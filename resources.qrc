@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>fonts/SmileySans-Oblique.ttf</file>
+        <file>images/vts_logo_with_name.png</file>
+        <file>images/icon.ico</file>
+        <file>images/loading.gif</file>
+        <file>fonts/AlibabaPuHuiTi-2-55-Regular.ttf</file>
+    </qresource>
+</RCC>

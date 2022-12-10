@@ -1,0 +1,19 @@
+{
+    "name": "vts-link-client",
+    "version-string": "0.0.1",
+    "dependencies": [
+      "kcp",
+      {
+          "name": "ffmpeg",
+          "default-features": true,
+          "features": [ "nvcodec", "opengl", "x264", "qsv", "openh264" ]
+      },
+      "libdatachannel",
+      "brotli",
+      "libyuv"
+    ],
+    "overrides": [
+        { "name": "openssl", "version-string": "1.1.1m#2" }
+    ],
+    "builtin-baseline": "bdf113f7a1133e77a4b847203eca8b3520aaf3e0"
+}
