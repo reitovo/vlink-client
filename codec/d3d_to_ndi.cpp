@@ -153,7 +153,7 @@ bool DxToNdi::init()
             D3D11_CREATE_DEVICE_SINGLETHREADED |
             D3D11_CREATE_DEVICE_BGRA_SUPPORT ;
 
-    if (IsDebuggerPresent()) {
+    if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
     }
 
@@ -453,11 +453,14 @@ bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
         frame->p_data = (uint8_t*)ms.pData;
 
         _mapped = true;
+
+        fps.add(t.nsecsElapsed());
+
+        return true;
+    } else {
+        return false;
     }
 
-    fps.add(t.nsecsElapsed());
-
-    return true;
 }
 
 void DxToNdi::unmapNdi()

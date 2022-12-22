@@ -808,7 +808,10 @@ void CollabRoom::ndiFindWorker()
         printf("Network sources (%u found).\n", no_sources);
         for (uint32_t i = 0; i < no_sources; i++) {
             qDebug() << QString("%1. %2 %3").arg(i+1).arg(ndiSources[i].p_ndi_name).arg(ndiSources[i].p_url_address);
-            sources.append(QString("%1").arg(ndiSources[i].p_ndi_name));
+            auto name = QString(ndiSources[i].p_ndi_name);
+            if (!name.contains("(VTS Link)")) {
+                sources.append(name);
+            }
         }
         emit onNdiSourcesUpdated(sources);
     }

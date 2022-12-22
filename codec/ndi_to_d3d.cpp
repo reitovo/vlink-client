@@ -104,7 +104,7 @@ bool NdiToDx::init()
             D3D11_CREATE_DEVICE_SINGLETHREADED |
             D3D11_CREATE_DEVICE_BGRA_SUPPORT ;
 
-    if (IsDebuggerPresent()) {
+    if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
     }
 

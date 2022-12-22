@@ -269,7 +269,6 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
         nv12->bgraToNv12(ndi, fast);
         nv12->copyFrame(frame_rgb, frame_a);
     } else {
-        nv12->unmapFrame();
         nv12->bgraToNv12(ndi); //~ 340000ns
         nv12->mapFrame(frame_rgb, frame_a);
     }
@@ -289,10 +288,12 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     meta->set_framen(frameN);
     meta->set_codecid((int)codecId);
 
+    QStringList err;
+
     ret = avcodec_send_frame(ctx_rgb, frame_rgb);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
-        return "send frame";
+        err.append("send frame");
     }
 
     while (ret >= 0) {
@@ -302,7 +303,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             break;
         else if (ret < 0) {
             qDebug() << "error recving packet for rgb encoding";
-            return "recv packet";
+            err.append("recv packet");
         }
 
         avFrame->add_rgbpackets(packet->data, packet->size);
@@ -313,7 +314,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     ret = avcodec_send_frame(ctx_a, frame_a);
     if (ret < 0) {
         qDebug() << "error sending frame for a encoding" << av_err2str(ret);
-        return "send frame";
+        err.append("send frame");
     }
 
     while (ret >= 0) {
@@ -322,7 +323,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             break;
         else if (ret < 0) {
             qDebug() << "error recving packet for a encoding";
-            return "recv packet";
+            err.append("recv packet");
         }
 
         avFrame->add_apackets(packet->data, packet->size);
@@ -330,7 +331,17 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
         av_packet_unref(packet);
     }
 
+    if (!useDxFrame) {
+        nv12->unmapFrame();
+    }
+
     fps.add(t.nsecsElapsed());
+
+    if (!err.empty()) {
+        auto ee = err.join(", ");
+        qDebug() << "one or more error occoured" << ee;
+        return ee;
+    }
 
     //e.end();
 

@@ -176,7 +176,7 @@ bool BgraToNv12::init()
             D3D11_CREATE_DEVICE_SINGLETHREADED |
             D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
-    if (IsDebuggerPresent()) {
+    if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
     }
 
@@ -553,10 +553,13 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxTo
     if (!_inited) {
         return false;
     }
+    if (!frame->p_data) {
+        return false;
+    }
 
     D3D11_BOX dstBox = {0, 0, 0, _width, _height, 1};
 
-    //elapsed e1("update subresource"); //~300000 ns
+    //Elapsed e1("update subresource"); //~300000 ns
     if (fast != nullptr) {
         fast->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_bgra.Get());
     } else {
@@ -565,16 +568,16 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxTo
     }
     //e1.end();
 
-    //elapsed e2("draw 1"); ~17500 ns
+    //Elapsed e2("draw 1"); //~17500 ns
     setBgraToNv24Context();
     this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
     //e2.end();
 
-    //elapsed e3("copy"); ~4000 ns
+    //Elapsed e3("copy"); //~4000 ns
     this->_d3d11_deviceCtx->CopyResource(_texture_uv_copy_target.Get(), _texture_uv_target.Get());
     //e3.end();
 
-    //elapsed e4("draw 2"); ~11100 ns
+    //Elapsed e4("draw 2"); //~11100 ns
     setNv24ToNv12Context();
     this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
 
