@@ -61,7 +61,7 @@ public:
     ~AvToDx();
 
     bool isInited();
-    std::optional<QString> init(const VtsAvMeta &meta);
+    std::optional<QString> init();
     std::optional<QString> process(const VtsAvFrame &meta);
     void stop();
 

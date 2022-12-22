@@ -917,10 +917,6 @@ void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer)
         peer->decode(m->avframe());
         break;
     }
-    case VTS_MSG_AVSTOP: {
-        peer->stopDecoder();
-        break;
-    }
     case VTS_MSG_HEARTBEAT: {
         // server first, then client reply
         qDebug() << "receive dc heartbeat from" << peer->peerId;

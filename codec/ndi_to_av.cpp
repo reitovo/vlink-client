@@ -244,11 +244,11 @@ std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecC
 void NdiToAv::initEncodingParameter(std::string encoder, AVCodecContext *ctx)
 {
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-        av_opt_set(ctx->priv_data, "preset", "ull", 0);
+        av_opt_set(ctx->priv_data, "preset", "p4", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
     } else if (encoder == "h264_amf") {
-        av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
+        av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
@@ -288,12 +288,6 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     auto avFrame = msg->mutable_avframe();
     avFrame->set_version(1);
     avFrame->set_pts(pts);
-    auto meta = avFrame->mutable_avmeta();
-    meta->set_width(xres);
-    meta->set_height(yres);
-    meta->set_framed(frameD);
-    meta->set_framen(frameN);
-    meta->set_codecid((int)codecId);
 
     QStringList err;
 
@@ -362,11 +356,6 @@ void NdiToAv::stop()
     if (!inited)
         return;
     inited = false;
-
-    auto msg = std::make_shared<VtsMsg>();
-    msg->set_version(1);
-    msg->set_type(VTS_MSG_AVSTOP);
-    onPacketReceived(std::move(msg));
 
     pts = 0;
     nv12 = nullptr;

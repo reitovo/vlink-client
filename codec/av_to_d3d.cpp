@@ -31,6 +31,8 @@ AvToDx::AvToDx(std::shared_ptr<DxToNdi> d3d) : IDxSrc(d3d)
 {
     qDebug() << "begin d3d2ndi";
     d3d->registerSource(this);
+
+    init();
 }
 
 AvToDx::~AvToDx()
@@ -41,18 +43,20 @@ AvToDx::~AvToDx()
     qDebug() << "end d3d2ndi done";
 }
 
-std::optional<QString> AvToDx::init(const VtsAvMeta &meta)
+std::optional<QString> AvToDx::init()
 {
     if (inited)
         stop();
 
-    xres = meta.width();
-    yres = meta.height();
-    frameD = meta.framed();
-    frameN = meta.framen();
-    codecId = (AVCodecID) meta.codecid();
+    qDebug() << "av2d3d init";
 
-    qDebug() << "using codec" << avcodec_get_name(codecId);
+    xres = 1920;
+    yres = 1080;
+    frameD = 1001;
+    frameN = 60000;
+    codecId = AV_CODEC_ID_H264;
+
+    qDebug() << "av2d3d using codec" << avcodec_get_name(codecId);
 
     bgra = std::make_unique<Nv12ToBgra>();
     if (!bgra->init()) {
@@ -212,11 +216,7 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
 {
     if (!inited) {
         qDebug() << "not inited";
-        auto res = init(meta.avmeta());
-        if (res.has_value()) {
-            qDebug() << "init failed" << res.value();
-            return res;
-        }
+        return "not inited";
     }
 
     int ret;
@@ -242,7 +242,7 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
 
     ret = avcodec_receive_frame(ctx_rgb, frame_rgb);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
-        qDebug() << "error while decoding rgb";
+        qDebug() << "error while decoding rgb" << av_err2str(ret);
         errList.append("receive frame");
     }
 
@@ -260,7 +260,7 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
 
     ret = avcodec_receive_frame(ctx_a, frame_a);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
-        qDebug() << "error while decoding a";
+        qDebug() << "error while decoding a" << av_err2str(ret);
         errList.append("receive frame");
     }
 
@@ -285,6 +285,9 @@ void AvToDx::stop()
 {
     if (!inited)
         return;
+
+    qDebug() << "av2d3d stop";
+
     inited = false;
     pts = 0;
     bgra = nullptr;

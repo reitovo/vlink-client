@@ -259,9 +259,7 @@ void Peer::initSmartBuf()
     }, [this] (auto data) {
         auto msg = std::make_unique<VtsMsg>();
         if (msg->ParseFromArray(data.data(), data.size())) {
-            if (recvQueue.size_approx() < 10) {
-                recvQueue.enqueue(std::move(msg));
-            }
+            recvQueue.enqueue(std::move(msg));
         } else {
             qDebug() << "invalid dc message at server";
         }
@@ -271,11 +269,6 @@ void Peer::initSmartBuf()
 void Peer::decode(const VtsAvFrame &frame)
 {
     dec->process(frame);
-}
-
-void Peer::stopDecoder()
-{
-    dec->stop();
 }
 
 void Peer::sendHeartbeat()

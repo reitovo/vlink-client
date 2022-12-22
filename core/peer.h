@@ -58,7 +58,6 @@ public:
     void initSmartBuf();
 
     void decode(const VtsAvFrame& frame);
-    void stopDecoder();
 
     void sendHeartbeat();
     long rtt();
