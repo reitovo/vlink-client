@@ -244,7 +244,14 @@ std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecC
 void NdiToAv::initEncodingParameter(std::string encoder, AVCodecContext *ctx)
 {
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-        av_opt_set(ctx->priv_data, "preset", "p4", 0);
+        av_opt_set(ctx->priv_data, "preset", "ull", 0);
+        av_opt_set(ctx->priv_data, "profile", "main", 0);
+        av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+    } else if (encoder == "h264_amf") {
+        av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
+        av_opt_set(ctx->priv_data, "profile", "main", 0);
+        av_opt_set(ctx->priv_data, "quality", "speed", 0);
+        av_opt_set(ctx->priv_data, "rc", "cbr", 0);
     } else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);
     }
