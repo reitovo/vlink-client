@@ -5,6 +5,7 @@ import "avframe.proto";
 enum VtsMsgType {
     VTS_MSG_INVALID = 0;
     VTS_MSG_AVFRAME = 1;
+    VTS_MSG_AVSTOP = 2;
     VTS_MSG_HEARTBEAT = 3;
 }
 

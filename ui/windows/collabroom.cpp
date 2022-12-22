@@ -914,7 +914,11 @@ void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer)
     // receive av from remote peer
     switch (m->type()) {
     case VTS_MSG_AVFRAME: {
-        peer->decode(m->avframe());
+        peer->decode(std::move(m));
+        break;
+    }
+    case VTS_MSG_AVSTOP: {
+        peer->resetDecoder();
         break;
     }
     case VTS_MSG_HEARTBEAT: {

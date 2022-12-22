@@ -23,6 +23,17 @@ extern "C" {
 #include "libavutil/pixdesc.h"
 }
 
+#include <queue>
+
+struct UnorderedFrame {
+    int pts;
+    std::unique_ptr<VtsMsg> data;
+};
+
+struct FrameReorderer {
+    bool operator() (const UnorderedFrame* l, const UnorderedFrame* r) const { return l->pts > r->pts; }
+};
+
 // This class is used by server to decode received ffmpeg packets
 // Then use d3d11 accelerated nv12 to bgra converter to save the frame to a d3d11texture2d
 // And the instance is a IDxSrc which will be registered to room's merger DxToNdi, which
@@ -56,13 +67,16 @@ private:
 
     QThread processThread;
 
+    std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
+
 public:
     AvToDx(std::shared_ptr<DxToNdi> d3d);
     ~AvToDx();
 
     bool isInited();
     std::optional<QString> init();
-    std::optional<QString> process(const VtsAvFrame &meta);
+    std::optional<QString> process(std::unique_ptr<VtsMsg> m);
+    void reset();
     void stop();
 
     QString debugInfo();

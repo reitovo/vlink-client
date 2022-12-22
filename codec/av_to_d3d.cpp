@@ -31,7 +31,6 @@ AvToDx::AvToDx(std::shared_ptr<DxToNdi> d3d) : IDxSrc(d3d)
 {
     qDebug() << "begin d3d2ndi";
     d3d->registerSource(this);
-
     init();
 }
 
@@ -212,8 +211,34 @@ std::optional<QString> AvToDx::initA(AVCodecID codec_id)
     return std::optional<QString>();
 }
 
-std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
+std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
 {
+    // enqueue for reordering
+    UnorderedFrame* f = new UnorderedFrame;
+    f->pts = m->avframe().pts();
+    f->data = std::move(m);
+    frameQueue.push(f);
+
+    if (frameQueue.size() < 30) {
+        return "buffering";
+    }
+
+    auto dd = frameQueue.top();
+    frameQueue.pop();
+
+    auto mem = std::move(dd->data);
+    auto newPts = dd->pts;
+    delete dd;
+
+    if (newPts < pts) {
+        qDebug() << "misordered" << newPts << pts;
+        return "misordered frame";
+    }
+
+    auto meta = mem->avframe();
+    qDebug() << "av2d3d pts" << meta.pts();
+    pts = meta.pts();
+
     if (!inited) {
         qDebug() << "not inited";
         return "not inited";
@@ -223,8 +248,6 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
 
     QElapsedTimer t;
     t.start();
-
-    qDebug() << "av2d3d pts" << meta.pts();
 
     QStringList errList;
 
@@ -281,15 +304,20 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
     return std::optional<QString>();
 }
 
+void AvToDx::reset()
+{
+    qDebug() << "av2d3d reset";
+    pts = 0;
+}
+
 void AvToDx::stop()
 {
     if (!inited)
         return;
 
     qDebug() << "av2d3d stop";
-
-    inited = false;
     pts = 0;
+    inited = false;
     bgra = nullptr;
     av_packet_free(&packet);
     av_frame_free(&frame_rgb);

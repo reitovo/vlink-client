@@ -57,7 +57,8 @@ public:
     void setRemoteSdp(QJsonObject sdp);
     void initSmartBuf();
 
-    void decode(const VtsAvFrame& frame);
+    void decode(std::unique_ptr<VtsMsg> m);
+    void resetDecoder();
 
     void sendHeartbeat();
     long rtt();

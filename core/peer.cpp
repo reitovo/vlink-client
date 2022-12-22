@@ -266,9 +266,14 @@ void Peer::initSmartBuf()
     });
 }
 
-void Peer::decode(const VtsAvFrame &frame)
+void Peer::decode(std::unique_ptr<VtsMsg> m)
 {
-    dec->process(frame);
+    dec->process(std::move(m));
+}
+
+void Peer::resetDecoder()
+{
+    dec->reset();
 }
 
 void Peer::sendHeartbeat()
