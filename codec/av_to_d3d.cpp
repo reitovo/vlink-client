@@ -230,13 +230,13 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     auto newPts = dd->pts;
     delete dd;
 
-    if (newPts < pts) {
+    if (newPts <= pts) {
         qDebug() << "misordered" << newPts << pts;
         return "misordered frame";
     }
 
     auto meta = mem->avframe();
-    qDebug() << "av2d3d pts" << meta.pts();
+    //qDebug() << "av2d3d pts" << meta.pts();
     pts = meta.pts();
 
     if (!inited) {

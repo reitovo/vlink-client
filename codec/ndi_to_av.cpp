@@ -357,6 +357,11 @@ void NdiToAv::stop()
         return;
     inited = false;
 
+    auto msg = std::make_shared<VtsMsg>();
+    msg->set_version(1);
+    msg->set_type(VTS_MSG_AVSTOP);
+    onPacketReceived(std::move(msg));
+
     pts = 0;
     nv12 = nullptr;
     av_packet_free(&packet);
