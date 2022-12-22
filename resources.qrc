@@ -4,6 +4,17 @@
         <file>images/vts_logo_with_name.png</file>
         <file>images/icon.ico</file>
         <file>images/loading.gif</file>
-        <file>fonts/AlibabaPuHuiTi-2-55-Regular.ttf</file>
+        <file>shader/nv12bgra_pixel.hlsl</file>
+        <file>shader/nv12bgra_vertex.hlsl</file>
+        <file>shader/blend_pixel.hlsl</file>
+        <file>shader/blend_vertex.hlsl</file>
+        <file>images/hide.png</file>
+        <file>images/show.png</file>
+        <file>fonts/MiSans-Regular.ttf</file>
+        <file>fonts/MiSans-Demibold.ttf</file>
+        <file>shader/bgranv12_pixel.hlsl</file>
+        <file>shader/bgranv12_vertex.hlsl</file>
+        <file>shader/bgranv12_downsample_pixel.hlsl</file>
+        <file>shader/bgranv12_downsample_vertex.hlsl</file>
     </qresource>
 </RCC>

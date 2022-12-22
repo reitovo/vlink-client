@@ -3,17 +3,20 @@
     "version-string": "0.0.1",
     "dependencies": [
       "kcp",
+      "libdatachannel",
+      "brotli",
+      "protobuf",
+      "concurrentqueue",
+      "crashpad",
       {
           "name": "ffmpeg",
           "default-features": true,
-          "features": [ "nvcodec", "opengl", "x264", "qsv", "openh264" ]
-      },
-      "libdatachannel",
-      "brotli",
-      "libyuv"
+          "features": [ "nvcodec", "qsv", "x264", "amf" ]
+      }
     ],
     "overrides": [
-        { "name": "openssl", "version-string": "1.1.1m#2" }
+        { "name": "openssl", "version-string": "1.1.1m#2" },
+        { "name": "ffmpeg", "version-string": "4.4.3#1" }
     ],
-    "builtin-baseline": "bdf113f7a1133e77a4b847203eca8b3520aaf3e0"
+    "builtin-baseline": "e07c62d05970d7d89e336bdb278b02242e8bda7c"
 }

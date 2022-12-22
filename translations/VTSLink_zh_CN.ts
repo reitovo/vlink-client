@@ -252,7 +252,7 @@
     <message>
         <location filename="../mainwindow.cpp" line="31"/>
         <location filename="../mainwindow.cpp" line="30"/>
-        <source>VTuber Studio 联动</source>
+        <source>VTube Studio 联动</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

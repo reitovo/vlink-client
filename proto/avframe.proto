@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+message VtsAvMeta {
+  int32 version = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 frameD = 4;
+  int32 frameN = 5;
+  int32 codecId = 6;
+}
+
+message VtsAvFrame {
+  int32 version = 1;
+  repeated bytes rgbPackets = 2;
+  repeated bytes aPackets = 3;
+  int64 pts = 4;
+  VtsAvMeta avMeta = 5;
+}

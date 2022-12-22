@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.12)
 
-project(VTSLink VERSION 0.9.0 LANGUAGES CXX)
+message(STATUS "VTSLink - Reito")
+
+project(VTSLink VERSION 0.9.0)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -13,22 +15,70 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 qt_standard_project_setup()
 
+find_package(Protobuf CONFIG REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+set(PROTO_FILES
+    proto/avframe.proto
+    proto/vts.proto
+    proto/smartbuf.proto
+)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
+
 set(TS_FILES
     translations/VTSLink_zh_CN.ts
     translations/VTSLink_en_US.ts)
 
+set(CODEC_FILES
+        codec/ndi_to_av.h
+        codec/ndi_to_av.cpp
+        codec/bgra_to_nv12.h
+        codec/bgra_to_nv12.cpp
+        codec/av_to_d3d.h
+        codec/av_to_d3d.cpp
+        codec/d3d_to_ndi.h
+        codec/d3d_to_ndi.cpp
+        codec/nv12_to_bgra.h
+        codec/nv12_to_bgra.cpp
+        codec/ndi_to_d3d.h
+        codec/ndi_to_d3d.cpp
+        codec/i_d3d_src.h
+        codec/i_d3d_src.cpp)
+
+set(SHADER_FILES
+        shader/blend_pixel.hlsl
+        shader/blend_vertex.hlsl
+        shader/nv12bgra_pixel.hlsl
+        shader/nv12bgra_vertex.hlsl
+        shader/bgranv12_pixel.hlsl
+        shader/bgranv12_vertex.hlsl
+        shader/bgranv12_downsample_vertex.hlsl
+        shader/bgranv12_downsample_pixel.hlsl
+    )
+
+include_directories(.)
+include_directories(codec)
+
 set(PROJECT_SOURCES
         main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
         resources.qrc
-        vtslink.h util.h
-        peer.h peer.cpp ndi2av.h ndi2av.cpp
-        collabroom.h collabroom.cpp collabroom.ui
-        blockinghttprequest.h blockinghttprequest.cpp blockinghttprequest.ui
-        peeritemwidget.h peeritemwidget.cpp peeritemwidget.ui
+        core/vtslink.h
+        core/util.h core/util.cpp
+        core/peer.h core/peer.cpp
+        core/smartbuf.h core/smartbuf.cpp
+        core/debugcenter.h core/debugcenter.cpp
+        ui/windows/mainwindow.cpp
+        ui/windows/mainwindow.h
+        ui/windows/mainwindow.ui
+        ui/windows/collabroom.h ui/windows/collabroom.cpp ui/windows/collabroom.ui
+        ui/windows/blockinghttprequest.h ui/windows/blockinghttprequest.cpp ui/windows/blockinghttprequest.ui
+        ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
+        ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
+        ${SHADER_FILES}
+        ${CODEC_FILES}
         ${TS_FILES}
+        ${PROTO_FILES}
+        ${PROTO_SRCS} ${PROTO_HDRS}
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -73,7 +123,8 @@ target_link_libraries(VTSLink PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 target_link_libraries(VTSLink PRIVATE Qt6::Network)
 
-add_subdirectory(NatTypeProbe)
+#natprobe
+add_subdirectory(dependency/NatTypeProbe)
 target_link_libraries(VTSLink PRIVATE NatTypeProb)
 
 #libdatachannel
@@ -85,6 +136,9 @@ target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 #find_library(WINSPARKLE_LIBRARY winsparkle)
 #target_include_directories(VTSLink PRIVATE ${WINSPARKLE_INCLUDE_DIR})
 #target_link_libraries(VTSLink PRIVATE ${WINSPARKLE_LIBRARY})
+
+find_package(crashpad CONFIG REQUIRED)
+target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
 
 # kcp
 find_package(kcp CONFIG REQUIRED)
@@ -111,9 +165,14 @@ add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if
         "${NDI_SDK_DIR}/Bin/x64/Processing.NDI.Lib.x64.dll"
         $<TARGET_FILE_DIR:VTSLink>)
 
-# yuv
-find_package(libyuv CONFIG REQUIRED)
-target_link_libraries(VTSLink PUBLIC yuv)
+add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VCPKG_INSTALLED_DIR}/x64-windows/bin/zlib1.dll"
+        $<TARGET_FILE_DIR:VTSLink>)
+add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VCPKG_INSTALLED_DIR}/x64-windows/tools/crashpad_handler.exe"
+        $<TARGET_FILE_DIR:VTSLink>)
+install(FILES "${VCPKG_INSTALLED_DIR}/x64-windows/tools/crashpad_handler.exe" DESTINATION bin)
+install(FILES "${VCPKG_INSTALLED_DIR}/x64-windows/bin/zlib1.dll" DESTINATION bin)
 
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)
@@ -121,6 +180,9 @@ find_package(unofficial-brotli CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlidec)
 # Brotli encoder library
 target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlienc)
+
+# protobuf
+target_link_libraries(VTSLink PRIVATE protobuf::libprotoc protobuf::libprotobuf)
 
 set_target_properties(VTSLink PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
