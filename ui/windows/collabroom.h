@@ -48,7 +48,6 @@ signals:
 private slots:
     void updatePeersUi(QList<PeerUi> peerUis);
     void updateNdiSourcesUi(QStringList list);
-    void updateNdiSourceIndex(int idx);
 
     void copyRoomId();
     void exitRoom(QString reason);
@@ -102,7 +101,6 @@ private:
     // ndi
     std::unique_ptr<QThread> ndiFindThread;
     std::atomic<const NDIlib_source_t*> ndiSources;
-    int ndiSourceIdx = -1;
     std::atomic_int ndiSourceCount = 0;
     std::atomic_bool ndiToFfmpegRunning = false;
     std::unique_ptr<QThread> ndiToFfmpegThread;

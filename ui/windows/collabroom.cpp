@@ -67,7 +67,6 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(this, &CollabRoom::onNdiToFfmpegError, this, &CollabRoom::ndiToFfmpegError);
     connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
 
-    connect(ui->ndiSourceSelect, &QComboBox::currentIndexChanged, this, &CollabRoom::updateNdiSourceIndex);
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleNdiToFfmpeg);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
     connect(ui->copyRoomId, &QPushButton::clicked, this, &CollabRoom::copyRoomId);
@@ -228,14 +227,6 @@ void CollabRoom::updateNdiSourcesUi(QStringList list)
 
     for (int i = 0; i < list.count(); ++i) {
         ui->ndiSourceSelect->setItemText(i, list[i]);
-    }
-}
-
-void CollabRoom::updateNdiSourceIndex(int idx)
-{
-    qDebug() << "Set current ndi source index to" << idx;
-    if (idx != -1) {
-        ndiSourceIdx = idx;
     }
 }
 
@@ -595,9 +586,17 @@ void CollabRoom::ndiToFfmpegWorkerClient()
 {
     qInfo() << "ndi to ffmpeg client start";
 
-    if (ndiSourceIdx < 0 || ndiSourceIdx >= ndiSourceCount) {
+    const NDIlib_source_t* source = nullptr;
+    auto name = ui->ndiSourceSelect->currentText();
+    for (auto i = 0; i < ndiSourceCount; ++i) {
+        if (name == ndiSources[i].p_ndi_name) {
+            source = &ndiSources[i];
+            break;
+        }
+    }
+
+    if (source == nullptr) {
         emit onNdiToFfmpegError("source error");
-        ndiToFfmpegRunning = false;
         return;
     }
 
@@ -610,7 +609,7 @@ void CollabRoom::ndiToFfmpegWorkerClient()
     }
 
     // Connect to our sources
-    NDIlib_recv_connect(pNDI_recv, ndiSources + ndiSourceIdx);
+    NDIlib_recv_connect(pNDI_recv, source);
 
     qDebug() << "ndi to ffmpeg ndi2av";
     // ffmpeg coverter
@@ -703,7 +702,16 @@ void CollabRoom::ndiToFfmpegWorkerServer()
 {
     qInfo() << "ndi to ffmpeg server start";
 
-    if (ndiSourceIdx < 0 || ndiSourceIdx >= ndiSourceCount) {
+    const NDIlib_source_t* source = nullptr;
+    auto name = ui->ndiSourceSelect->currentText();
+    for (auto i = 0; i < ndiSourceCount; ++i) {
+        if (name == ndiSources[i].p_ndi_name) {
+            source = &ndiSources[i];
+            break;
+        }
+    }
+
+    if (source == nullptr) {
         emit onNdiToFfmpegError("source error");
         return;
     }
@@ -716,7 +724,7 @@ void CollabRoom::ndiToFfmpegWorkerServer()
     }
 
     // Connect to our sources
-    NDIlib_recv_connect(pNDI_recv, ndiSources + ndiSourceIdx);
+    NDIlib_recv_connect(pNDI_recv, source);
 
     NdiToDx cvt(d3d);
     cvt.init();
