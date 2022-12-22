@@ -224,7 +224,7 @@ std::optional<QString> AvToDx::process(const VtsAvFrame &meta)
     QElapsedTimer t;
     t.start();
 
-    //qDebug() << "start av2d3d";
+    qDebug() << "av2d3d pts" << meta.pts();
 
     QStringList errList;
 
