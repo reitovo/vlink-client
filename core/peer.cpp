@@ -222,7 +222,7 @@ void Peer::close()
 
 void Peer::sendAsync(std::shared_ptr<VtsMsg> payload)
 {
-    if (sendQueue.size_approx() > 15) {
+    if (sendQueue.size_approx() > 10) {
         //qDebug() << "throw away payload because queue is full";
         return;
     }
@@ -259,7 +259,9 @@ void Peer::initSmartBuf()
     }, [this] (auto data) {
         auto msg = std::make_unique<VtsMsg>();
         if (msg->ParseFromArray(data.data(), data.size())) {
-            recvQueue.enqueue(std::move(msg));
+            if (recvQueue.size_approx() < 10) {
+                recvQueue.enqueue(std::move(msg));
+            }
         } else {
             qDebug() << "invalid dc message at server";
         }
