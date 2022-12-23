@@ -28,6 +28,12 @@ enum NdiToAvMode {
     NDI_TO_AV_MODE_LIBYUV
 };
 
+struct CodecOption {
+    QString name;
+    AVCodecID codecId;
+    NdiToAvMode mode;
+};
+
 // This is used by clients to encode NDI source which should comes from VTube Studio
 // to two ffmpeg sources, Because alpha channel is essential, so there'll be 2 streams
 // after encoded by ffmpeg the packet is send to remote server.
@@ -70,8 +76,8 @@ public:
     std::optional<QString> initRgb(const CodecOption& option);
     std::optional<QString> initA(const CodecOption& option);
 
-    std::optional<QString> initOptimalEncoder(std::string encoder, AVCodecContext * ctx);
-    void initEncodingParameter(std::string encoder, AVCodecContext * ctx);
+    std::optional<QString> initOptimalEncoder(const CodecOption& option, AVCodecContext * ctx);
+    void initEncodingParameter(const CodecOption& option, AVCodecContext * ctx);
 
     std::optional<QString> process(NDIlib_video_frame_v2_t* ndi, std::shared_ptr<DxToNdi> fast = nullptr);
     void stop();

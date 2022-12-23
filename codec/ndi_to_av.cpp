@@ -6,16 +6,12 @@
 #include <QStringList>
 #include <sstream>
 #include "core/vtslink.h"
+#include "libyuv.h"
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
 #define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
-struct CodecOption {
-    QString name;
-    AVCodecID codecId;
-    NdiToAvMode mode;
-};
 
 NdiToAv::NdiToAv(std::function<void (std::shared_ptr<VtsMsg>)> cb) {
     qDebug() << "begin ndi2av";
@@ -64,14 +60,14 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     std::optional<QString> err;
     for (auto& o : options) {
         auto e = o.name;
-        err = initRgb(e.toStdString());
+        err = initRgb(o);
         if (err.has_value()) {
             qWarning() << "ndi2av init rgb encoder" << e << "failed" << err.value();
             stop();
             continue;
         }
         qDebug() << "ndi2av init rgb encoder" << e << "succeed";
-        err = initA(e.toStdString());
+        err = initA(o);
         if (err.has_value()) {
             qWarning() << "ndi2av init a encoder" << e << "failed" << err.value();
             stop();
@@ -106,7 +102,7 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
 {
     int err;
 
-    codec_rgb = avcodec_find_encoder_by_name(option.name.c_str());
+    codec_rgb = avcodec_find_encoder_by_name(option.name.toStdString().c_str());
     if (!codec_rgb) {
         qDebug("Cannot open codec\n");
         return "find av codec";
@@ -125,8 +121,8 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
     ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
     ctx_rgb->pkt_timebase = ctx_rgb->time_base;
 
-    initEncodingParameter(encoder, ctx_rgb);
-    initOptimalEncoder(encoder, ctx_rgb);
+    initEncodingParameter(option, ctx_rgb);
+    initOptimalEncoder(option, ctx_rgb);
 
     if ((err = avcodec_open2(ctx_rgb, codec_rgb, nullptr)) < 0) {
         qDebug("Could not open codec %s\n", av_err2str(err));
@@ -138,9 +134,15 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
         qDebug("Could not alloc sw frame\n");
         return "frame alloc";
     }
-    frame_rgb->format = useDxFrame ? AV_PIX_FMT_D3D11 : AV_PIX_FMT_NV12;
+    frame_rgb->format = option.mode == NDI_TO_AV_MODE_DXFULL ? AV_PIX_FMT_D3D11 : AV_PIX_FMT_NV12;
     frame_rgb->width = ctx_rgb->width;
     frame_rgb->height = ctx_rgb->height;
+    if (option.mode == NDI_TO_AV_MODE_LIBYUV) {
+        if ((err = av_frame_get_buffer(frame_rgb, 0)) < 0) {
+            qDebug() << "alloc frame buffer failed" << av_err2str(err);
+            return "alloc buffer";
+        }
+    }
 
     return std::optional<QString>();
 }
@@ -149,7 +151,7 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
 {
     int err;
 
-    codec_a = avcodec_find_encoder_by_name(option.name.c_str());
+    codec_a = avcodec_find_encoder_by_name(option.name.toStdString().c_str());
     if (!codec_a) {
         qDebug("Cannot open codec\n");
         return "find av codec";
@@ -168,8 +170,8 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
     ctx_a->time_base.num = ctx_a->framerate.den = frameN;
     ctx_a->pkt_timebase = ctx_a->time_base;
 
-    initEncodingParameter(encoder, ctx_a);
-    initOptimalEncoder(encoder, ctx_a);
+    initEncodingParameter(option, ctx_a);
+    initOptimalEncoder(option, ctx_a);
 
     if ((err = avcodec_open2(ctx_a, codec_a, nullptr)) < 0) {
         qDebug("Could not open codec %s\n", av_err2str(err));
@@ -181,18 +183,25 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
         qDebug("Could not alloc sw frame\n");
         return "frame alloc";
     }
-    frame_a->format = useDxFrame ? AV_PIX_FMT_D3D11 : AV_PIX_FMT_NV12;
+    frame_a->format = option.mode == NDI_TO_AV_MODE_DXFULL ? AV_PIX_FMT_D3D11 : AV_PIX_FMT_NV12;
     frame_a->width = ctx_rgb->width;
     frame_a->height = ctx_rgb->height;
+    if (option.mode == NDI_TO_AV_MODE_LIBYUV) {
+        if ((err = av_frame_get_buffer(frame_a, 0)) < 0) {
+            qDebug() << "alloc frame buffer failed" << av_err2str(err);
+            return "alloc buffer";
+        }
+        memset(frame_a->data[1], 128, xres * yres / 2);
+    }
 
     return std::optional<QString>();
 }
 
-std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecContext *ctx)
+std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AVCodecContext *ctx)
 {
     int err;
 
-    if (encoder == "h264_nvenc" || encoder == "h264_amf") {
+    if (option.mode == NDI_TO_AV_MODE_DXFULL) {
         // Yeahy, we can optimize
         ctx->pix_fmt = AV_PIX_FMT_D3D11;
         ctx->sw_pix_fmt = AV_PIX_FMT_NV12;
@@ -237,8 +246,9 @@ std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecC
     return std::optional<QString>();
 }
 
-void NdiToAv::initEncodingParameter(std::string encoder, AVCodecContext *ctx)
+void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *ctx)
 {
+    auto encoder = option.name;
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
         av_opt_set(ctx->priv_data, "preset", "p4", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
@@ -274,12 +284,20 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     QElapsedTimer t;
     t.start();
 
-    if (useDxFrame) {
+    if (mode == NDI_TO_AV_MODE_DXFULL) {
         nv12->bgraToNv12(ndi, fast);
         nv12->copyFrame(frame_rgb, frame_a);
-    } else {
+    } else if (mode == NDI_TO_AV_MODE_DXMAP) {
         nv12->bgraToNv12(ndi); //~ 340000ns
         nv12->mapFrame(frame_rgb, frame_a);
+    } else if (mode == NDI_TO_AV_MODE_LIBYUV) {
+        libyuv::ARGBToNV12(ndi->p_data, ndi->line_stride_in_bytes,
+                frame_rgb->data[0], frame_rgb->linesize[0],
+                frame_rgb->data[1], frame_rgb->linesize[1],
+                ndi->xres, ndi->yres);
+        libyuv::ARGBExtractAlpha(ndi->p_data, ndi->line_stride_in_bytes,
+                frame_a->data[0], frame_a->linesize[0],
+                ndi->xres, ndi->yres);
     }
 
     pts++;
@@ -334,7 +352,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
         av_packet_unref(packet);
     }
 
-    if (!useDxFrame) {
+    if (mode == NDI_TO_AV_MODE_DXMAP) {
         nv12->unmapFrame();
     }
 
@@ -371,14 +389,14 @@ void NdiToAv::stop()
     av_frame_free(&frame_a);
 
     // Prevent ffmpeg from releasing d3d11 device
-    if (useDxFrame)  {
+    if (mode == NDI_TO_AV_MODE_DXFULL)  {
         AVHWDeviceContext* device_ctx = reinterpret_cast<AVHWDeviceContext*>(ctx_rgb->hw_device_ctx->data);
         AVD3D11VADeviceContext* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
         d3d11va_device_ctx->device = nullptr;
         device_ctx = reinterpret_cast<AVHWDeviceContext*>(ctx_a->hw_device_ctx->data);
         d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
         d3d11va_device_ctx->device = nullptr;
-        useDxFrame = false;
+        mode = NDI_TO_AV_MODE_INVALID;
     }
 
     avcodec_free_context(&ctx_rgb);
