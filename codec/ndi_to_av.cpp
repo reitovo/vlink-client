@@ -54,10 +54,10 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
+        {"libx264", AV_CODEC_ID_H264},
         {"h264_nvenc", AV_CODEC_ID_H264},
         {"h264_qsv", AV_CODEC_ID_H264},
         {"h264_amf", AV_CODEC_ID_H264},
-        {"libx264", AV_CODEC_ID_H264}
     };
 
     std::optional<QString> err;
@@ -122,7 +122,6 @@ std::optional<QString> NdiToAv::initRgb(std::string encoder)
     ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
     ctx_rgb->pkt_timebase = ctx_rgb->time_base;
     ctx_rgb->gop_size = 10;
-    ctx_rgb->max_b_frames = 1;
 
     initEncodingParameter(encoder, ctx_rgb);
     initOptimalEncoder(encoder, ctx_rgb);
@@ -167,7 +166,6 @@ std::optional<QString> NdiToAv::initA(std::string encoder)
     ctx_a->time_base.num = ctx_a->framerate.den = frameN;
     ctx_a->pkt_timebase = ctx_a->time_base;
     ctx_a->gop_size = 10;
-    ctx_a->max_b_frames = 1;
 
     initEncodingParameter(encoder, ctx_a);
     initOptimalEncoder(encoder, ctx_a);
@@ -193,8 +191,8 @@ std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecC
 {
     int err;
 
-    if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-        // Yeahy, we can optimize for nvenc
+    if (encoder == "h264_nvenc" || encoder == "h264_amf") {
+        // Yeahy, we can optimize
         ctx->pix_fmt = AV_PIX_FMT_D3D11;
         ctx->sw_pix_fmt = AV_PIX_FMT_NV12;
 
@@ -252,8 +250,10 @@ void NdiToAv::initEncodingParameter(std::string encoder, AVCodecContext *ctx)
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
     } else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);
+        ctx->max_b_frames = 1;
     }
 }
 

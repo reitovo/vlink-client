@@ -587,6 +587,7 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxTo
     return true;
 }
 
+// Extremely slow on some devices
 bool BgraToNv12::mapFrame(AVFrame* rgb, AVFrame* a)
 {
     if (!_inited)
