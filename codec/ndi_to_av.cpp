@@ -51,10 +51,10 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
-        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
         {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
         {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
         {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
+        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
     };
 
     std::optional<QString> err;
@@ -280,10 +280,10 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
         return "frame change error";
     }
 
-    //elapsed e("encode");
     QElapsedTimer t;
     t.start();
 
+    Elapsed e1("convert");
     if (mode == NDI_TO_AV_MODE_DXFULL) {
         nv12->bgraToNv12(ndi, fast);
         nv12->copyFrame(frame_rgb, frame_a);
@@ -299,6 +299,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
                 frame_a->data[0], frame_a->linesize[0],
                 ndi->xres, ndi->yres);
     }
+    e1.end();
 
     pts++;
     frame_rgb->pts = frame_a->pts = pts;
@@ -311,6 +312,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
     QStringList err;
 
+    Elapsed e2("encode");
     ret = avcodec_send_frame(ctx_rgb, frame_rgb);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
@@ -351,6 +353,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
         av_packet_unref(packet);
     }
+    e2.end();
 
     if (mode == NDI_TO_AV_MODE_DXMAP) {
         nv12->unmapFrame();

@@ -17,7 +17,7 @@
     ],
     "overrides": [
         { "name": "openssl", "version-string": "1.1.1m#2" },
-        { "name": "ffmpeg", "version-string": "4.4.3#1" }
+        { "name": "ffmpeg", "version-string": "5.1.2" }
     ],
-    "builtin-baseline": "e07c62d05970d7d89e336bdb278b02242e8bda7c"
+    "builtin-baseline": "287283e57c4642c4867e5349200b175a54fc8324"
 }

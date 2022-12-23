@@ -8,7 +8,7 @@
 
 #define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) qDebug() << __FUNCTION__ " reset " #x " ret" << remain; }
 
-#define DX_DEBUG_LAYER true
+#define DX_DEBUG_LAYER false
 
 class Elapsed {
     bool ended = false;
