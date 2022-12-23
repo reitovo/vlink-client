@@ -157,6 +157,10 @@ pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
 )
 target_link_libraries(VTSLink PUBLIC PkgConfig::LIBAV)
 
+# libyuv
+find_package(libyuv CONFIG REQUIRED)
+target_link_libraries(VTSLink PRIVATE yuv)
+
 # NDI SDK
 string(REPLACE "\\" "/" NDI_SDK_DIR $ENV{NDI_SDK_DIR})
 target_include_directories(VTSLink PRIVATE "${NDI_SDK_DIR}/Include")

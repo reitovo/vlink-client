@@ -51,10 +51,10 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
+        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
         {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
         {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
         {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
-        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
     };
 
     std::optional<QString> err;
