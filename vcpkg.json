@@ -19,5 +19,5 @@
         { "name": "openssl", "version-string": "1.1.1m#2" },
         { "name": "ffmpeg", "version-string": "5.1.2" }
     ],
-    "builtin-baseline": "287283e57c4642c4867e5349200b175a54fc8324"
+    "builtin-baseline": "b5fae7da3f5c8fbedcf31cc54c810f1ee4600f59"
 }

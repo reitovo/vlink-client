@@ -51,11 +51,11 @@ private:
     AVPacket *packet = nullptr;
     //rgb
     AVCodecContext *ctx_rgb = nullptr;
-    AVCodec* codec_rgb = nullptr;
+    const AVCodec* codec_rgb = nullptr;
     AVFrame* frame_rgb = nullptr;
     //alpha
     AVCodecContext *ctx_a = nullptr;
-    AVCodec* codec_a = nullptr;
+    const AVCodec* codec_a = nullptr;
     AVFrame* frame_a = nullptr;
 
     NdiToAvMode mode = NDI_TO_AV_MODE_INVALID;
