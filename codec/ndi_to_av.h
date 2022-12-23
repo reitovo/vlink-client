@@ -21,6 +21,13 @@ extern "C" {
 #include "avframe.pb.h"
 #include "vts.pb.h"
 
+enum NdiToAvMode {
+    NDI_TO_AV_MODE_INVALID,
+    NDI_TO_AV_MODE_DXFULL,
+    NDI_TO_AV_MODE_DXMAP,
+    NDI_TO_AV_MODE_LIBYUV
+};
+
 // This is used by clients to encode NDI source which should comes from VTube Studio
 // to two ffmpeg sources, Because alpha channel is essential, so there'll be 2 streams
 // after encoded by ffmpeg the packet is send to remote server.
@@ -45,7 +52,7 @@ private:
     AVCodec* codec_a = nullptr;
     AVFrame* frame_a = nullptr;
 
-    bool useDxFrame = false;
+    NdiToAvMode mode = NDI_TO_AV_MODE_INVALID;
 
     int pts = 0;
     std::function<void(std::shared_ptr<VtsMsg>)> onPacketReceived = nullptr;
@@ -60,8 +67,8 @@ public:
 
     bool isInited();
     std::optional<QString> init(int xres, int yres, int d, int n, int type, int cc);
-    std::optional<QString> initRgb(std::string encoder);
-    std::optional<QString> initA(std::string encoder);
+    std::optional<QString> initRgb(const CodecOption& option);
+    std::optional<QString> initA(const CodecOption& option);
 
     std::optional<QString> initOptimalEncoder(std::string encoder, AVCodecContext * ctx);
     void initEncodingParameter(std::string encoder, AVCodecContext * ctx);

@@ -34,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
     icon.addFile(QString::fromUtf8(":/images/icon.ico"), QSize(), QIcon::Normal, QIcon::Off);
     tray->setIcon(icon);
     tray->show();
+
+    iterateCodec();
+    iterateHwAccels();
 }
 
 MainWindow::~MainWindow()

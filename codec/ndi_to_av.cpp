@@ -14,6 +14,7 @@ static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 struct CodecOption {
     QString name;
     AVCodecID codecId;
+    NdiToAvMode mode;
 };
 
 NdiToAv::NdiToAv(std::function<void (std::shared_ptr<VtsMsg>)> cb) {
@@ -54,10 +55,10 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
-        {"libx264", AV_CODEC_ID_H264},
-        {"h264_nvenc", AV_CODEC_ID_H264},
-        {"h264_qsv", AV_CODEC_ID_H264},
-        {"h264_amf", AV_CODEC_ID_H264},
+        {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
+        {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
+        {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
+        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
     };
 
     std::optional<QString> err;
@@ -77,12 +78,14 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
             continue;
         }
         qDebug() << "ndi2av init a encoder" << e << "succeed";
+
         codecId = o.codecId;
         codec = o.name;
+        mode = o.mode;
         break;
     }
 
-    if (useDxFrame) {
+    if (mode == NDI_TO_AV_MODE_DXFULL) {
         av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0);
         av_hwframe_get_buffer(ctx_a->hw_frames_ctx, frame_a, 0);
     }
@@ -99,11 +102,11 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     return std::optional<QString>();
 }
 
-std::optional<QString> NdiToAv::initRgb(std::string encoder)
+std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
 {
     int err;
 
-    codec_rgb = avcodec_find_encoder_by_name(encoder.c_str());
+    codec_rgb = avcodec_find_encoder_by_name(option.name.c_str());
     if (!codec_rgb) {
         qDebug("Cannot open codec\n");
         return "find av codec";
@@ -121,7 +124,6 @@ std::optional<QString> NdiToAv::initRgb(std::string encoder)
     ctx_rgb->time_base.den = ctx_rgb->framerate.num = frameD;
     ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
     ctx_rgb->pkt_timebase = ctx_rgb->time_base;
-    ctx_rgb->gop_size = 10;
 
     initEncodingParameter(encoder, ctx_rgb);
     initOptimalEncoder(encoder, ctx_rgb);
@@ -143,11 +145,11 @@ std::optional<QString> NdiToAv::initRgb(std::string encoder)
     return std::optional<QString>();
 }
 
-std::optional<QString> NdiToAv::initA(std::string encoder)
+std::optional<QString> NdiToAv::initA(const CodecOption& option)
 {
     int err;
 
-    codec_a = avcodec_find_encoder_by_name(encoder.c_str());
+    codec_a = avcodec_find_encoder_by_name(option.name.c_str());
     if (!codec_a) {
         qDebug("Cannot open codec\n");
         return "find av codec";
@@ -165,7 +167,6 @@ std::optional<QString> NdiToAv::initA(std::string encoder)
     ctx_a->time_base.den = ctx_a->framerate.num = frameD;
     ctx_a->time_base.num = ctx_a->framerate.den = frameN;
     ctx_a->pkt_timebase = ctx_a->time_base;
-    ctx_a->gop_size = 10;
 
     initEncodingParameter(encoder, ctx_a);
     initOptimalEncoder(encoder, ctx_a);
@@ -229,11 +230,8 @@ std::optional<QString> NdiToAv::initOptimalEncoder(std::string encoder, AVCodecC
 
         av_buffer_unref(&hw);
         av_buffer_unref(&hwf);
-
-        useDxFrame = true;
     } else {
         ctx->pix_fmt = AV_PIX_FMT_NV12;
-        useDxFrame = false;
     }
 
     return std::optional<QString>();
@@ -245,15 +243,19 @@ void NdiToAv::initEncodingParameter(std::string encoder, AVCodecContext *ctx)
         av_opt_set(ctx->priv_data, "preset", "p4", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        ctx->max_b_frames = 1;
+        ctx->gop_size = 10;
     } else if (encoder == "h264_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        ctx->gop_size = 120;
         //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
     } else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);
         ctx->max_b_frames = 1;
+        ctx->gop_size = 10;
     }
 }
 

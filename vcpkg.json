@@ -8,6 +8,7 @@
       "protobuf",
       "concurrentqueue",
       "crashpad",
+      "libyuv",
       {
           "name": "ffmpeg",
           "default-features": true,
