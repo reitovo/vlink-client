@@ -51,10 +51,11 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
-        {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
-        {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
-        {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL},
-        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV},
+        {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Least CPU usage, fastest approach
+        {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Best quality, slightly slower
+        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP}, // Cost reasonable CPU
+        {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Absolutely trash
+        {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV}, // Cost massive CPU
     };
 
     std::optional<QString> err;
@@ -80,6 +81,8 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
         mode = o.mode;
         break;
     }
+
+    qDebug() << "using" << codec << "mode" << mode;
 
     if (mode == NDI_TO_AV_MODE_DXFULL) {
         av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0);
