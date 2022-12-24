@@ -142,6 +142,7 @@ void BgraToNv12::releaseSharedSurf()
 }
 
 ID3D11Device* BgraToNv12::getDevice() {
+    _d3d11_device->AddRef();
     return _d3d11_device.Get();
 }
 

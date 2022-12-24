@@ -392,19 +392,7 @@ void NdiToAv::stop()
     nv12 = nullptr;
     av_packet_free(&packet);
     av_frame_free(&frame_rgb);
-    av_frame_free(&frame_a);
-
-    // Prevent ffmpeg from releasing d3d11 device
-    if (mode == NDI_TO_AV_MODE_DXFULL)  {
-        AVHWDeviceContext* device_ctx = reinterpret_cast<AVHWDeviceContext*>(ctx_rgb->hw_device_ctx->data);
-        AVD3D11VADeviceContext* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
-        d3d11va_device_ctx->device = nullptr;
-        device_ctx = reinterpret_cast<AVHWDeviceContext*>(ctx_a->hw_device_ctx->data);
-        d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
-        d3d11va_device_ctx->device = nullptr;
-        mode = NDI_TO_AV_MODE_INVALID;
-    }
-
+    av_frame_free(&frame_a); 
     avcodec_free_context(&ctx_rgb);
     avcodec_free_context(&ctx_a);
 }

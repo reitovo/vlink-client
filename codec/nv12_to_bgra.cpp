@@ -109,6 +109,7 @@ void Nv12ToBgra::releaseSharedSurf()
 }
 
 ID3D11Device* Nv12ToBgra::getDevice() {
+    _d3d11_device->AddRef();
     return _d3d11_device.Get();
 }
 
