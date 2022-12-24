@@ -9,7 +9,7 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeCommandArgs": "-DVCPKG_INSTALL_OPTIONS=\"--x-buildtrees-root=E:\\b1\""
+      "cmakeCommandArgs": ""
     },
     {
       "name": "x64-Release",
