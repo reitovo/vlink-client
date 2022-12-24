@@ -57,7 +57,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
         {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Absolutely trash
         {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV}, // Cost massive CPU
     };
-
+    AVOption a;
     std::optional<QString> err;
     for (auto& o : options) {
         auto e = o.name;

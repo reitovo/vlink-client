@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
+set(ENV{VCPKG_MAX_CONCURRENCY} 16)
+
 message(STATUS "VTSLink - Reito")
 
 project(VTSLink VERSION 0.9.0)
@@ -137,8 +139,18 @@ target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 #target_include_directories(VTSLink PRIVATE ${WINSPARKLE_INCLUDE_DIR})
 #target_link_libraries(VTSLink PRIVATE ${WINSPARKLE_LIBRARY})
 
+#crashpad
 find_package(crashpad CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
+ 
+add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"
+        $<TARGET_FILE_DIR:VTSLink>)
+add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/crashpad_handler.exe"
+        $<TARGET_FILE_DIR:VTSLink>)
+install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/crashpad_handler.exe" DESTINATION bin)
+install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll" DESTINATION bin)
 
 # kcp
 find_package(kcp CONFIG REQUIRED)
@@ -169,15 +181,6 @@ add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if
         "${NDI_SDK_DIR}/Bin/x64/Processing.NDI.Lib.x64.dll"
         $<TARGET_FILE_DIR:VTSLink>)
 
-add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${VCPKG_INSTALLED_DIR}/x64-windows/bin/zlib1.dll"
-        $<TARGET_FILE_DIR:VTSLink>)
-add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${VCPKG_INSTALLED_DIR}/x64-windows/tools/crashpad_handler.exe"
-        $<TARGET_FILE_DIR:VTSLink>)
-install(FILES "${VCPKG_INSTALLED_DIR}/x64-windows/tools/crashpad_handler.exe" DESTINATION bin)
-install(FILES "${VCPKG_INSTALLED_DIR}/x64-windows/bin/zlib1.dll" DESTINATION bin)
-
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)
 # Brotli decoder library
@@ -202,6 +205,7 @@ endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION ${CMAKE_INSTALL_BINDIR}
     FILES_MATCHING PATTERN "*.dll")
+     
 
 install(TARGETS VTSLink
     BUNDLE  DESTINATION .
@@ -211,9 +215,18 @@ qt_generate_deploy_app_script(
     TARGET VTSLink
     FILENAME_VARIABLE DEPLOY_SCRIPT
     NO_UNSUPPORTED_PLATFORM_ERROR
-)
+) 
 install(SCRIPT ${DEPLOY_SCRIPT})
 
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(VTSLink)
 endif()
+
+#If use IDE other than Qt Creator, we need to copy required plugins and qt.conf correctly
+file(WRITE "${CMAKE_BINARY_DIR}/bin/qt.conf" "[Paths]
+Prefix = ..") 
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    file(COPY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/Qt6/plugins/" DESTINATION "${CMAKE_BINARY_DIR}/plugins/")
+else()
+    file(COPY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/Qt6/plugins/" DESTINATION "${CMAKE_BINARY_DIR}/plugins/")
+endif() 
