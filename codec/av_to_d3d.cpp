@@ -251,7 +251,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     QStringList errList; 
 
     for (auto& a : meta.rgbpackets()) {
-        auto d = a.data();
+        auto& d = a.data();
         packet->data = (uint8_t*) d.data();
         packet->size = d.size();
         packet->dts = a.dts();
@@ -275,7 +275,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     }
 
     for (auto& a : meta.apackets()) {
-        auto d = a.data();
+        auto& d = a.data();
         packet->data = (uint8_t*)d.data();
         packet->size = d.size();
         packet->dts = a.dts();
