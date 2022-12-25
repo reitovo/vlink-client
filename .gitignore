@@ -75,3 +75,4 @@ CMakeLists.txt.user*
 /out
 /.vscode
 /.idea
+/CMakeSettings.json
