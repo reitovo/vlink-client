@@ -113,6 +113,94 @@ ID3D11Device* Nv12ToBgra::getDevice() {
     return _d3d11_device.Get();
 }
 
+void Nv12ToBgra::enqueueRgb(AVFrame* rgb)
+{
+    if (rgb->format != AV_PIX_FMT_D3D11)
+        return;
+    if (!rgb->hw_frames_ctx)
+        return;
+
+    auto f = _frame_rgb_queue.getFree();
+
+    D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
+
+    ID3D11Texture2D* textureRgb = (ID3D11Texture2D*)rgb->data[0];
+    const int textureRgbIndex = (int)rgb->data[1];
+    //qDebug() << "copy rgb" << textureRgb << textureRgbIndex;
+
+    //bind/copy ffmpeg hw texture -> local d3d11 texture
+    this->_d3d11_deviceCtx->CopySubresourceRegion(
+        f.Get(), 0, 0, 0, 0,
+        textureRgb, textureRgbIndex, &srcBox
+    );
+
+    _frame_rgb_queue.enqueue(f);
+}
+
+void Nv12ToBgra::enqueueA(AVFrame* a)
+{
+    if (a->format != AV_PIX_FMT_D3D11)
+        return;
+    if (!a->hw_frames_ctx)
+        return;
+
+    auto f = _frame_a_queue.getFree();
+
+    D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
+
+    ID3D11Texture2D* textureA = (ID3D11Texture2D*)a->data[0];
+    const int textureAIndex = (int)a->data[1];
+    //qDebug() << "copy a" << textureA << textureAIndex;
+
+    //bind/copy ffmpeg hw texture -> local d3d11 texture
+    this->_d3d11_deviceCtx->CopySubresourceRegion(
+        f.Get(), 0, 0, 0, 0,
+        textureA, textureAIndex, &srcBox
+    );
+
+    _frame_a_queue.enqueue(f);
+}
+
+void Nv12ToBgra::createFramePool()
+{
+    HRESULT hr;
+    ComPtr<ID3D11Texture2D> tex;
+
+    D3D11_TEXTURE2D_DESC texDesc_nv12;
+    ZeroMemory(&texDesc_nv12, sizeof(texDesc_nv12));
+    texDesc_nv12.Format = DXGI_FORMAT_NV12;
+    texDesc_nv12.Width = _width;
+    texDesc_nv12.Height = _height;
+    texDesc_nv12.ArraySize = 1;
+    texDesc_nv12.MipLevels = 1;
+    texDesc_nv12.BindFlags = 0;
+    texDesc_nv12.Usage = D3D11_USAGE_DEFAULT;
+    texDesc_nv12.CPUAccessFlags = 0;
+    texDesc_nv12.SampleDesc.Count = 1;
+    texDesc_nv12.SampleDesc.Quality = 0;
+    texDesc_nv12.MiscFlags = 0;
+
+    for (int i = 0; i < 5; ++i) {
+        hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, tex.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "nv12bgra create frame pool failed" << HRESULT_CODE(hr);
+            return;
+        }
+        _frame_rgb_queue.addFree(tex);
+    }
+
+    for (int i = 0; i < 5; ++i) {
+        hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, tex.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "nv12bgra create frame pool failed" << HRESULT_CODE(hr);
+            return;
+        }
+        _frame_a_queue.addFree(tex);
+    }
+
+    qDebug() << "nv12bgra create frame pool";
+}
+
 bool Nv12ToBgra::init()
 {
     HRESULT hr;
@@ -241,8 +329,12 @@ bool Nv12ToBgra::init()
 
     auto width = 1920;
     auto height = 1080;
+
+    this->_width = width;
+    this->_height = height;
     auto ret = createSharedSurf(width, height);
     resetDeviceContext(width, height);
+    createFramePool();
 
     _inited = true;
 
@@ -292,9 +384,6 @@ void Nv12ToBgra::resetDeviceContext(int width, int height)
                 1);
 
     qDebug() << "nv12bgra set context viewport";
-
-    this->_width = width;
-    this->_height = height;
 }
 
 bool Nv12ToBgra::createSharedSurf(int width, int height)
@@ -418,40 +507,25 @@ bool Nv12ToBgra::createSharedSurf(int width, int height)
     return true;
 }
 
-bool Nv12ToBgra::nv12ToBgra(AVFrame *rgb, AVFrame *a)
+bool Nv12ToBgra::nv12ToBgra()
 {
     HRESULT hr{ 0 };
-    if (rgb == NULL || a == NULL)
-        return false;
-    if (rgb->format != AV_PIX_FMT_D3D11)
-        return false;
-    if (!rgb->hw_frames_ctx)
-        return false;
+
     if (!_inited) {
         return false;
     }
 
-    D3D11_BOX srcBox = {0, 0, 0, _width, _height, 1};
+    if (_frame_rgb_queue.size() == 0 || _frame_a_queue.size() == 0)
+        return false;
 
-    ID3D11Texture2D* textureRgb = (ID3D11Texture2D*)rgb->data[0];
-    const int textureRgbIndex = (int)rgb->data[1];
-    //qDebug() << "copy rgb" << textureRgb << textureRgbIndex;
+    auto rgb = _frame_rgb_queue.dequeue();
+    auto a = _frame_a_queue.dequeue();
+     
+    this->_d3d11_deviceCtx->CopyResource(this->_texture_nv12_rgb.Get(), rgb.Get());
+    this->_d3d11_deviceCtx->CopyResource(this->_texture_nv12_a.Get(), a.Get()); 
 
-    //bind/copy ffmpeg hw texture -> local d3d11 texture
-    this->_d3d11_deviceCtx->CopySubresourceRegion(
-                this->_texture_nv12_rgb.Get(), 0, 0, 0, 0,
-                textureRgb, textureRgbIndex, &srcBox
-                );
-
-    ID3D11Texture2D* textureA = (ID3D11Texture2D*)a->data[0];
-    const int textureAIndex = (int)a->data[1];
-    //qDebug() << "copy a" << textureA << textureAIndex;
-
-    //bind/copy ffmpeg hw texture -> local d3d11 texture
-    this->_d3d11_deviceCtx->CopySubresourceRegion(
-                this->_texture_nv12_a.Get(), 0, 0, 0, 0,
-                textureA, textureAIndex, &srcBox
-                );
+    _frame_rgb_queue.addFree(rgb);
+    _frame_a_queue.addFree(a);
 
     //    qDebug() << "clear";
     //    FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -494,4 +568,39 @@ bool Nv12ToBgra::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Textu
     lock.unlock();
 
     return true;
+}
+
+int DxFrameBuffer::size() {
+    return queue.size();
+}
+
+ComPtr<ID3D11Texture2D> DxFrameBuffer::getFree() {
+    ComPtr<ID3D11Texture2D> ret;
+    if (!free.empty()) {  
+        ret = free.front();
+        free.pop();
+    }
+    else if (!queue.empty()) {
+        ret = queue.front();
+        queue.pop();
+    }
+    return ret;
+}
+
+void DxFrameBuffer::addFree(ComPtr<ID3D11Texture2D> f) { 
+    free.push(f);
+}
+
+ComPtr<ID3D11Texture2D> DxFrameBuffer::dequeue() {
+    if (queue.empty())
+        return nullptr;
+
+    ComPtr<ID3D11Texture2D> ret;
+    ret = queue.front();
+    queue.pop();
+    return ret;
+}
+
+void DxFrameBuffer::enqueue(ComPtr<ID3D11Texture2D> f) {
+    queue.push(f);
 }

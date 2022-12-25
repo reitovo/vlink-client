@@ -72,8 +72,7 @@ private:
 public:
     AvToDx(std::shared_ptr<DxToNdi> d3d);
     ~AvToDx();
-
-    bool isInited();
+     
     std::optional<QString> init();
     std::optional<QString> process(std::unique_ptr<VtsMsg> m);
     void reset();
@@ -81,11 +80,7 @@ public:
 
     QString debugInfo();
 
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest);
-
-    void iterateCodec();
-    void iterateHwAccels();
-    void iterateCodecHwConstraint(AVBufferRef *dev, AVCodec* codec);
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
 };
 
 #endif // AV_TO_D3D_H

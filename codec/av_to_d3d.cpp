@@ -266,7 +266,10 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
         qDebug() << "error while decoding rgb" << av_err2str(ret);
         errList.append("receive frame");
-    } 
+    }
+    else {
+        bgra->enqueueRgb(frame_rgb);
+    }
 
     for (auto& a : meta.apackets()) {
         packet->data = (uint8_t*) a.data();
@@ -284,19 +287,21 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
         qDebug() << "error while decoding a" << av_err2str(ret);
         errList.append("receive frame"); 
-    } 
+    }
+    else {
+        bgra->enqueueA(frame_a);
+    }
 
     //qDebug() << "to bgra";
 
-    qDebug() << "rgb" << frame_rgb->coded_picture_number << meta.rgbpackets_size() << "a" << frame_a->coded_picture_number << meta.apackets_size();
+    //qDebug() << "rgb" << frame_rgb->coded_picture_number << meta.rgbpackets_size() << "a" << frame_a->coded_picture_number << meta.apackets_size();
 
     if (!errList.empty()) {
         auto e = errList.join(", ");
-        qDebug() << "one or more error occoured" << e;  
-        return e;
+        qDebug() << "one or more error occoured" << e;   
     } 
       
-    bgra->nv12ToBgra(frame_rgb, frame_a); 
+    bgra->nv12ToBgra(); 
 
     fps.add(t.nsecsElapsed()); 
 

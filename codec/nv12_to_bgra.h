@@ -10,6 +10,7 @@ extern "C" {
 #include <wrl/client.h>
 #include <QString>
 #include <d3dcompiler.h>
+#include <queue>
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -22,6 +23,18 @@ struct ID3D11Buffer;
 struct ID3D11ShaderResourceView;
 struct ID3D11RenderTargetView;
 using Microsoft::WRL::ComPtr;
+
+class DxFrameBuffer {
+public:
+    std::queue<ComPtr<ID3D11Texture2D>> free;
+    std::queue<ComPtr<ID3D11Texture2D>> queue;
+
+    int size();
+    ComPtr<ID3D11Texture2D> getFree();
+    void addFree(ComPtr<ID3D11Texture2D> f);
+    ComPtr<ID3D11Texture2D> dequeue();
+    void enqueue(ComPtr<ID3D11Texture2D> f);
+};
 
 // Thanks to
 // https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/HolographicFaceTracking/cpp/Content/NV12VideoTexture.cpp
@@ -53,6 +66,9 @@ class Nv12ToBgra
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
+    DxFrameBuffer _frame_rgb_queue;
+    DxFrameBuffer _frame_a_queue;
+
     HANDLE _texture_rgba_copy_shared = nullptr;
 
     uint32_t _width{ 0 };
@@ -70,11 +86,15 @@ public:
     bool compileShader();
     void resetDeviceContext(int width, int height);
     bool createSharedSurf(int width, int height);
+    void createFramePool();
     void releaseSharedSurf();
     ID3D11Device* getDevice();
-
-    bool nv12ToBgra(AVFrame* rgb, AVFrame* a);
+     
+    void enqueueRgb(AVFrame* rgb);
+    void enqueueA(AVFrame* a);
+    bool nv12ToBgra();
     bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest);
+
 };
 
 #endif // NV12_TO_BGRA_H
