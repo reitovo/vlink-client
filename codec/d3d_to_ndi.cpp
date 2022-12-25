@@ -347,19 +347,26 @@ bool DxToNdi::createSharedSurf(int width, int height)
     qDebug() << "d3d2ndi create shader resource view src";
 
     texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;
-    // Copy by ndi to av
-    texDesc_rgba.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
     hr = this->_d3d11_device->CreateTexture2D(&texDesc_rgba, nullptr, this->_texture_rgba_target.GetAddressOf());
     if (FAILED(hr))
         return false;
 
     qDebug() << "d3d2ndi create texture target";
 
+    // Copy by ndi to av
+    texDesc_rgba.BindFlags = 0;
+    texDesc_rgba.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+    hr = this->_d3d11_device->CreateTexture2D(&texDesc_rgba, nullptr, this->_texture_rgba_target_shared.GetAddressOf());
+    if (FAILED(hr))
+        return false;
+
+    qDebug() << "d3d2ndi create texture target shared";
+
     IDXGIResource* pDXGIResource = NULL;
-    _texture_rgba_target->QueryInterface(__uuidof(IDXGIResource), (LPVOID*) &pDXGIResource);
-    pDXGIResource->GetSharedHandle(&_texture_rgba_target_handle);
+    _texture_rgba_target_shared->QueryInterface(__uuidof(IDXGIResource), (LPVOID*) &pDXGIResource);
+    pDXGIResource->GetSharedHandle(&_texture_rgba_target_shared_handle);
     pDXGIResource->Release();
-    if (!_texture_rgba_target_handle){
+    if (!_texture_rgba_target_shared_handle){
         return false;
     }
 
@@ -430,9 +437,11 @@ bool DxToNdi::render()
         }
         this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
         renderCount++;
-    }
+    } 
     lock.unlock();
     //e2.end();
+    this->_d3d11_deviceCtx->CopyResource(_texture_rgba_target_shared.Get(), _texture_rgba_target.Get());
+    this->_d3d11_deviceCtx->Flush();
 
     renderFps.add(t.nsecsElapsed());
 
@@ -451,7 +460,6 @@ bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
     t.start();
 
     //Elapsed e3("copy");
-    this->_d3d11_deviceCtx->Flush();
     this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
     //e3.end();
 
@@ -490,10 +498,14 @@ bool DxToNdi::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2
     lock.lock();
 
     ID3D11Texture2D *src;
-    dev->OpenSharedResource(_texture_rgba_target_handle, __uuidof(ID3D11Texture2D), (LPVOID*) &src);
-    ctx->CopyResource(dest, src);
-    src->Release();
+    dev->OpenSharedResource(_texture_rgba_target_shared_handle, __uuidof(ID3D11Texture2D), (LPVOID*) &src);
+    if (src == nullptr)
+        return false;
+     
+    D3D11_BOX box = { 0, 0, 0, _width, _height, 1 };
+    ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
     ctx->Flush();
+    src->Release();
 
     lock.unlock();
 

@@ -85,8 +85,15 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     qDebug() << "using" << codec << "mode" << mode;
 
     if (mode == NDI_TO_AV_MODE_DXFULL) {
-        av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0);
-        av_hwframe_get_buffer(ctx_a->hw_frames_ctx, frame_a, 0);
+        int e;
+        if ((e = av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0)) != 0) {
+            qDebug("Could not get hw frame rgb %s\n", av_err2str(e));
+            return "open codec";
+        }
+        if ((e = av_hwframe_get_buffer(ctx_a->hw_frames_ctx, frame_a, 0)) != 0) {
+            qDebug("Could not get hw frame a %s\n", av_err2str(e));
+            return "open codec";
+        }
     }
 
     packet = av_packet_alloc();
@@ -231,7 +238,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
         frame->sw_format = AV_PIX_FMT_NV12;
         frame->width = ctx->width;
         frame->height = ctx->height;
-        frame->initial_pool_size = 1;
+        frame->initial_pool_size = 0;
 
         if ((err = av_hwframe_ctx_init(hwf)) < 0) {
             qDebug() << "ndi2av d3d11 hwframe failed" << av_err2str(err);
@@ -257,21 +264,22 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
         ctx->max_b_frames = 1;
-        ctx->gop_size = 10;
+        ctx->gop_size = 30;
     } else if (encoder == "h264_amf" || encoder == "hevc_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
-        av_opt_set(ctx->priv_data, "rc", "cbr", 0);
-        av_opt_set_int(ctx->priv_data, "qp_i", 20, 0);
-        av_opt_set_int(ctx->priv_data, "qp_p", 20, 0);
-        av_opt_set_int(ctx->priv_data, "qp_b", 20, 0);
-        ctx->gop_size = 120;
+        av_opt_set(ctx->priv_data, "rc", "cqp", 0);
+        av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
+        av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
+        av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
+        ctx->max_b_frames = 1;
+        ctx->gop_size = 30; 
         //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
     } else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);
         ctx->max_b_frames = 1;
-        ctx->gop_size = 10;
+        ctx->gop_size = 30;
     }
 }
 
@@ -318,7 +326,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
     QStringList err;
 
-    //Elapsed e2("encode");
+    //Elapsed e2("encode"); 
     ret = avcodec_send_frame(ctx_rgb, frame_rgb);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
@@ -335,11 +343,12 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             err.append("recv packet");
         }
 
+        //qDebug() << "rgb packet" << packet->size;
         avFrame->add_rgbpackets(packet->data, packet->size);
 
         av_packet_unref(packet);
     }
-
+     
     ret = avcodec_send_frame(ctx_a, frame_a);
     if (ret < 0) {
         qDebug() << "error sending frame for a encoding" << av_err2str(ret);
@@ -355,6 +364,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             err.append("recv packet");
         }
 
+        //qDebug() << "a packet" << packet->size;
         avFrame->add_apackets(packet->data, packet->size);
 
         av_packet_unref(packet);

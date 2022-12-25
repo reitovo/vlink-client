@@ -107,8 +107,7 @@ private:
     std::unique_ptr<QThread> ndiSendThread;
 
     // d3d
-    std::shared_ptr<DxToNdi> d3d;
-    FpsCounter ndiSendFps;
+    std::shared_ptr<DxToNdi> d3d; 
 };
 
 #endif // COLLABROOM_H

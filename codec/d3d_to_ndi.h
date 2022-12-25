@@ -30,12 +30,13 @@ class DxToNdi : public IDebugCollectable {
     ComPtr<ID3D11RenderTargetView> _renderTargetView = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba_src = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba_target = nullptr;
+    ComPtr<ID3D11Texture2D> _texture_rgba_target_shared = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba_copy = nullptr;
 
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
-    HANDLE _texture_rgba_target_handle;
+    HANDLE _texture_rgba_target_shared_handle;
 
     uint32_t _width{ 0 };
     uint32_t _height{ 0 };

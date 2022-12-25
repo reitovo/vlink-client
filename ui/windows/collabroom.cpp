@@ -886,21 +886,16 @@ void CollabRoom::ndiSendWorker()
         // We now submit the frame. Note that this call will be clocked so that we end up submitting
         // at exactly 60fps.
 
-        if (d3d->render()) { 
-
-            QElapsedTimer t;
-            t.start();
-
-            if (d3d->mapNdi(&NDI_video_frame)) {
-                // blocking
-                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame); 
-            }
-
-            ndiSendFps.add(t.nsecsElapsed());
+        if (d3d->render()) {
 
             // encode and send
             if (isServer) {
                 cvt->process(&NDI_video_frame, d3d);
+            }
+
+            if (d3d->mapNdi(&NDI_video_frame)) {
+                // blocking
+                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame); 
             }
 
             d3d->unmapNdi();

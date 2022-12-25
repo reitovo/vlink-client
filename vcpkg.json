@@ -14,7 +14,7 @@
       "default-features": true,
       "features": [ "nvcodec", "qsv", "x264", "amf" ]
     },
-    "qt" 
+    "qt"
   ],
   "overrides": [
     {
@@ -26,5 +26,5 @@
       "version-string": "5.1.2"
     }
   ],
-  "builtin-baseline": "dad8f3ecb1561b032ff1b3e86293242eb2c3b83b"
+  "builtin-baseline": "a7f7e16735e988aa286200589f8caeb2823484dd"
 }

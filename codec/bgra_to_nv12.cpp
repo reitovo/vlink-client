@@ -656,11 +656,11 @@ void BgraToNv12::unmapFrame()
 void BgraToNv12::copyFrame(AVFrame *rgb, AVFrame *a)
 {
     if (!_inited)
-        return;
+        return; 
 
-    D3D11_BOX srcBox = {0, 0, 0, _width, _height, 1};
+    D3D11_BOX srcBox = {0, 0, 0, _width, _height, 1}; 
     this->_d3d11_deviceCtx->CopySubresourceRegion((ID3D11Resource*)rgb->data[0], (int)rgb->data[1], 0, 0, 0,
                                                   _texture_nv12_rgb_target.Get(), 0, &srcBox);
     this->_d3d11_deviceCtx->CopySubresourceRegion((ID3D11Resource*)a->data[0], (int)a->data[1], 0, 0, 0,
-                                                  _texture_nv12_a_target.Get(), 0, &srcBox);
+                                                  _texture_nv12_a_target.Get(), 0, &srcBox); 
 }

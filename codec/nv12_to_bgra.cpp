@@ -479,11 +479,17 @@ bool Nv12ToBgra::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Textu
     //qDebug() << "copy from buffer";
 
     lock.lock();
+
     ID3D11Texture2D *src;
     dev->OpenSharedResource(_texture_rgba_copy_shared, __uuidof(ID3D11Texture2D), (LPVOID*) &src);
-    ctx->CopyResource(dest, src);
-    src->Release();
+    if (src == nullptr)
+        return false;
+
+    D3D11_BOX box = { 0, 0, 0, _width, _height, 1 };
+    ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
     ctx->Flush();
+
+    src->Release();
 
     lock.unlock();
 
