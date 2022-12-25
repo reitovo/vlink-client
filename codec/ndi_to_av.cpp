@@ -273,14 +273,14 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
         av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
         av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
         
-        av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
-        ctx->rc_max_rate = ctx->bit_rate * 5;
-        ctx->rc_buffer_size = ctx->bit_rate * 3;
+        //av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
+        //ctx->rc_max_rate = ctx->bit_rate * 5;
+        //ctx->rc_buffer_size = ctx->bit_rate * 3;
 
-        //av_opt_set(ctx->priv_data, "rc", "cqp", 0);
-        //av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
-        //av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
-        //av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
+        av_opt_set(ctx->priv_data, "rc", "cqp", 0);
+        av_opt_set_int(ctx->priv_data, "qp_i", 28, 0);
+        av_opt_set_int(ctx->priv_data, "qp_p", 28, 0);
+        av_opt_set_int(ctx->priv_data, "qp_b", 28, 0);
 
         //av_opt_set(ctx->priv_data, "rc", "cbr", 0);
         //av_opt_set_int(ctx->priv_data, "filler_data", 1, 0); 
@@ -328,11 +328,9 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
     pts++;
     frame_rgb->pts = frame_a->pts = pts;
-    auto msg = std::make_shared<VtsMsg>();
-    msg->set_version(1);
+    auto msg = std::make_shared<VtsMsg>(); 
     msg->set_type(VTS_MSG_AVFRAME);
-    auto avFrame = msg->mutable_avframe();
-    avFrame->set_version(1);
+    auto avFrame = msg->mutable_avframe(); 
     avFrame->set_pts(pts);
 
     QStringList err;
@@ -354,8 +352,11 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             err.append("recv packet");
         }
 
-        //qDebug() << "rgb packet" << packet->size;
-        avFrame->add_rgbpackets(packet->data, packet->size);
+        //qDebug() << "rgb packet" << packet->size; 
+        auto d = avFrame->add_rgbpackets();
+        d->mutable_data()->assign((const char *)packet->data, packet->size);
+        d->set_dts(packet->dts);
+        d->set_pts(packet->pts);
 
         av_packet_unref(packet);
     }
@@ -375,8 +376,11 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
             err.append("recv packet");
         }
 
-        //qDebug() << "a packet" << packet->size;
-        avFrame->add_apackets(packet->data, packet->size);
+        //qDebug() << "a packet" << packet->size;  
+        auto d = avFrame->add_apackets();
+        d->mutable_data()->assign((const char*)packet->data, packet->size);
+        d->set_dts(packet->dts);
+        d->set_pts(packet->pts);
 
         av_packet_unref(packet);
     }
@@ -406,8 +410,7 @@ void NdiToAv::stop()
         return;
     inited = false;
 
-    auto msg = std::make_shared<VtsMsg>();
-    msg->set_version(1);
+    auto msg = std::make_shared<VtsMsg>(); 
     msg->set_type(VTS_MSG_AVSTOP);
     onPacketReceived(std::move(msg));
 

@@ -279,8 +279,7 @@ void Peer::resetDecoder()
 void Peer::sendHeartbeat()
 {
     qDebug() << "send dc heartbeat";
-    std::unique_ptr<VtsMsg> hb = std::make_unique<VtsMsg>();
-    hb->set_version(1);
+    std::unique_ptr<VtsMsg> hb = std::make_unique<VtsMsg>(); 
     hb->set_type(VTS_MSG_HEARTBEAT);
     sendQueue.enqueue(std::move(hb));
 }

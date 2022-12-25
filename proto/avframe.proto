@@ -1,8 +1,13 @@
 syntax = "proto3";
 
-message VtsAvFrame {
-  int32 version = 1;
-  repeated bytes rgbPackets = 2;
-  repeated bytes aPackets = 3;
+message AvPacket {
+	bytes data = 1;
+	int64 pts = 2;
+	int64 dts = 3;
+}
+
+message VtsAvFrame { 
+  repeated AvPacket rgbPackets = 2;
+  repeated AvPacket aPackets = 3;
   int64 pts = 4;
 }

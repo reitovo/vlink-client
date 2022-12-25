@@ -251,8 +251,11 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     QStringList errList; 
 
     for (auto& a : meta.rgbpackets()) {
-        packet->data = (uint8_t*) a.data();
-        packet->size = a.size();
+        auto d = a.data();
+        packet->data = (uint8_t*) d.data();
+        packet->size = d.size();
+        packet->dts = a.dts();
+        packet->pts = a.pts();
         ret = avcodec_send_packet(ctx_rgb, packet);
         if (ret < 0) {
             qDebug() << "error sending packet for rgb decoding" << av_err2str(ret);
@@ -272,8 +275,11 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     }
 
     for (auto& a : meta.apackets()) {
-        packet->data = (uint8_t*) a.data();
-        packet->size = a.size();
+        auto d = a.data();
+        packet->data = (uint8_t*)d.data();
+        packet->size = d.size();
+        packet->dts = a.dts();
+        packet->pts = a.pts();
         ret = avcodec_send_packet(ctx_a, packet);
         if (ret < 0) {
             qDebug() << "error sending packet for a decoding" << av_err2str(ret);

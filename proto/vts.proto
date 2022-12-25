@@ -9,8 +9,7 @@ enum VtsMsgType {
     VTS_MSG_HEARTBEAT = 3;
 }
 
-message VtsMsg {
-  int32 version = 1;
+message VtsMsg { 
   VtsMsgType type = 2;
   VtsAvFrame avFrame = 3;
 }
