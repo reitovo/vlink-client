@@ -273,10 +273,14 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
         av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
         av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
         
-        av_opt_set(ctx->priv_data, "rc", "cqp", 0);
-        av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
-        av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
-        av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
+        av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
+        ctx->rc_max_rate = ctx->bit_rate * 5;
+        ctx->rc_buffer_size = ctx->bit_rate * 3;
+
+        //av_opt_set(ctx->priv_data, "rc", "cqp", 0);
+        //av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
+        //av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
+        //av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
 
         //av_opt_set(ctx->priv_data, "rc", "cbr", 0);
         //av_opt_set_int(ctx->priv_data, "filler_data", 1, 0); 
