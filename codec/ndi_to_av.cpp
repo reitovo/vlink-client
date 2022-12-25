@@ -258,28 +258,35 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 
 void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *ctx)
 {
+    ctx->max_b_frames = 1;
+    ctx->gop_size = 30;
     auto encoder = option.name;
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
         av_opt_set(ctx->priv_data, "preset", "p4", 0);
+        //av_opt_set(ctx->priv_data, "tune", "ull", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
-        ctx->max_b_frames = 1;
-        ctx->gop_size = 30;
+
     } else if (encoder == "h264_amf" || encoder == "hevc_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
-        av_opt_set(ctx->priv_data, "rc", "cqp", 0);
-        av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
-        av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
-        av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
-        ctx->max_b_frames = 1;
-        ctx->gop_size = 30; 
+        av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
+        
+        //av_opt_set(ctx->priv_data, "rc", "cqp", 0);
+        //av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);
+        //av_opt_set_int(ctx->priv_data, "qp_p", 30, 0);
+        //av_opt_set_int(ctx->priv_data, "qp_b", 30, 0);
+
+        av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        av_opt_set_int(ctx->priv_data, "filler_data", 1, 0); 
+
         //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
-    } else {
+    } else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
+        av_opt_set(ctx->priv_data, "preset", "fast", 0);  
+    }
+    else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);
-        ctx->max_b_frames = 1;
-        ctx->gop_size = 30;
     }
 }
 
