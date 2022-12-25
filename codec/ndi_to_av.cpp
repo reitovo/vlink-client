@@ -391,8 +391,12 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     }
 
     //e.end();
-
-    onPacketReceived(std::move(msg));
+    if (avFrame->apackets_size() == 1 && avFrame->rgbpackets_size() == 1) { 
+        onPacketReceived(std::move(msg));
+    }
+    else {
+        int a = 0;
+    }
 
     return std::optional<QString>();
 }
