@@ -123,8 +123,7 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
         qDebug("Could not allocate video codec context\n");
         return "codec alloc ctx";
     }
-
-    ctx_rgb->bit_rate = VTSLINK_CODEC_RGB_BITRATE;
+     
     ctx_rgb->width = xres;
     ctx_rgb->height = yres;
     ctx_rgb->time_base.den = ctx_rgb->framerate.num = frameD;
@@ -172,8 +171,7 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
         qDebug("Could not allocate video codec context\n");
         return "codec alloc ctx";
     }
-
-    ctx_a->bit_rate = VTSLINK_CODEC_A_BITRATE;
+     
     ctx_a->width = xres;
     ctx_a->height = yres;
     ctx_a->time_base.den = ctx_a->framerate.num = frameD;
@@ -258,13 +256,15 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 
 void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *ctx)
 {
-    ctx->max_b_frames = 1;
-    ctx->gop_size = 30;
+    ctx->max_b_frames = 0;
+    ctx->gop_size = 60;
     auto encoder = option.name;
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
         av_opt_set(ctx->priv_data, "preset", "p4", 0); 
         av_opt_set(ctx->priv_data, "profile", "main", 0);
-        av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        av_opt_set(ctx->priv_data, "rc", "constqp", 0);
+        av_opt_set_int(ctx->priv_data, "qp", 28, 0);
+        av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 
     } else if (encoder == "h264_amf" || encoder == "hevc_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
@@ -272,6 +272,7 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
         av_opt_set(ctx->priv_data, "quality", "balanced", 0);
         av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
         av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
+        av_opt_set_int(ctx->priv_data, "intra_refresh_mb", ctx->gop_size, 0);
         
         //av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
         //ctx->rc_max_rate = ctx->bit_rate * 5;
@@ -287,7 +288,18 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
 
         //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
     } else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
-        av_opt_set(ctx->priv_data, "preset", "fast", 0);  
+        av_opt_set(ctx->priv_data, "preset", "fast", 0);
+        av_opt_set_int(ctx->priv_data, "idr_interval", ctx->gop_size, 0);
+        av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
+        av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
+
+        ctx->flags |= AV_CODEC_FLAG_QSCALE;
+        auto qp = 28;
+        ctx->global_quality = qp * FF_QP2LAMBDA;
+        ctx->i_quant_factor = 1;
+        ctx->b_quant_factor = 1;
+        ctx->i_quant_offset = 0;
+        ctx->b_quant_offset = 0;
     }
     else {
         av_opt_set(ctx->priv_data, "preset", "fast", 0);

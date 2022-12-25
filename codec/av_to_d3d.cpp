@@ -300,7 +300,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
 
     //qDebug() << "to bgra";
 
-    //qDebug() << "rgb" << frame_rgb->coded_picture_number << meta.rgbpackets_size() << "a" << frame_a->coded_picture_number << meta.apackets_size();
+    qDebug() << "rgb" << frame_rgb->pts << meta.rgbpackets_size() << "a" << frame_a->pts << meta.apackets_size();
 
     if (!errList.empty()) {
         auto e = errList.join(", ");
