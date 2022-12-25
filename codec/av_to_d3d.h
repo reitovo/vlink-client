@@ -58,7 +58,7 @@ private:
     const AVCodec* codec_a = nullptr;
     AVFrame* frame_a = nullptr;
 
-    int pts = 0;
+    int pts = 0; 
 
     FpsCounter fps;
 

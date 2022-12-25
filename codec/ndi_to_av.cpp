@@ -262,16 +262,16 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
     ctx->gop_size = 30;
     auto encoder = option.name;
     if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-        av_opt_set(ctx->priv_data, "preset", "p4", 0);
-        //av_opt_set(ctx->priv_data, "tune", "ull", 0);
+        av_opt_set(ctx->priv_data, "preset", "p4", 0); 
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
 
     } else if (encoder == "h264_amf" || encoder == "hevc_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
-        av_opt_set(ctx->priv_data, "quality", "speed", 0);
+        av_opt_set(ctx->priv_data, "quality", "balanced", 0);
         av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
+        av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
         
         av_opt_set(ctx->priv_data, "rc", "cqp", 0);
         av_opt_set_int(ctx->priv_data, "qp_i", 30, 0);

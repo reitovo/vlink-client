@@ -231,13 +231,12 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     delete dd;
 
     if (newPts <= pts) {
-        qDebug() << "misordered" << newPts << pts;
-        return "misordered frame";
+        qDebug() << "misordered" << newPts << pts;  
     }
 
     auto meta = mem->avframe();
     //qDebug() << "av2d3d pts" << meta.pts();
-    pts = meta.pts();
+    pts = meta.pts(); 
 
     if (!inited) {
         qDebug() << "not inited";
@@ -249,7 +248,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     QElapsedTimer t;
     t.start();
 
-    QStringList errList;
+    QStringList errList; 
 
     for (auto& a : meta.rgbpackets()) {
         packet->data = (uint8_t*) a.data();
@@ -262,12 +261,12 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     }
 
     //qDebug() << "recv frame rgb";
-
+     
     ret = avcodec_receive_frame(ctx_rgb, frame_rgb);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
         qDebug() << "error while decoding rgb" << av_err2str(ret);
         errList.append("receive frame");
-    }
+    } 
 
     for (auto& a : meta.apackets()) {
         packet->data = (uint8_t*) a.data();
@@ -280,24 +279,26 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     }
 
     //qDebug() << "recv frame a";
-
+     
     ret = avcodec_receive_frame(ctx_a, frame_a);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
         qDebug() << "error while decoding a" << av_err2str(ret);
-        errList.append("receive frame");
-    }
+        errList.append("receive frame"); 
+    } 
 
     //qDebug() << "to bgra";
 
+    qDebug() << "rgb" << frame_rgb->coded_picture_number << meta.rgbpackets_size() << "a" << frame_a->coded_picture_number << meta.apackets_size();
+
     if (!errList.empty()) {
         auto e = errList.join(", ");
-        qDebug() << "one or more error occoured" << e;
+        qDebug() << "one or more error occoured" << e;  
         return e;
-    }
+    } 
+      
+    bgra->nv12ToBgra(frame_rgb, frame_a); 
 
-    bgra->nv12ToBgra(frame_rgb, frame_a);
-
-    fps.add(t.nsecsElapsed());
+    fps.add(t.nsecsElapsed()); 
 
 //    auto ee = t.nsecsElapsed();
 //    qDebug() << "av2d3d elapsed" << ee;
