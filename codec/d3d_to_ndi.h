@@ -43,7 +43,8 @@ class DxToNdi : public IDebugCollectable {
     std::atomic_bool _inited = false;
     bool _mapped = false;
 
-    FpsCounter fps;
+    FpsCounter renderFps;
+    FpsCounter mapFps;
 
 public:
     DxToNdi();
@@ -63,6 +64,7 @@ public:
     // Will be called from ndi thread,
     // to ensure sources no change during render we need to lock
     QMutex lock;
+    bool render();
     bool mapNdi(NDIlib_video_frame_v2_t* frame);
     void unmapNdi();
 

@@ -183,8 +183,8 @@ CollabRoom::~CollabRoom()
 QString CollabRoom::debugInfo()
 {
     return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3")
-            .arg(isServer ? "Server" : "Client").arg(roomId)
-            .arg(peerId).arg(ui->nick->text());
+        .arg(isServer ? "Server" : "Client").arg(roomId)
+        .arg(peerId).arg(ui->nick->text());
 }
 
 void CollabRoom::updatePeersUi(QList<PeerUi> peerUis)
@@ -886,9 +886,17 @@ void CollabRoom::ndiSendWorker()
         // We now submit the frame. Note that this call will be clocked so that we end up submitting
         // at exactly 60fps.
 
-        if (d3d->mapNdi(&NDI_video_frame)) {
-            // blocking
-            NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame);
+        if (d3d->render()) { 
+
+            QElapsedTimer t;
+            t.start();
+
+            if (d3d->mapNdi(&NDI_video_frame)) {
+                // blocking
+                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame); 
+            }
+
+            ndiSendFps.add(t.nsecsElapsed());
 
             // encode and send
             if (isServer) {
@@ -896,6 +904,9 @@ void CollabRoom::ndiSendWorker()
             }
 
             d3d->unmapNdi();
+        }
+        else {
+            QThread::msleep(1);
         }
     }
 

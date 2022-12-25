@@ -77,7 +77,9 @@ QString DxToNdi::debugInfo()
     count = sources.count();
     lock.unlock();
 
-    return QString("Dx->Ndi (NDI Generator) %1 Count: %2").arg(fps.stat()).arg(count);
+    return QString("Dx->Ndi (D3D11 Render) %1 Sources: %2\nDx->Ndi (D3D11 Map) %3")
+        .arg(renderFps.stat()).arg(count)
+        .arg(mapFps.stat());
 }
 
 void DxToNdi::registerSource(IDxSrc *src)
@@ -402,15 +404,12 @@ void DxToNdi::releaseSharedSurf()
     this->_height = 0;
 }
 
-bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
+bool DxToNdi::render()
 {
     if (!_inited)
         return false;
 
     if (sources.empty())
-        return false;
-
-    if (_mapped)
         return false;
 
     QElapsedTimer t;
@@ -425,7 +424,7 @@ bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
     //Elapsed e2("render");
     int renderCount = 0;
     lock.lock();
-    for (auto & src : sources) {
+    for (auto& src : sources) {
         if (!src->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_rgba_src.Get())) {
             continue;
         }
@@ -435,32 +434,43 @@ bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
     lock.unlock();
     //e2.end();
 
-    if (renderCount > 0) {
-        //Elapsed e3("copy");
-        this->_d3d11_deviceCtx->Flush();
-        this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
-        //e3.end();
+    renderFps.add(t.nsecsElapsed());
 
-        //Elapsed e4("map");
-        //get texture output
-        //render target view only 1 sub resource https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-subresources
-        D3D11_MAPPED_SUBRESOURCE ms;
-        HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_rgba_copy.Get(), /*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
-        if (FAILED(hr))
-            return false;
-        //e4.end();
+    return renderCount > 0;
+}
 
-        frame->p_data = (uint8_t*)ms.pData;
-
-        _mapped = true;
-
-        fps.add(t.nsecsElapsed());
-
-        return true;
-    } else {
+bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
+{
+    if (!_inited)
         return false;
-    }
 
+    if (_mapped)
+        return false;
+
+    QElapsedTimer t;
+    t.start();
+
+    //Elapsed e3("copy");
+    this->_d3d11_deviceCtx->Flush();
+    this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
+    //e3.end();
+
+    //Elapsed e4("map");
+    //get texture output
+    //render target view only 1 sub resource https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-subresources
+    D3D11_MAPPED_SUBRESOURCE ms;
+    HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_rgba_copy.Get(), /*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
+    if (FAILED(hr))
+        return false;
+    //e4.end();
+
+    frame->p_data = (uint8_t*)ms.pData;
+
+    _mapped = true;
+
+    mapFps.add(t.nsecsElapsed());
+
+    return true; 
 }
 
 void DxToNdi::unmapNdi()

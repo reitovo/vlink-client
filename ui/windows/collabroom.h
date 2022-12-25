@@ -108,6 +108,7 @@ private:
 
     // d3d
     std::shared_ptr<DxToNdi> d3d;
+    FpsCounter ndiSendFps;
 };
 
 #endif // COLLABROOM_H

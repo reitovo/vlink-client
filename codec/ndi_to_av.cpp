@@ -51,10 +51,10 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
     }
 
     QList<CodecOption> options = {
-        {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Least CPU usage, fastest approach
         {"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Best quality, slightly slower
+        {"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Least CPU usage, fastest approach
+        {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Good
         {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP}, // Cost reasonable CPU
-        {"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL}, // Absolutely trash
         {"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV}, // Cost massive CPU
     };
     AVOption a;
@@ -258,11 +258,14 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext *c
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
         ctx->max_b_frames = 1;
         ctx->gop_size = 10;
-    } else if (encoder == "h264_amf") {
+    } else if (encoder == "h264_amf" || encoder == "hevc_amf") {
         av_opt_set(ctx->priv_data, "usage", "transcoding", 0);
         av_opt_set(ctx->priv_data, "profile", "main", 0);
         av_opt_set(ctx->priv_data, "quality", "speed", 0);
         av_opt_set(ctx->priv_data, "rc", "cbr", 0);
+        av_opt_set_int(ctx->priv_data, "qp_i", 20, 0);
+        av_opt_set_int(ctx->priv_data, "qp_p", 20, 0);
+        av_opt_set_int(ctx->priv_data, "qp_b", 20, 0);
         ctx->gop_size = 120;
         //av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
     } else {
@@ -286,7 +289,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
     QElapsedTimer t;
     t.start();
 
-    Elapsed e1("convert");
+    //Elapsed e1("convert");
     if (mode == NDI_TO_AV_MODE_DXFULL) {
         nv12->bgraToNv12(ndi, fast);
         nv12->copyFrame(frame_rgb, frame_a);
@@ -302,7 +305,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
                 frame_a->data[0], frame_a->linesize[0],
                 ndi->xres, ndi->yres);
     }
-    e1.end();
+    //e1.end();
 
     pts++;
     frame_rgb->pts = frame_a->pts = pts;
@@ -315,7 +318,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
     QStringList err;
 
-    Elapsed e2("encode");
+    //Elapsed e2("encode");
     ret = avcodec_send_frame(ctx_rgb, frame_rgb);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
@@ -356,7 +359,7 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 
         av_packet_unref(packet);
     }
-    e2.end();
+    //e2.end();
 
     if (mode == NDI_TO_AV_MODE_DXMAP) {
         nv12->unmapFrame();
