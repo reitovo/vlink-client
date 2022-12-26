@@ -64,6 +64,8 @@ private slots:
     void openSetting();
 
 private:
+    QString errorToReadable(QString e);
+
     void connectWebsocket();
     void updatePeers(QJsonArray peers);
 

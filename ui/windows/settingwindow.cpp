@@ -4,21 +4,39 @@
 #include "codec/ndi_to_av.h"
 #include "QSettings"
 
+SettingWindow::SettingWindow(QWidget *parent) :
+        QMainWindow(parent),
+        ui(new Ui::SettingWindow) {
+    room = nullptr;
+    init();
+}
+
 SettingWindow::SettingWindow(CollabRoom *parent) :
-    QMainWindow(parent),
-    ui(new Ui::SettingWindow)
-{
+        QMainWindow(parent),
+        ui(new Ui::SettingWindow) {
+    room = parent;
+    init();
+}
+
+SettingWindow::~SettingWindow() {
+    delete ui;
+}
+
+void SettingWindow::updateDebug() {
+    ui->debugInfo->setText(DebugCenter::debugInfo());
+}
+
+void SettingWindow::init() {
     ui->setupUi(this);
 
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
-    room = parent;
     connect(&debugGather, &QTimer::timeout, this, &SettingWindow::updateDebug);
     debugGather.start(100);
 
     auto encoders = NdiToAv::getEncoders();
-    for(auto& e : encoders) {
+    for (auto &e: encoders) {
         ui->encoders->addItem(e.readable);
     }
 
@@ -30,7 +48,7 @@ SettingWindow::SettingWindow(CollabRoom *parent) :
         ui->encoders->setCurrentText(settings.value("forceEncoderName").toString());
     }
 
-    connect(ui->encoders, &QComboBox::currentTextChanged, this, [&](const QString& s) {
+    connect(ui->encoders, &QComboBox::currentTextChanged, this, [&](const QString &s) {
         settings.setValue("forceEncoderName", s);
         settings.sync();
         qDebug() << "force encoder to" << s;
@@ -44,14 +62,4 @@ SettingWindow::SettingWindow(CollabRoom *parent) :
         settings.sync();
         qDebug() << "force encoder" << v;
     });
-}
-
-SettingWindow::~SettingWindow()
-{
-    delete ui;
-}
-
-void SettingWindow::updateDebug()
-{
-    ui->debugInfo->setText(DebugCenter::debugInfo());
 }

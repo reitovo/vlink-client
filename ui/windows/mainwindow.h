@@ -32,5 +32,6 @@ private slots:
     void actionExit();
     void joinRoom();
     void createRoom();
+    void openSetting();
 };
 #endif // MAINWINDOW_H

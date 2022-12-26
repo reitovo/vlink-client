@@ -19,8 +19,11 @@ class SettingWindow : public QMainWindow
     QSettings settings;
 
 public:
-    explicit SettingWindow(CollabRoom *parent = nullptr);
+    explicit SettingWindow(QWidget* parent);
+    explicit SettingWindow(CollabRoom *parent);
     ~SettingWindow();
+
+    void init();
 
 private:
     Ui::SettingWindow *ui;

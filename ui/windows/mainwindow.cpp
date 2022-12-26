@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "collabroom.h"
+#include "settingwindow.h"
 
 #include <QTranslator>
 #include <QPushButton>
@@ -28,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
     connect(ui->btnCreateRoom, SIGNAL(clicked()), this, SLOT(createRoom()));
+    connect(ui->actionOpenSetting, SIGNAL(triggered()), this, SLOT(openSetting()));
 
     tray = std::make_unique<QSystemTrayIcon>(this);
     QIcon icon;
@@ -149,4 +151,9 @@ void MainWindow::iterateHwAccels()
         auto t = av_hwdevice_get_type_name(type);
         qDebug() << t;
     }
+}
+
+void MainWindow::openSetting() {
+    auto w = new SettingWindow(this);
+    w->show();
 }

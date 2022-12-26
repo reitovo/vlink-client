@@ -308,24 +308,7 @@ void CollabRoom::ndiToFfmpegError(QString reason)
 {
     stopNdiToFfmpegWorker();
 
-    QString err = reason;
-    if (reason == "init error") {
-        err = tr("初始化错误");
-    } else if (reason == "source error") {
-        err = tr("NDI 来源错误");
-    } else if (reason == "frame error") {
-        err = tr("NDI 接收断开");
-    } else if (reason == "frame format error") {
-        err = tr("NDI 帧格式错误(Frame)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
-    } else if (reason == "frame size error") {
-        err = tr("NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「1920 X 1080」");
-    } else if (reason == "frame change error") {
-        err = tr("NDI 输出源格式发生变化，请不要在分享画面时更改 VTube Studio 中的 NDI 设置");
-    } else if (reason == "line stride error") {
-        err = tr("NDI 帧格式错误(Stride)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
-    }
-
-    QMessageBox::critical(this, tr("NDI 错误"), err);
+    QMessageBox::critical(this, tr("NDI 错误"), errorToReadable(reason));
 
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(true);
@@ -334,7 +317,7 @@ void CollabRoom::ndiToFfmpegError(QString reason)
 
 void CollabRoom::fatalError(QString reason)
 {
-    QMessageBox::critical(this, tr("致命错误"), reason);
+    QMessageBox::critical(this, tr("致命错误"), errorToReadable(reason));
     close();
 }
 
@@ -648,9 +631,11 @@ void CollabRoom::ndiToFfmpegWorkerClient()
                     ndiToFfmpegRunning = false;
                 }
 
-                auto err0 = cvt.init(video_frame.xres, video_frame.yres, video_frame.frame_rate_D, video_frame.frame_rate_N, video_frame.frame_format_type, video_frame.FourCC);
-                if (err0.has_value()) {
-                    emit onNdiToFfmpegError(err0.value());
+                auto initErr = cvt.init(video_frame.xres, video_frame.yres,
+                                        video_frame.frame_rate_D, video_frame.frame_rate_N,
+                                        video_frame.frame_format_type, video_frame.FourCC);
+                if (initErr.has_value()) {
+                    emit onNdiToFfmpegError(initErr.value());
                     ndiToFfmpegRunning = false;
                 }
                 if (!ndiToFfmpegRunning)
@@ -868,7 +853,7 @@ void CollabRoom::ndiSendWorker()
 
     qDebug() << "ndi send ndi2av";
     // ffmpeg coverter
-    std::unique_ptr<NdiToAv> cvt;
+    std::unique_ptr<NdiToAv> cvt = nullptr;
 
     if (isServer) {
         cvt = std::make_unique<NdiToAv>([=](auto av) {
@@ -879,7 +864,12 @@ void CollabRoom::ndiSendWorker()
             }
             peersLock.unlock();
         });
-        cvt->init(1920, 1080, 1001, 60000, NDIlib_frame_format_type_progressive, NDIlib_FourCC_type_BGRA);
+        auto initErr = cvt->init(1920, 1080, 1001, 60000, NDIlib_frame_format_type_progressive, NDIlib_FourCC_type_BGRA);
+        if (initErr.has_value()) {
+            emit onFatalError(initErr.value());
+            NDIlib_send_destroy(pNDI_send);
+            return;
+        }
     }
 
     while (!exiting) {
@@ -954,4 +944,26 @@ void CollabRoom::wsSendAsync(std::string content)
     });
     connect(t, &QThread::finished, t, &QThread::deleteLater);
     t->start();
+}
+
+QString CollabRoom::errorToReadable(QString reason) {
+    QString err = reason;
+    if (reason == "init error") {
+        err = tr("初始化错误");
+    } else if (reason == "source error") {
+        err = tr("NDI 来源错误");
+    } else if (reason == "frame error") {
+        err = tr("NDI 接收断开");
+    } else if (reason == "frame format error") {
+        err = tr("NDI 帧格式错误(Frame)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
+    } else if (reason == "frame size error") {
+        err = tr("NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「1920 X 1080」");
+    } else if (reason == "frame change error") {
+        err = tr("NDI 输出源格式发生变化，请不要在分享画面时更改 VTube Studio 中的 NDI 设置");
+    } else if (reason == "line stride error") {
+        err = tr("NDI 帧格式错误(Stride)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
+    } else if (reason == "no valid encoder") {
+        err = tr("没有可用的编码器，无法启动！如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
+    }
+    return err;
 }
