@@ -21,14 +21,14 @@ static QList<CodecOption> options = {
 	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_QSV,"QSV Native (H.264)"}, // Best quality, slightly slower
 	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "AMF Native (H.264)"}, // Good
 
-	// Try mapped, as app might run on different GPU
+	// Try mapped, as app might run on different GPU, it might perform bad.
 	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "NVENC Mapped (H.264)"},
 	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "AMF Mapped (H.264)"},
 	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
 
 	// You don't have a GPU?
 	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "X264 Mapped (H.264)"}, // Cost reasonable CPU
-	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV, "X264 Software (H.264)"}, // Cost massive CPU
+	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV, "X264 Software (H.264)"}, // Cost more CPU
 };
 
 NdiToAv::NdiToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
