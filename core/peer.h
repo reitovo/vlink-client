@@ -45,6 +45,7 @@ public:
     void startClient(QJsonObject serverSdp);
     void close();
      
+    std::atomic_bool dcInited = false;
     std::atomic_bool dcThreadAlive;
     std::unique_ptr<QThread> dcThread;
     moodycamel::ConcurrentQueue<std::shared_ptr<VtsMsg>> sendQueue;

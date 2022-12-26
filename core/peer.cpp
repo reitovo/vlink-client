@@ -11,14 +11,15 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=]() {
         while (dcThreadAlive) { 
-            QThread::usleep(100); 
-
-            if (smartBuf != nullptr) {
-                std::shared_ptr<VtsMsg> msg;
-                if (sendQueue.try_dequeue(msg)) {
-                    auto data = msg->SerializeAsString();
-                    smartBuf->send(data);
-                }
+            if (!dcInited) {
+                QThread::msleep(1);
+                continue;
+            }
+              
+            std::shared_ptr<VtsMsg> msg;
+            if (sendQueue.try_dequeue(msg)) {
+                auto data = msg->SerializeAsString();
+                smartBuf->send(data);
             } 
 
             std::unique_ptr<VtsMsg> msg2;
@@ -116,7 +117,8 @@ void Peer::startServer()
 
     dc->onOpen([this]() {
         std::cout << "Server datachannel open" << std::endl;
-        initSmartBuf(); 
+        initSmartBuf();
+        dcInited = true;
     });
 
     dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
@@ -127,6 +129,7 @@ void Peer::startServer()
     });
 
     dc->onClosed([this]() {
+        dcInited = false;
         qDebug() << "Server datachannel closed";
         smartBuf.reset();
     });
@@ -183,6 +186,7 @@ void Peer::startClient(QJsonObject serverSdp)
         dc->onOpen([this]() {
             qDebug() << "Server datachannel open";
             initSmartBuf();
+            dcInited = true;
         });
 
         dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
@@ -193,6 +197,7 @@ void Peer::startClient(QJsonObject serverSdp)
         });
 
         dc->onClosed([this]() {
+            dcInited = false;
             qDebug() << "Server datachannel closed";
             smartBuf.reset();
         });
@@ -204,6 +209,7 @@ void Peer::startClient(QJsonObject serverSdp)
 
 void Peer::close()
 {
+    dcInited = false;
     if (dc != nullptr) {
         dcLock.lock();
         dc->resetCallbacks();
