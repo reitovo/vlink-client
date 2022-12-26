@@ -69,6 +69,7 @@ set(PROJECT_SOURCES
         core/peer.h core/peer.cpp
         core/smartbuf.h core/smartbuf.cpp
         core/debugcenter.h core/debugcenter.cpp
+        core/usage.h core/usage.cpp
         ui/windows/mainwindow.cpp
         ui/windows/mainwindow.h
         ui/windows/mainwindow.ui
