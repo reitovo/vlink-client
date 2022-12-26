@@ -13,11 +13,13 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
         while (dcThreadAlive) { 
             QThread::usleep(100); 
 
-            std::shared_ptr<VtsMsg> msg;
-            if (sendQueue.try_dequeue(msg)) {
-                auto data = msg->SerializeAsString();
-                smartBuf->send(data);
-            }
+            if (smartBuf != nullptr) {
+                std::shared_ptr<VtsMsg> msg;
+                if (sendQueue.try_dequeue(msg)) {
+                    auto data = msg->SerializeAsString();
+                    smartBuf->send(data);
+                }
+            } 
 
             std::unique_ptr<VtsMsg> msg2;
             if (recvQueue.try_dequeue(msg2)) {
@@ -114,7 +116,7 @@ void Peer::startServer()
 
     dc->onOpen([this]() {
         std::cout << "Server datachannel open" << std::endl;
-        initSmartBuf();
+        initSmartBuf(); 
     });
 
     dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
