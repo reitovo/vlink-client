@@ -9,9 +9,7 @@
 #include "core/vtslink.h"
 #include "libyuv.h"
 #include <qsettings.h>
-#include "mfx/mfxcommon.h"
-
-#pragma comment(lib, "C:\\Users\\reito\\Desktop\\VTSLink\\Client\\VTSLink\\out\\build\\x64-Debug\\vcpkg_installed\\x64-windows\\debug\\lib\\libmfx.lib")
+#include "mfx/mfxcommon.h" 
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
