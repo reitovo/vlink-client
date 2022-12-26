@@ -39,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     iterateCodec();
     iterateHwAccels();
+
+
 }
 
 MainWindow::~MainWindow()

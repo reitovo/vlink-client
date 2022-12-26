@@ -78,6 +78,9 @@ private:
 
     void peerDataChannelMessage(std::unique_ptr<VtsMsg>, Peer* peer);
 
+    void heartbeatUpdate();
+    void usageStatUpdate();
+
 private:
     Ui::CollabRoom *ui;
 
@@ -89,13 +92,16 @@ private:
     std::unique_ptr<rtc::WebSocket> ws;
     void wsSendAsync(std::string content);
 
-    std::atomic_bool exiting = false;
+    volatile std::atomic_bool exiting = false;
+
+    FpsCounter outputFps;
 
     QMutex peersLock;
     // As server
     QString turnServer;
     std::map<QString, std::unique_ptr<Peer>> servers;
     std::unique_ptr<QTimer> heartbeat;
+    std::unique_ptr<QTimer> usageStat;
 
     // As client
     std::unique_ptr<Peer> client;

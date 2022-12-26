@@ -28,12 +28,14 @@ extern "C" {
 
 #include <QSystemTrayIcon>
 #include "d3d_to_ndi.h"
+#include "core/usage.h"
 
 CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CollabRoom)
 {
     ui->setupUi(this);
+     
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     this->roomId = roomId;
@@ -97,32 +99,21 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     if (isServer) {
         heartbeat = std::make_unique<QTimer>(this);
         connect(heartbeat.get(), &QTimer::timeout, this, [this]() {
-            QJsonObject dict;
-
-            peersLock.lock();
-            for (auto& s : servers) {
-                s.second->sendHeartbeat();
-                dict[s.second->peerId] = (qint64)s.second->rtt();
-            }
-            peersLock.unlock();
-
-            QJsonObject dto;
-            dto["rtts"] = dict;
-            dto["type"] = "rtt";
-            QJsonDocument doc(dto);
-            auto content = QString::fromUtf8(doc.toJson());
-            qDebug() << content;
-
-            wsSendAsync(content.toStdString());
-
+            heartbeatUpdate();
         });
         heartbeat->start(20000);
     }
 
+    usageStat = std::make_unique<QTimer>(this);
+    connect(usageStat.get(), &QTimer::timeout, this, [this]() {
+        usageStatUpdate();
+    });
+    usageStat->start(1000);
+
     if (!isServer) {
-        resize(QSize(381, 340));
+        resize(QSize(381, 360));
     } else {
-        resize(QSize(730, 340));
+        resize(QSize(730, 360));
     }
 
     d3d = std::make_shared<DxToNdi>();
@@ -131,6 +122,9 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
 CollabRoom::~CollabRoom()
 {
     exiting = true;
+
+    usageStat.reset();
+    heartbeat.reset();
 
     stopNdiToFfmpegWorker();
 
@@ -876,6 +870,9 @@ void CollabRoom::ndiSendWorker()
         // We now submit the frame. Note that this call will be clocked so that we end up submitting
         // at exactly 60fps.
 
+        QElapsedTimer t;
+        t.start();
+
         if (d3d->render()) {
 
             // encode and send
@@ -889,10 +886,12 @@ void CollabRoom::ndiSendWorker()
             }
 
             d3d->unmapNdi();
+
+            outputFps.add(t.nsecsElapsed());
         }
         else {
             QThread::msleep(1);
-        }
+        } 
     }
 
     // Destroy the NDI sender
@@ -963,7 +962,33 @@ QString CollabRoom::errorToReadable(QString reason) {
     } else if (reason == "line stride error") {
         err = tr("NDI 帧格式错误(Stride)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
     } else if (reason == "no valid encoder") {
-        err = tr("没有可用的编码器，无法启动！如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
+        err = tr("无法启动任何编码器！\n如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
     }
     return err;
+}
+
+void CollabRoom::usageStatUpdate() {
+    ui->usageStat->setText(QString("CPU: %1% FPS: %2")
+        .arg(QString::number(usage::getCpuUsage(), 'f', 1))
+        .arg(QString::number(outputFps.fps(), 'f', 1)));
+}
+
+void CollabRoom::heartbeatUpdate() {
+    QJsonObject dict;
+
+    peersLock.lock();
+    for (auto& s : servers) {
+        s.second->sendHeartbeat();
+        dict[s.second->peerId] = (qint64)s.second->rtt();
+    }
+    peersLock.unlock();
+
+    QJsonObject dto;
+    dto["rtts"] = dict;
+    dto["type"] = "rtt";
+    QJsonDocument doc(dto);
+    auto content = QString::fromUtf8(doc.toJson());
+    qDebug() << content;
+
+    wsSendAsync(content.toStdString());
 }

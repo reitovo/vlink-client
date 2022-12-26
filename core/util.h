@@ -26,10 +26,12 @@ class FpsCounter {
     int lastCount = 0;
     int count = 0;
     long nsAverage = 0;
+    int lastAddSec = 0;
 
 public:
     void add(long nsConsumed);
     QString stat();
+    double fps();
 };
 
 inline bool requestOk(const QJsonObject& json) {

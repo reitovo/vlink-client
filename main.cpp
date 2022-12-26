@@ -13,22 +13,28 @@
 extern "C" {
 #include <libavutil\avutil.h>
 }
+ 
+#include <Windows.h>
 
+#ifdef HAS_CRASHPAD
 #include <client/crash_report_database.h>
 #include <client/settings.h>
 #include <client/crashpad_client.h>
+void initializeCrashpad();
+#endif
 
 void redirectDebugOutput();
-void initializeCrashpad();
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 int main(int argc, char *argv[])
-{
+{ 
     QFile log("vts.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();
 
+#ifdef HAS_CRASHPAD
     initializeCrashpad();
+#endif
     if(!IsDebuggerPresent())
         qInstallMessageHandler(customMessageHandler);
     QThread::create(redirectDebugOutput)->start();
@@ -90,12 +96,13 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.show();
-
-    auto ret = a.exec();
+     
+    auto ret = a.exec(); 
 
     return ret;
 }
 
+#ifdef HAS_CRASHPAD
 void initializeCrashpad() {
     using namespace crashpad;
     std::map<std::string, std::string> annotations;
@@ -141,6 +148,7 @@ void initializeCrashpad() {
         return;
     }
 }
+#endif
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {

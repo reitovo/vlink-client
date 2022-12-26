@@ -9,16 +9,32 @@
 #include "core/vtslink.h"
 #include "libyuv.h"
 #include <qsettings.h>
-#include "mfx/mfxcommon.h" 
+#include "mfx/mfxcommon.h"  
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
 #define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
+static QList<CodecOption> options = {
+	// Full Hardware Acceleration
+	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "NVENC Native (H.264)"}, // Least CPU usage, fastest approach
+	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_QSV,"QSV Native (H.264)"}, // Best quality, slightly slower
+	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "AMF Native (H.264)"}, // Good
+
+	// Try mapped, as app might run on different GPU
+	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "NVENC Mapped (H.264)"},
+	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "AMF Mapped (H.264)"},
+	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
+
+	// You don't have a GPU?
+	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "X264 Mapped (H.264)"}, // Cost reasonable CPU
+	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV, "X264 Software (H.264)"}, // Cost massive CPU
+};
 
 NdiToAv::NdiToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
 	qDebug() << "begin ndi2av";
 	onPacketReceived = cb;
+
 }
 
 NdiToAv::~NdiToAv()
@@ -36,22 +52,6 @@ QString NdiToAv::debugInfo()
 bool NdiToAv::isInited() {
 	return inited;
 }
-
-static QList<CodecOption> options = {
-	// Full Hardware Acceleration
-	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "H.264 NVENC HW"}, // Least CPU usage, fastest approach
-	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_QSV, "H.264 QSV HW"}, // Best quality, slightly slower
-	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "H.264 AMF HW"}, // Good
-
-	// Try mapped, as app might run on different GPU
-	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "H.264 NVENC MAP"},
-	{"h264_amf", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "H.264 AMF MAP"},
-	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "H.264 QSV MAP"},
-
-	// You don't have a GPU?
-	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "H.264 X264 MAP"}, // Cost reasonable CPU
-	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV, "H.264 X264 SW"}, // Cost massive CPU
-};
 
 static AVPixelFormat getPixelFormatOf(NdiToAvMode mode) {
 	switch (mode) {
@@ -82,22 +82,22 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 		return "init bgra to nv12";
 	}
 
-    QList<CodecOption> opts = options;
+	QList<CodecOption> opts = options;
 
 	QSettings settings;
 	auto forceEncoder = settings.value("forceEncoder", false).toBool();
-    if (forceEncoder) {
-        qDebug() << "forcing encoder";
-        auto name = settings.value("forceEncoderName").toString();
-        auto opt = std::find_if(options.begin(), options.end(), [&](const CodecOption &item) {
-            return item.readable == name;
-        });
-        if (opt != options.end()) {
-            opts.clear();
-            opts.append(*opt);
-            qDebug() << "forced encoder" << (*opt).readable;
-        }
-    }
+	if (forceEncoder) {
+		qDebug() << "forcing encoder";
+		auto name = settings.value("forceEncoderName").toString();
+		auto opt = std::find_if(options.begin(), options.end(), [&](const CodecOption& item) {
+			return item.readable == name;
+			});
+		if (opt != options.end()) {
+			opts.clear();
+			opts.append(*opt);
+			qDebug() << "forced encoder" << (*opt).readable;
+		}
+	}
 
 	bool selected = false;
 	std::optional<QString> err;
@@ -116,7 +116,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 			stop();
 			continue;
 		}
-		qDebug() << "ndi2av init a encoder" << o.readable << "succeed"; 
+		qDebug() << "ndi2av init a encoder" << o.readable << "succeed";
 
 		if (o.mode == NDI_TO_AV_MODE_DXFULL_D3D11 || o.mode == NDI_TO_AV_MODE_DXFULL_QSV) {
 			int code;
@@ -134,11 +134,11 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 
 		qDebug() << "using" << o.readable;
 		selected = true;
-        currentOption = o;
+		currentOption = o;
 		break;
-	} 
+	}
 
-	if (!selected) { 
+	if (!selected) {
 		qDebug() << "none of codec is working";
 		return "no valid encoder";
 	}
@@ -178,7 +178,7 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
 	ctx_rgb->time_base.den = ctx_rgb->framerate.num = frameD;
 	ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
 	ctx_rgb->pkt_timebase = ctx_rgb->time_base;
-	 
+
 	initEncodingParameter(option, ctx_rgb);
 	ASSERT_SUCCESS_RESULT(initOptimalEncoder(option, ctx_rgb));
 
@@ -277,7 +277,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 
 			AVBufferRef* hw = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
 			auto* device_ctx = reinterpret_cast<AVHWDeviceContext*>(hw->data);
-            auto* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
+			auto* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
 			d3d11va_device_ctx->device = nv12->getDevice();
 			if (d3d11va_device_ctx->device == nullptr) {
 				qDebug("ndi2av d3d11 device null");
@@ -293,7 +293,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 			ctx->hw_device_ctx = av_buffer_ref(hw);
 
 			AVBufferRef* hwf = av_hwframe_ctx_alloc(hw);
-            auto* frame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
+			auto* frame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
 			frame->format = AV_PIX_FMT_D3D11;
 			frame->sw_format = AV_PIX_FMT_NV12;
 			frame->width = ctx->width;
@@ -310,7 +310,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 			av_buffer_unref(&hw);
 			av_buffer_unref(&hwf);
 		}
-		else if (option.name.endsWith("qsv")) { 
+		else if (option.name.endsWith("qsv")) {
 			if (nv12->getDeviceVendor() != ADAPTER_VENDOR_INTEL) {
 				return "adapter mismatch";
 			}
@@ -428,8 +428,8 @@ void NdiToAv::initEncodingParameter(const CodecOption& option, AVCodecContext* c
 		av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
 		av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
 		//av_opt_set_int(ctx->priv_data, "idr_interval", 1, 0);
-		 
-		ctx->flags |= AV_CODEC_FLAG_QSCALE; 
+
+		ctx->flags |= AV_CODEC_FLAG_QSCALE;
 		ctx->global_quality = 36 * FF_QP2LAMBDA;
 	}
 	else if (encoder == "libx264") {
@@ -577,5 +577,5 @@ void NdiToAv::stop()
 }
 
 const QList<CodecOption>& NdiToAv::getEncoders() {
-    return options;
+	return options;
 }

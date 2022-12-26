@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>731</width>
-    <height>340</height>
+    <height>361</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -801,6 +801,24 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QLabel" name="usageStat">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>336</y>
+     <width>711</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>MiSans</family>
+    </font>
+   </property>
+   <property name="text">
+    <string>CPU: 0.0% FPS: 0.0</string>
+   </property>
   </widget>
  </widget>
  <resources>

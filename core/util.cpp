@@ -55,9 +55,24 @@ void FpsCounter::add(long nsConsumed)
     }
     count++;
     nsAverage = (nsAverage * 31 + nsConsumed) / 32;
+    lastAddSec = sec;
 }
 
 QString FpsCounter::stat()
 {
+    auto sec = QDateTime::currentSecsSinceEpoch();
+    if (sec - lastAddSec > 3) {
+        return QString("FPS: - Cost: - us");
+    }
     return QString("FPS: %2 Cost: %3 us").arg(lastCount).arg(nsAverage / 1000);
+}
+
+double FpsCounter::fps()
+{
+    auto sec = QDateTime::currentSecsSinceEpoch();
+    if (sec - lastAddSec > 3) {
+        return 0.0;
+    }
+
+    return 1000000000.0 / nsAverage;
 }

@@ -725,7 +725,7 @@
      <x>0</x>
      <y>0</y>
      <width>401</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">
@@ -775,7 +775,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>
@@ -785,7 +785,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>
@@ -795,7 +795,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>
@@ -805,14 +805,14 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>
   <action name="actionVersion">
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>
@@ -822,7 +822,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei</family>
     </font>
    </property>
   </action>

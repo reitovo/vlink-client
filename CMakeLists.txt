@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(ENV{VCPKG_MAX_CONCURRENCY} 16)
+set(ENV{VCPKG_MAX_CONCURRENCY} 16)  
 
 message(STATUS "VTSLink - Reito")
 
@@ -141,8 +141,14 @@ target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 #target_link_libraries(VTSLink PRIVATE ${WINSPARKLE_LIBRARY})
 
 #crashpad
-find_package(crashpad CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
+set(USE_ASAN 0) 
+if(USE_ASAN) 
+    target_compile_options(VTSLink -fsanitize=address)
+else()
+    target_compile_definitions(VTSLink PUBLIC HAS_CRASHPAD)
+    find_package(crashpad CONFIG REQUIRED)
+    target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
+endif()
  
 add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"

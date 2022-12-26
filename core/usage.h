@@ -1,2 +1,4 @@
 
-double getCpuUsage()
+namespace usage {
+    double getCpuUsage();
+}
