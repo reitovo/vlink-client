@@ -10,9 +10,10 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
 
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=]() {
-        while (dcThreadAlive) { 
+        while (dcThreadAlive) {
+            QThread::usleep(500); 
+
             if (!dcInited) {
-                QThread::msleep(1);
                 continue;
             }
               
