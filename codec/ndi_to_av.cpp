@@ -154,7 +154,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 	inited = true;
 	qDebug() << "ndi2av init done";
 
-	return std::optional<QString>();
+	return {};
 }
 
 #define ASSERT_SUCCESS_RESULT(x) {auto e = x; if (e.has_value()) return e;}
@@ -205,7 +205,7 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
 		}
 	}
 
-	return std::optional<QString>();
+	return {};
 }
 
 std::optional<QString> NdiToAv::initA(const CodecOption& option)
@@ -255,7 +255,7 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
 		memset(frame_a->data[1], 128, xres * yres / 2);
 	}
 
-	return std::optional<QString>();
+	return {};
 }
 
 std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AVCodecContext* ctx)
@@ -278,8 +278,8 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 			ctx->sw_pix_fmt = AV_PIX_FMT_NV12;
 
 			AVBufferRef* hw = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
-			AVHWDeviceContext* device_ctx = reinterpret_cast<AVHWDeviceContext*>(hw->data);
-			AVD3D11VADeviceContext* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
+			auto* device_ctx = reinterpret_cast<AVHWDeviceContext*>(hw->data);
+            auto* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
 			d3d11va_device_ctx->device = nv12->getDevice();
 			if (d3d11va_device_ctx->device == nullptr) {
 				qDebug("ndi2av d3d11 device null");
@@ -295,7 +295,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 			ctx->hw_device_ctx = av_buffer_ref(hw);
 
 			AVBufferRef* hwf = av_hwframe_ctx_alloc(hw);
-			AVHWFramesContext* frame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
+            auto* frame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
 			frame->format = AV_PIX_FMT_D3D11;
 			frame->sw_format = AV_PIX_FMT_NV12;
 			frame->width = ctx->width;
@@ -322,8 +322,8 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 
 			// Init d3d11 child device
 			AVBufferRef* ch = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
-			AVHWDeviceContext* ch_device_ctx = reinterpret_cast<AVHWDeviceContext*>(ch->data);
-			AVD3D11VADeviceContext* ch_d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(ch_device_ctx->hwctx);
+			auto* ch_device_ctx = reinterpret_cast<AVHWDeviceContext*>(ch->data);
+			auto* ch_d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(ch_device_ctx->hwctx);
 			ch_d3d11va_device_ctx->device = nv12->getDevice();
 			if (ch_d3d11va_device_ctx->device == nullptr) {
 				qDebug("ndi2av qsv d3d11 device null");
@@ -349,7 +349,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 
 			// Create child hwframe
 			AVBufferRef* chf = av_hwframe_ctx_alloc(ch);
-			AVHWFramesContext* frame = reinterpret_cast<AVHWFramesContext*>(chf->data);
+			auto* frame = reinterpret_cast<AVHWFramesContext*>(chf->data);
 			frame->format = AV_PIX_FMT_D3D11;
 			frame->sw_format = AV_PIX_FMT_NV12;
 			frame->width = ctx->width;

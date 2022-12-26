@@ -134,7 +134,7 @@ void Nv12ToBgra::enqueueRgb(AVFrame* rgb)
         textureRgb, textureRgbIndex, &srcBox
     );
 
-    _frame_rgb_queue.enqueue(f);
+    _frame_rgb_queue.enqueue(f, rgb->pts);
 }
 
 void Nv12ToBgra::enqueueA(AVFrame* a)
@@ -158,7 +158,7 @@ void Nv12ToBgra::enqueueA(AVFrame* a)
         textureA, textureAIndex, &srcBox
     );
 
-    _frame_a_queue.enqueue(f);
+    _frame_a_queue.enqueue(f, a->pts);
 }
 
 void Nv12ToBgra::createFramePool()
@@ -518,6 +518,13 @@ bool Nv12ToBgra::nv12ToBgra()
     if (_frame_rgb_queue.size() == 0 || _frame_a_queue.size() == 0)
         return false;
 
+    if (_frame_rgb_queue.topPts() != _frame_a_queue.topPts()) {
+        qDebug() << "rgb a unaligned" << _frame_rgb_queue.topPts() << _frame_a_queue.topPts();
+        _frame_rgb_queue.clear();
+        _frame_a_queue.clear();
+        return false;
+    }
+
     auto rgb = _frame_rgb_queue.dequeue();
     auto a = _frame_a_queue.dequeue();
      
@@ -570,12 +577,12 @@ bool Nv12ToBgra::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Textu
     return true;
 }
 
-int DxFrameBuffer::size() {
+int DxFrameBuffer::size() const {
     return queue.size();
 }
 
 ComPtr<ID3D11Texture2D> DxFrameBuffer::getFree() {
-    ComPtr<ID3D11Texture2D> ret;
+    DxFrame ret;
     if (!free.empty()) {  
         ret = free.front();
         free.pop();
@@ -584,23 +591,35 @@ ComPtr<ID3D11Texture2D> DxFrameBuffer::getFree() {
         ret = queue.front();
         queue.pop();
     }
-    return ret;
+    return ret.frame;
 }
 
-void DxFrameBuffer::addFree(ComPtr<ID3D11Texture2D> f) { 
-    free.push(f);
+void DxFrameBuffer::addFree(ComPtr<ID3D11Texture2D> f) {
+    free.push({-1, f});
 }
 
 ComPtr<ID3D11Texture2D> DxFrameBuffer::dequeue() {
     if (queue.empty())
         return nullptr;
 
-    ComPtr<ID3D11Texture2D> ret;
+    DxFrame ret;
     ret = queue.front();
     queue.pop();
-    return ret;
+    return ret.frame;
 }
 
-void DxFrameBuffer::enqueue(ComPtr<ID3D11Texture2D> f) {
-    queue.push(f);
+void DxFrameBuffer::enqueue(ComPtr<ID3D11Texture2D> f, int64_t pts) {
+    queue.push({pts, f});
+}
+
+int64_t DxFrameBuffer::topPts() {
+    return queue.front().pts;
+}
+
+void DxFrameBuffer::clear() {
+    while (!queue.empty()) {
+        auto t = queue.front();
+        queue.pop();
+        free.push({-1, t.frame});
+    }
 }

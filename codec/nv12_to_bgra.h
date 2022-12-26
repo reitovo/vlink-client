@@ -24,17 +24,27 @@ struct ID3D11ShaderResourceView;
 struct ID3D11RenderTargetView;
 using Microsoft::WRL::ComPtr;
 
-class DxFrameBuffer {
-public:
-    std::queue<ComPtr<ID3D11Texture2D>> free;
-    std::queue<ComPtr<ID3D11Texture2D>> queue;
+namespace {
+    struct DxFrame {
+        int64_t pts;
+        ComPtr<ID3D11Texture2D> frame;
+    };
 
-    int size();
-    ComPtr<ID3D11Texture2D> getFree();
-    void addFree(ComPtr<ID3D11Texture2D> f);
-    ComPtr<ID3D11Texture2D> dequeue();
-    void enqueue(ComPtr<ID3D11Texture2D> f);
-};
+    class DxFrameBuffer {
+    public:
+        std::queue<DxFrame> free;
+        std::queue<DxFrame> queue;
+
+        int size() const;
+        ComPtr<ID3D11Texture2D> getFree();
+        void addFree(ComPtr<ID3D11Texture2D> f);
+
+        int64_t topPts();
+        ComPtr<ID3D11Texture2D> dequeue();
+        void enqueue(ComPtr<ID3D11Texture2D> f, int64_t pts);
+        void clear();
+    };
+}
 
 // Thanks to
 // https://github.com/microsoft/Windows-universal-samples/blob/main/Samples/HolographicFaceTracking/cpp/Content/NV12VideoTexture.cpp
