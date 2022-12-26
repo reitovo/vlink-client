@@ -50,6 +50,40 @@ inline QString humanizeBytes(uint64_t bytes) {
     } else {
         return QString("%1 B").arg(bytes);
     }
+} 
+
+enum DeviceAdapterType {
+    ADAPTER_VENDOR_INVALID,
+    ADAPTER_VENDOR_NVIDIA,
+    ADAPTER_VENDOR_AMD,
+    ADAPTER_VENDOR_INTEL
+};
+
+inline DeviceAdapterType getGpuVendorTypeFromVendorId(uint32_t v) { 
+    switch (v) {
+    case 0x1002:
+    case 0x1022:
+        return ADAPTER_VENDOR_AMD;
+    case 0x8086:
+        return ADAPTER_VENDOR_INTEL;
+    case 0x10DE:
+        return ADAPTER_VENDOR_NVIDIA;
+    default:
+        return ADAPTER_VENDOR_INVALID;
+    } 
+}
+
+inline QString getGpuVendorName(DeviceAdapterType t) {
+    switch (t) {
+    case ADAPTER_VENDOR_AMD:
+        return "AMD";
+    case ADAPTER_VENDOR_INTEL:
+        return "Intel";
+    case ADAPTER_VENDOR_NVIDIA:
+        return "NVIDIA"; 
+    default:
+        return "UNKNOWN";
+    }
 }
 
 struct ID3D11Device;

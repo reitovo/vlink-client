@@ -2,6 +2,7 @@
 #define SETTINGWINDOW_H
 
 #include "qtimer.h"
+#include "QSettings"
 #include <QMainWindow>
 
 namespace Ui {
@@ -15,6 +16,7 @@ class SettingWindow : public QMainWindow
 
     QTimer debugGather;
     CollabRoom* room;
+    QSettings settings;
 
 public:
     explicit SettingWindow(CollabRoom *parent = nullptr);

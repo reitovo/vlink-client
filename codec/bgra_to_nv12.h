@@ -12,6 +12,7 @@ extern "C" {
 #include <QString>
 #include <d3dcompiler.h>
 #include <array>
+#include "core/util.h"
 
 class DxToNdi;
 struct ID3D11Device;
@@ -79,6 +80,7 @@ class BgraToNv12
     uint32_t _width{ 0 };
     uint32_t _height{ 0 };
 
+    DeviceAdapterType _vendor;
     std::atomic_bool _inited = false;
 
     bool _mapped = false;
@@ -101,12 +103,15 @@ public:
     void releaseSharedSurf();
     ID3D11Device* getDevice();
 
+    DeviceAdapterType getDeviceVendor();
+
     bool bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxToNdi> fast = nullptr);
 
     bool mapFrame(AVFrame* rgb, AVFrame* a);
     void unmapFrame();
 
-    void copyFrame(AVFrame* rgb, AVFrame* a);
+    void copyFrameD3D11(AVFrame* rgb, AVFrame* a);
+    void copyFrameQSV(AVFrame* rgb, AVFrame* a);
 };
 
 #endif // BGRANV12_H

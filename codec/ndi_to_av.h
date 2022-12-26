@@ -23,7 +23,8 @@ extern "C" {
 
 enum NdiToAvMode {
     NDI_TO_AV_MODE_INVALID,
-    NDI_TO_AV_MODE_DXFULL,
+    NDI_TO_AV_MODE_DXFULL_D3D11,
+    NDI_TO_AV_MODE_DXFULL_QSV,
     NDI_TO_AV_MODE_DXMAP,
     NDI_TO_AV_MODE_LIBYUV
 };
@@ -32,6 +33,7 @@ struct CodecOption {
     QString name;
     AVCodecID codecId;
     NdiToAvMode mode;
+    QString readable;
 };
 
 // This is used by clients to encode NDI source which should comes from VTube Studio
@@ -45,8 +47,6 @@ private:
 private:
     bool inited = false;
     int xres, yres, frameD, frameN, frameType, fourCC;
-    AVCodecID codecId;
-    QString codec;
 
     AVPacket *packet = nullptr;
     //rgb
@@ -58,7 +58,7 @@ private:
     const AVCodec* codec_a = nullptr;
     AVFrame* frame_a = nullptr;
 
-    NdiToAvMode mode = NDI_TO_AV_MODE_INVALID;
+    CodecOption currentOption;
 
     int pts = 0;
     std::function<void(std::shared_ptr<VtsMsg>)> onPacketReceived = nullptr;
@@ -81,6 +81,8 @@ public:
 
     std::optional<QString> process(NDIlib_video_frame_v2_t* ndi, std::shared_ptr<DxToNdi> fast = nullptr);
     void stop();
+
+    static const QList<CodecOption>& getEncoders();
 };
 
 #endif // NDI_TO_AV_H
