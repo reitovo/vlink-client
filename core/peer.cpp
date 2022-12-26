@@ -10,11 +10,8 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
 
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=]() {
-        while (dcThreadAlive) {
-            if (!connected()) {
-                QThread::msleep(10);
-                continue;
-            }
+        while (dcThreadAlive) { 
+            QThread::usleep(100); 
 
             std::shared_ptr<VtsMsg> msg;
             if (sendQueue.try_dequeue(msg)) {
