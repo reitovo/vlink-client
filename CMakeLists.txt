@@ -32,18 +32,18 @@ set(TS_FILES
     translations/VTSLink_en_US.ts)
 
 set(CODEC_FILES
-        codec/ndi_to_av.h
-        codec/ndi_to_av.cpp
+        codec/frame_to_av.h
+        codec/frame_to_av.cpp
         codec/bgra_to_nv12.h
         codec/bgra_to_nv12.cpp
         codec/av_to_d3d.h
         codec/av_to_d3d.cpp
-        codec/d3d_to_ndi.h
-        codec/d3d_to_ndi.cpp
+        codec/d3d_to_frame.h
+        codec/d3d_to_frame.cpp
         codec/nv12_to_bgra.h
         codec/nv12_to_bgra.cpp
-        codec/ndi_to_d3d.h
-        codec/ndi_to_d3d.cpp
+        codec/frame_to_d3d.h
+        codec/frame_to_d3d.cpp
         codec/i_d3d_src.h
         codec/i_d3d_src.cpp)
 
@@ -82,7 +82,7 @@ set(PROJECT_SOURCES
         ${TS_FILES}
         ${PROTO_FILES}
         ${PROTO_SRCS} ${PROTO_HDRS}
-)
+        ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui)
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VTSLink

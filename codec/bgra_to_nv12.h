@@ -14,7 +14,7 @@ extern "C" {
 #include <array>
 #include "core/util.h"
 
-class DxToNdi;
+class DxToFrame;
 struct ID3D11Device;
 struct ID3D11DeviceContext;
 struct ID3D11Texture2D;
@@ -105,7 +105,8 @@ public:
 
     DeviceAdapterType getDeviceVendor();
 
-    bool bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxToNdi> fast = nullptr);
+    bool bgraToNv12(NDIlib_video_frame_v2_t* frame);
+    bool bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast);
 
     bool mapFrame(AVFrame* rgb, AVFrame* a);
     void unmapFrame();

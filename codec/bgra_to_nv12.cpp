@@ -1,6 +1,6 @@
 #include "bgra_to_nv12.h"
 #include "core/util.h"
-#include "d3d_to_ndi.h"
+#include "d3d_to_frame.h"
 #include <d3d11.h>
 #include <dxcore.h>
 #include <DirectXMath.h>
@@ -558,11 +558,12 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	return true;
 }
 
-bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxToNdi> fast)
+bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame)
 {
 	HRESULT hr{ 0 };
-	if (frame == NULL)
+	if (frame == nullptr)
 		return false;
+
 	if (!_inited) {
 		return false;
 	}
@@ -573,13 +574,8 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxTo
 	D3D11_BOX dstBox = { 0, 0, 0, _width, _height, 1 };
 
 	//Elapsed e1("update subresource"); //~300000 ns
-	if (fast != nullptr) {
-		fast->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_bgra.Get());
-	}
-	else {
-		this->_d3d11_deviceCtx->UpdateSubresource(this->_texture_bgra.Get(), 0, &dstBox,
-			frame->p_data, frame->line_stride_in_bytes, 0);
-	}
+    this->_d3d11_deviceCtx->UpdateSubresource(this->_texture_bgra.Get(), 0, &dstBox,
+        frame->p_data, frame->line_stride_in_bytes, 0);
 	//e1.end();
 
 	//Elapsed e2("draw 1"); //~17500 ns
@@ -599,6 +595,42 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame, std::shared_ptr<DxTo
 	//e4.end();
 
 	return true;
+}
+
+bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast)
+{
+    HRESULT hr{ 0 };
+
+    if (!_inited) {
+        return false;
+    }
+    D3D11_BOX dstBox = { 0, 0, 0, _width, _height, 1 };
+
+    //Elapsed e1("update subresource"); //~300000 ns
+    if (fast != nullptr) {
+        fast->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_bgra.Get());
+    } else {
+        return false;
+    }
+    //e1.end();
+
+    //Elapsed e2("draw 1"); //~17500 ns
+    setBgraToNv24Context();
+    this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
+    //e2.end();
+
+    //Elapsed e3("copy"); //~4000 ns
+    this->_d3d11_deviceCtx->CopyResource(_texture_uv_copy_target.Get(), _texture_uv_target.Get());
+    //e3.end();
+
+    //Elapsed e4("draw 2"); //~11100 ns
+    setNv24ToNv12Context();
+    this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
+
+    this->_d3d11_deviceCtx->Flush();
+    //e4.end();
+
+    return true;
 }
 
 // Extremely slow on some devices

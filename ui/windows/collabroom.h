@@ -64,7 +64,7 @@ private slots:
     void openSetting();
 
 private:
-    QString errorToReadable(QString e);
+    QString errorToReadable(const QString& e);
 
     void connectWebsocket();
     void updatePeers(QJsonArray peers);
@@ -75,8 +75,9 @@ private:
 
     void ndiFindWorker();
     void ndiSendWorker();
+    void dxgiSendWorker();
 
-    void peerDataChannelMessage(std::unique_ptr<VtsMsg>, Peer* peer);
+    void peerDataChannelMessage(std::unique_ptr<VtsMsg>, Peer* peer) const;
 
     void heartbeatUpdate();
     void usageStatUpdate();
@@ -85,16 +86,18 @@ private:
     Ui::CollabRoom *ui;
 
     bool isServer;
+    bool useNdiSender;
     QString roomId;
     QString peerId;
 
     QMutex wsLock;
     std::unique_ptr<rtc::WebSocket> ws;
-    void wsSendAsync(std::string content);
+    void wsSendAsync(const std::string& content);
 
     volatile std::atomic_bool exiting = false;
 
     FpsCounter outputFps;
+    FpsCounter sendProcessFps;
 
     QMutex peersLock;
     // As server
@@ -107,15 +110,17 @@ private:
     std::unique_ptr<Peer> client;
 
     // ndi
-    std::unique_ptr<QThread> ndiFindThread;
-    std::atomic<const NDIlib_source_t*> ndiSources;
-    std::atomic_int ndiSourceCount = 0;
     std::atomic_bool ndiToFfmpegRunning = false;
     std::unique_ptr<QThread> ndiToFfmpegThread;
-    std::unique_ptr<QThread> ndiSendThread;
+    std::unique_ptr<QThread> ndiFindThread;
+
+    // send
+    std::atomic_int ndiSourceCount = 0;
+    std::atomic<const NDIlib_source_t*> ndiSources;
+    std::unique_ptr<QThread> frameSendThread;
 
     // d3d
-    std::shared_ptr<DxToNdi> d3d; 
+    std::shared_ptr<DxToFrame> d3d;
 };
 
 #endif // COLLABROOM_H

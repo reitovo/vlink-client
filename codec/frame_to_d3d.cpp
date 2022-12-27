@@ -1,4 +1,4 @@
-#include "ndi_to_d3d.h"
+#include "frame_to_d3d.h"
 #include <Processing.NDI.Lib.h>
 #include "qdebug.h"
 #include "core/util.h"
@@ -6,15 +6,15 @@
 
 #include <d3d11.h>
 #include <dxgi1_2.h>
-#include <d3d_to_ndi.h>
+#include <d3d_to_frame.h>
 
-NdiToDx::NdiToDx(std::shared_ptr<DxToNdi> d3d) : IDxSrc(d3d)
+FrameToDx::FrameToDx(std::shared_ptr<DxToFrame> d3d) : IDxSrc(d3d)
 {
     qDebug() << "begin ndi2d3d";
     d3d->registerSource(this);
 }
 
-NdiToDx::~NdiToDx()
+FrameToDx::~FrameToDx()
 {
     qDebug() << "end ndi2d3d";
     d3d->unregisterSource(this);
@@ -32,12 +32,12 @@ NdiToDx::~NdiToDx()
     qDebug() << "end ndi2d3d done";
 }
 
-QString NdiToDx::debugInfo()
+QString FrameToDx::debugInfo()
 {
-    return QString("Ndi->Dx (Local Fast Copy) %1").arg(fps.stat());
+    return QString("Frame->Dx (Local Fast Copy) %1").arg(fps.stat());
 }
 
-void NdiToDx::update(NDIlib_video_frame_v2_t * frame)
+void FrameToDx::update(NDIlib_video_frame_v2_t * frame)
 {
     lock.lock();
 
@@ -57,7 +57,7 @@ void NdiToDx::update(NDIlib_video_frame_v2_t * frame)
     lock.unlock();
 }
 
-bool NdiToDx::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest)
+bool FrameToDx::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest)
 {
     if (!_inited)
         return false;
@@ -80,7 +80,7 @@ bool NdiToDx::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2
     return true;
 }
 
-bool NdiToDx::init()
+bool FrameToDx::init()
 {
     HRESULT hr;
 
@@ -160,7 +160,7 @@ bool NdiToDx::init()
     return ret;
 }
 
-bool NdiToDx::createSharedSurf(int width, int height)
+bool FrameToDx::createSharedSurf(int width, int height)
 {
     //
     HRESULT hr{ 0 };
@@ -202,7 +202,7 @@ bool NdiToDx::createSharedSurf(int width, int height)
     return true;
 }
 
-void NdiToDx::releaseSharedSurf()
+void FrameToDx::releaseSharedSurf()
 {
     if (this->_d3d11_deviceCtx.Get() != nullptr)
         this->_d3d11_deviceCtx->ClearState();

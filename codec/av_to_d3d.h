@@ -38,7 +38,7 @@ struct FrameReorderer {
 // Then use d3d11 accelerated nv12 to bgra converter to save the frame to a d3d11texture2d
 // And the instance is a IDxSrc which will be registered to room's merger DxToNdi, which
 // will combine all sources textures there.
-class DxToNdi;
+class DxToFrame;
 class AvToDx : public IDxSrc, public IDebugCollectable {
 
 private:
@@ -70,7 +70,7 @@ private:
     std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
 
 public:
-    AvToDx(std::shared_ptr<DxToNdi> d3d);
+    AvToDx(std::shared_ptr<DxToFrame> d3d);
     ~AvToDx();
      
     std::optional<QString> init();

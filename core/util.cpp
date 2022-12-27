@@ -76,3 +76,8 @@ double FpsCounter::fps()
 
     return 1000000000.0 / nsAverage;
 }
+
+long FpsCounter::ns()
+{
+    return nsAverage;
+}

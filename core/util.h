@@ -32,6 +32,7 @@ public:
     void add(long nsConsumed);
     QString stat();
     double fps();
+    long ns();
 };
 
 inline bool requestOk(const QJsonObject& json) {

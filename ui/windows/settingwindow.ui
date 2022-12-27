@@ -37,7 +37,7 @@
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>画面</string>
+      <string>高级</string>
      </attribute>
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
@@ -57,7 +57,7 @@
          <item>
           <widget class="QCheckBox" name="shouldForceEncoder">
            <property name="text">
-            <string>不自动选择编码器，使用指定的编码器（重新打开房间生效）</string>
+            <string>使用指定的编码器（重新打开房间生效）</string>
            </property>
           </widget>
          </item>
@@ -67,9 +67,16 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="forceUyva">
+        <widget class="QCheckBox" name="useNdiSender">
          <property name="text">
-          <string>强制 VTS 的 NDI 输入使用 UYVA 格式</string>
+          <string>使用 NDI 输出（重新打开房间生效，消耗更多资源，仅当游戏源捕获失败时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="showDxgiWindow">
+         <property name="text">
+          <string>显示联动画面窗口（重新打开房间生效，调试）</string>
          </property>
         </widget>
        </item>
@@ -96,10 +103,10 @@
      <widget class="QLabel" name="debugInfo">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>491</width>
-        <height>271</height>
+        <x>3</x>
+        <y>1</y>
+        <width>531</width>
+        <height>311</height>
        </rect>
       </property>
       <property name="text">

@@ -1,7 +1,8 @@
-#include "d3d_to_ndi.h"
+#include "d3d_to_frame.h"
 #include "QDebug"
 #include "qdatetime.h"
 #include "core/util.h"
+#include "ui/windows/dxgioutput.h"
 
 #include <d3dcompiler.h>
 #include <d3d11.h>
@@ -40,11 +41,11 @@ static VERTEX Vertices[NUMVERTICES] =
 
 static FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 
-DxToNdi::DxToNdi() {
+DxToFrame::DxToFrame() {
     qDebug() << "begin d3d2ndi";
 }
 
-DxToNdi::~DxToNdi()
+DxToFrame::~DxToFrame()
 {
     qDebug() << "end d3d2ndi";
     lock.lock();
@@ -63,6 +64,8 @@ DxToNdi::~DxToNdi()
     COM_RESET(_vertex_shader);
     COM_RESET(_pixel_shader);
 
+    COM_RESET(_swap_chain);
+
     COM_RESET(_d3d11_deviceCtx);
     COM_RESET(_d3d11_device);
 
@@ -70,19 +73,18 @@ DxToNdi::~DxToNdi()
     qDebug() << "end d3d2ndi done";
 }
 
-QString DxToNdi::debugInfo()
+QString DxToFrame::debugInfo()
 {
     auto count = 0;
     lock.lock();
     count = sources.count();
     lock.unlock();
 
-    return QString("Dx->Ndi (D3D11 Render) %1 Sources: %2\nDx->Ndi (D3D11 Map) %3")
-        .arg(renderFps.stat()).arg(count)
-        .arg(mapFps.stat());
+    return QString("Dx->Frame (D3D11 Render) %1 Sources: %2")
+        .arg(renderFps.stat()).arg(count);
 }
 
-void DxToNdi::registerSource(IDxSrc *src)
+void DxToFrame::registerSource(IDxSrc *src)
 {
     qDebug() << "d3d2ndi register source";
     lock.lock();
@@ -90,7 +92,7 @@ void DxToNdi::registerSource(IDxSrc *src)
     lock.unlock();
 }
 
-void DxToNdi::unregisterSource(IDxSrc *src)
+void DxToFrame::unregisterSource(IDxSrc *src)
 {
     qDebug() << "d3d2ndi unregister source";
     lock.lock();
@@ -98,7 +100,7 @@ void DxToNdi::unregisterSource(IDxSrc *src)
     lock.unlock();
 }
 
-bool DxToNdi::compileShader()
+bool DxToFrame::compileShader()
 {
     QFile f1(":/shader/blend_vertex.hlsl");
     f1.open(QIODevice::ReadOnly);
@@ -124,9 +126,14 @@ bool DxToNdi::compileShader()
     return true;
 }
 
-bool DxToNdi::init()
+bool DxToFrame::init(bool swap)
 {
     HRESULT hr;
+
+    auto width = 1920;
+    auto height = 1080;
+    _width = width;
+    _height = height;
 
     qDebug() << "d3d2ndi init";
 
@@ -152,7 +159,7 @@ bool DxToNdi::init()
     // This flag adds support for surfaces with a different color channel ordering
     // than the default. It is required for compatibility with Direct2D.
     UINT creationFlags =
-            D3D11_CREATE_DEVICE_SINGLETHREADED |
+            //D3D11_CREATE_DEVICE_SINGLETHREADED | Make OBS hookable
             D3D11_CREATE_DEVICE_BGRA_SUPPORT ;
 
     if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
@@ -174,13 +181,14 @@ bool DxToNdi::init()
     }
 
     DXGI_ADAPTER_DESC descAdapter;
-    hr = pAdapter->GetDesc(&descAdapter);
+    pAdapter->GetDesc(&descAdapter);
     qDebug() << "using device" << QString::fromWCharArray(descAdapter.Description);
 
     for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
     {
         hr = D3D11CreateDevice(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
-                               D3D11_SDK_VERSION, this->_d3d11_device.GetAddressOf(), &FeatureLevel, this->_d3d11_deviceCtx.GetAddressOf());
+                               D3D11_SDK_VERSION, this->_d3d11_device.GetAddressOf(), &FeatureLevel,
+                               this->_d3d11_deviceCtx.GetAddressOf());
         if (SUCCEEDED(hr))
         {
             qDebug() << "d3d2ndi successfully created device";
@@ -190,6 +198,39 @@ bool DxToNdi::init()
     }
     if (FAILED(hr))
         return false;
+
+    if (swap) {
+        // create swap chain for capture by obs
+        DXGI_MODE_DESC bufferDesc = {};
+        bufferDesc.Width = _width;
+        bufferDesc.Height = _height;
+        bufferDesc.RefreshRate.Numerator = 60;              //（注释1）  显示最大的刷新率  刷新率如果是  60pfs/每1秒
+        bufferDesc.RefreshRate.Denominator = 1;             //（注释1）  显示最大刷新率
+        bufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                     // 后台缓冲区像素格式
+
+        DXGI_SWAP_CHAIN_DESC swapChainDesc = {};//Dx用来描述交换缓冲区的结构体
+
+        swapChainDesc.BufferDesc = bufferDesc;                          //多重采样数量和质量级别
+        swapChainDesc.SampleDesc.Count = 1;                             //（注释2）多重采样的结构体描述
+        swapChainDesc.SampleDesc.Quality = 0;                           //（注释2）多重采样的结构体描述
+        swapChainDesc.BufferCount = 1;                                  //交换链中的后台缓冲区数量；我们一般只用一个后台缓冲区来实现双 缓存。当然，你也可以使用两个后台缓冲区来实现三缓存。
+        swapChainDesc.OutputWindow = DxgiOutput::getHwnd();                //这个非常重要，winId()是Qt中QWidget获取操作句柄的函数，这里表示我们把当前QWidget的控制权交给了DX，让DX去管理这个句柄
+        swapChainDesc.Windowed = TRUE;                                  //当设为 true 时，程序以窗口模式运行；当设为 false 时，程序以全屏模式运行
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+
+        hr = pDXGIFactory->CreateSwapChain(_d3d11_device.Get(), &swapChainDesc, this->_swap_chain.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "failed to create swapchain";
+            return false;
+        }
+
+        hr = _swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)_swap_chain_back_buffer.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "failed to get swapchain backbuffer";
+            return false;
+        }
+    }
 
     pDXGIFactory->Release();
     pAdapter->Release();
@@ -250,8 +291,6 @@ bool DxToNdi::init()
 
     qDebug() << "d3d2ndi create vertex buffer";
 
-    auto width = 1920;
-    auto height = 1080;
     auto ret = createSharedSurf(width, height);
     resetDeviceContext(width, height);
 
@@ -261,7 +300,7 @@ bool DxToNdi::init()
     return ret;
 }
 
-void DxToNdi::resetDeviceContext(int width, int height)
+void DxToFrame::resetDeviceContext(int width, int height)
 {
     // alpha blend
     D3D11_BLEND_DESC blendDesc = {};
@@ -308,11 +347,9 @@ void DxToNdi::resetDeviceContext(int width, int height)
                 (UINT)ceil(width * 1.0 / 8),
                 (UINT)ceil(height * 1.0 / 8),
                 1);
-    this->_width = width;
-    this->_height = height;
 }
 
-bool DxToNdi::createSharedSurf(int width, int height)
+bool DxToFrame::createSharedSurf(int width, int height)
 {
     //
     HRESULT hr{ 0 };
@@ -395,7 +432,7 @@ bool DxToNdi::createSharedSurf(int width, int height)
     return true;
 }
 
-void DxToNdi::releaseSharedSurf()
+void DxToFrame::releaseSharedSurf()
 {
     if (this->_d3d11_deviceCtx.Get() != nullptr)
         this->_d3d11_deviceCtx->ClearState();
@@ -411,7 +448,7 @@ void DxToNdi::releaseSharedSurf()
     this->_height = 0;
 }
 
-bool DxToNdi::render()
+bool DxToFrame::render()
 {
     if (!_inited)
         return false;
@@ -448,16 +485,13 @@ bool DxToNdi::render()
     return renderCount > 0;
 }
 
-bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
+bool DxToFrame::mapNdi(NDIlib_video_frame_v2_t* frame)
 {
     if (!_inited)
         return false;
 
     if (_mapped)
         return false;
-
-    QElapsedTimer t;
-    t.start();
 
     //Elapsed e3("copy");
     this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
@@ -476,12 +510,10 @@ bool DxToNdi::mapNdi(NDIlib_video_frame_v2_t* frame)
 
     _mapped = true;
 
-    mapFps.add(t.nsecsElapsed());
-
     return true; 
 }
 
-void DxToNdi::unmapNdi()
+void DxToFrame::unmapNdi()
 {
     if (!_mapped)
         return;
@@ -490,7 +522,7 @@ void DxToNdi::unmapNdi()
     _mapped = false;
 }
 
-bool DxToNdi::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest)
+bool DxToFrame::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest)
 {
     if (!_inited)
         return false;
@@ -508,6 +540,25 @@ bool DxToNdi::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2
     src->Release();
 
     lock.unlock();
+
+    return true;
+}
+
+bool DxToFrame::present() {
+    if (!_inited)
+        return false;
+
+    if (_swap_chain == nullptr)
+        return false;
+
+    this->_d3d11_deviceCtx->CopyResource(_swap_chain_back_buffer.Get(), _texture_rgba_target_shared.Get());
+    this->_d3d11_deviceCtx->Flush();
+
+    HRESULT hr = this->_swap_chain->Present(0, 0);
+    if (FAILED(hr)) {
+        qDebug() << "present failed" << HRESULT_CODE(hr);
+        return false;
+    }
 
     return true;
 }

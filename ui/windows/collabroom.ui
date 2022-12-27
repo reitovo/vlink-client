@@ -20,9 +20,6 @@
    <iconset resource="../../resources.qrc">
     <normaloff>:/images/icon.ico</normaloff>:/images/icon.ico</iconset>
   </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
   <widget class="QLabel" name="label_4">
    <property name="geometry">
     <rect>

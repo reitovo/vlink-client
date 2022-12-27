@@ -24,7 +24,7 @@ struct NDIlib_video_frame_v2_t;
 
 // This is used by server side to directly convert ndi frames to d3d11texture2d.
 // Then it can be directly used by DxToNdi merger, without need to encode/decode
-class NdiToDx : public IDxSrc, public IDebugCollectable
+class FrameToDx : public IDxSrc, public IDebugCollectable
 {
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
@@ -43,8 +43,8 @@ class NdiToDx : public IDxSrc, public IDebugCollectable
     FpsCounter fps;
 
 public:
-    NdiToDx(std::shared_ptr<DxToNdi>);
-    ~NdiToDx();
+    FrameToDx(std::shared_ptr<DxToFrame>);
+    ~FrameToDx();
 
     QString debugInfo();
 

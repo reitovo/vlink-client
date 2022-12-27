@@ -1,7 +1,7 @@
 #include "collabroom.h"
 #include "NatTypeProbe/NatProb.h"
-#include "ndi_to_av.h"
-#include "ndi_to_d3d.h"
+#include "frame_to_av.h"
+#include "frame_to_d3d.h"
 #include "ui/widgets/peeritemwidget.h"
 #include "qjsonarray.h"
 #include "qjsondocument.h"
@@ -27,16 +27,32 @@ extern "C" {
 }
 
 #include <QSystemTrayIcon>
-#include "d3d_to_ndi.h"
+#include "d3d_to_frame.h"
 #include "core/usage.h"
+#include "dxgioutput.h"
 
 CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CollabRoom)
 {
     ui->setupUi(this);
-     
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+
+    QSettings settings;
+    useNdiSender = settings.value("useNdiSender", false).toBool();
+
+    d3d = std::make_shared<DxToFrame>();
+    if (!useNdiSender) {
+        auto output = new DxgiOutput();
+        if (settings.value("showDxgiWindow").toBool()) {
+            output->show();
+        }
+        d3d->init(true);
+    } else {
+        d3d->init(false);
+    }
+
+    qDebug() << "sender is" << (useNdiSender ? "ndi" : "swap");
 
     this->roomId = roomId;
     this->isServer = isServer;
@@ -52,7 +68,6 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     auto role = isServer ? "Server" : "Client";
     qDebug() << "Role is" << (role) << peerId;
 
-    QSettings settings;
     if (isServer) {
         turnServer = settings.value("turnServer", QString()).toString();
         ui->relayInput->setText(turnServer);
@@ -89,11 +104,15 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     }));
     ndiFindThread->start();
 
-    // Start sending NDI
-    ndiSendThread = std::unique_ptr<QThread>(QThread::create([this]() {
-        ndiSendWorker();
+    // Start sending thread
+    frameSendThread = std::unique_ptr<QThread>(QThread::create([=]() {
+        if (useNdiSender) {
+            ndiSendWorker();
+        } else {
+            dxgiSendWorker();
+        }
     }));
-    ndiSendThread->start();
+    frameSendThread->start();
 
     // If server, start sending heartbeat, and rtt update
     if (isServer) {
@@ -115,8 +134,6 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     } else {
         resize(QSize(730, 360));
     }
-
-    d3d = std::make_shared<DxToNdi>();
 }
 
 CollabRoom::~CollabRoom()
@@ -136,11 +153,11 @@ CollabRoom::~CollabRoom()
         ndiFindThread = nullptr;
     }
 
-    if (ndiSendThread != nullptr && !ndiSendThread->isFinished() && !ndiSendThread->wait(500)) {
-        qWarning() << "uneasy to exit ndi send thread";
-        ndiSendThread->terminate();
-        ndiSendThread->wait(500);
-        ndiSendThread = nullptr;
+    if (frameSendThread != nullptr && !frameSendThread->isFinished() && !frameSendThread->wait(500)) {
+        qWarning() << "uneasy to exit frame send thread";
+        frameSendThread->terminate();
+        frameSendThread->wait(500);
+        frameSendThread = nullptr;
     }
 
     wsLock.lock();
@@ -176,9 +193,11 @@ CollabRoom::~CollabRoom()
 
 QString CollabRoom::debugInfo()
 {
-    return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3")
+    return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6")
         .arg(isServer ? "Server" : "Client").arg(roomId)
-        .arg(peerId).arg(ui->nick->text());
+        .arg(peerId).arg(ui->nick->text())
+        .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
+        .arg(sendProcessFps.stat());
 }
 
 void CollabRoom::updatePeersUi(QList<PeerUi> peerUis)
@@ -544,7 +563,7 @@ void CollabRoom::updatePeers(QJsonArray peers)
         u.isServer = p["isServer"].toBool();
         peerUis.append(u);
 
-        if (u.nat != StunTypeOpen && u.nat != StunTypeRestrictedNat
+        if (u.nat != StunTypeOpen && u.nat != StunTypeRestrictedNat && u.nat != StunTypeConeNat
                 && u.nat != StunTypePortRestrictedNat && u.nat != StunTypeUnavailable) {
             badNatList.append(u.nick.isEmpty() ? QString("%1%2").arg(tr("用户")).arg(u.peerId.left(4)) : u.nick);
         }
@@ -579,7 +598,7 @@ void CollabRoom::ndiToFfmpegWorkerClient()
 
     qDebug() << "ndi to ffmpeg ndi2av";
     // ffmpeg coverter
-    NdiToAv cvt([=](auto av) {
+    FrameToAv cvt([=](auto av) {
         peersLock.lock();
         if (client != nullptr)
             client->sendAsync(std::move(av));
@@ -684,7 +703,7 @@ void CollabRoom::ndiToFfmpegWorkerServer()
         return;
     }
 
-    NdiToDx cvt(d3d);
+    FrameToDx cvt(d3d);
     if (!cvt.init()) {
         emit onNdiToFfmpegError("ndi to dx init failed");
         return;
@@ -803,8 +822,6 @@ void CollabRoom::ndiFindWorker()
 
 void CollabRoom::ndiSendWorker()
 {
-    d3d->init();
-
     qInfo() << "start ndi sender";
 
     // Create an NDI source that is called "My Video and Audio" and is clocked to the video.
@@ -839,10 +856,10 @@ void CollabRoom::ndiSendWorker()
 
     qDebug() << "ndi send ndi2av";
     // ffmpeg coverter
-    std::unique_ptr<NdiToAv> cvt = nullptr;
+    std::unique_ptr<FrameToAv> cvt = nullptr;
 
     if (isServer) {
-        cvt = std::make_unique<NdiToAv>([=](auto av) {
+        cvt = std::make_unique<FrameToAv>([=](auto av) {
             peersLock.lock();
             // This approach is bandwidth consuming, should be replaced by relay approach
             for(auto & s : servers) {
@@ -869,10 +886,14 @@ void CollabRoom::ndiSendWorker()
 
             // encode and send
             if (isServer) {
-                cvt->process(&NDI_video_frame, d3d);
+                cvt->processFast(d3d);
             }
 
+            QElapsedTimer t1;
+            t1.start();
             if (d3d->mapNdi(&NDI_video_frame)) {
+                sendProcessFps.add(t1.nsecsElapsed());
+
                 // blocking
                 NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame); 
             }
@@ -896,7 +917,7 @@ void CollabRoom::ndiSendWorker()
     qInfo() << "end ndi sender";
 }
 
-void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer)
+void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer) const
 {
     // receive av from remote peer
     switch (m->type()) {
@@ -922,7 +943,7 @@ void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer)
     }
 }
 
-void CollabRoom::wsSendAsync(std::string content)
+void CollabRoom::wsSendAsync(const std::string& content)
 {
     if (exiting)
         return;
@@ -937,7 +958,7 @@ void CollabRoom::wsSendAsync(std::string content)
     t->start();
 }
 
-QString CollabRoom::errorToReadable(QString reason) {
+QString CollabRoom::errorToReadable(const QString& reason) {
     QString err = reason;
     if (reason == "init error") {
         err = tr("初始化错误");
@@ -962,7 +983,8 @@ QString CollabRoom::errorToReadable(QString reason) {
 void CollabRoom::usageStatUpdate() {
     ui->usageStat->setText(QString("CPU: %1% FPS: %2")
         .arg(QString::number(usage::getCpuUsage(), 'f', 1))
-        .arg(QString::number(outputFps.fps(), 'f', 1)));
+        .arg(QString::number(outputFps.fps(), 'f', 1)) 
+    );
 }
 
 void CollabRoom::heartbeatUpdate() {
@@ -983,4 +1005,71 @@ void CollabRoom::heartbeatUpdate() {
     qDebug() << content;
 
     wsSendAsync(content.toStdString());
+}
+
+void CollabRoom::dxgiSendWorker() {
+
+    qInfo() << "start dxgi sender";
+
+    // ffmpeg coverter
+    std::unique_ptr<FrameToAv> cvt = nullptr;
+
+    int frameD = 1001;
+    int frameN = 60000;
+
+    if (isServer) {
+        cvt = std::make_unique<FrameToAv>([=](auto av) {
+            peersLock.lock();
+            // This approach is bandwidth consuming, should be replaced by relay approach
+            for(auto & s : servers) {
+                s.second->sendAsync(av);
+            }
+            peersLock.unlock();
+        });
+        auto initErr = cvt->init(1920, 1080, frameD, frameN, true);
+        if (initErr.has_value()) {
+            emit onFatalError(initErr.value());
+            return;
+        }
+    }
+
+    int64_t frameCount = 0;
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+    while (!exiting) {
+        QElapsedTimer t;
+        t.start();
+
+        if (d3d->render()) {
+
+            // encode and send
+            if (isServer) {
+                cvt->processFast(d3d);
+            }
+
+            QElapsedTimer t1;
+            t1.start();
+
+            d3d->present();
+
+            sendProcessFps.add(t1.nsecsElapsed());
+        }
+
+        frameCount++;
+        int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+        int64_t nextTime = startTime + frameTime;
+        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        auto sleepTime = nextTime - currentTime;
+        if (sleepTime > 0) {
+            QThread::usleep(sleepTime);
+        }
+
+        outputFps.add(t.nsecsElapsed());
+    }
+
+    if (isServer) {
+        cvt->stop();
+    }
+
+    qInfo() << "end dxgi sender";
 }
