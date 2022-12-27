@@ -52,7 +52,7 @@ QString NdiToAv::debugInfo()
 
 bool NdiToAv::useUYVA()
 {
-	return currentOption.mode == NDI_TO_AV_MODE_LIBYUV_UYVA;
+	return (currentOption.mode & NDI_TO_AV_FMT_UYVA) != 0;
 }
 
 bool NdiToAv::isInited() {
@@ -107,7 +107,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, bool forc
 	bool selected = false;
 	std::optional<QString> err;
 	for (auto& o : opts) {
-		if (forceBgra && o.mode == NDI_TO_AV_MODE_LIBYUV_UYVA)
+		if (forceBgra && (o.mode & NDI_TO_AV_FMT_UYVA))
 			continue;
 
 		auto& e = o.name;
@@ -127,7 +127,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, bool forc
 		qDebug() << "ndi2av init a encoder" << o.readable << "succeed";
 
 		int code;
-		if (o.mode == NDI_TO_AV_MODE_DXFULL_D3D11 || o.mode == NDI_TO_AV_MODE_DXFULL_QSV) {
+		if (o.mode & NDI_TO_AV_TYPE_DXFULL) {
 			if ((code = av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0)) != 0) {
 				qWarning("Could not get hw frame rgb %s\n", av_err2str(code));
 				stop();
@@ -139,7 +139,7 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, bool forc
 				continue;
 			}
 		}
-		else if (o.mode == NDI_TO_AV_MODE_LIBYUV_BGRA || o.mode == NDI_TO_AV_MODE_LIBYUV_UYVA) { 
+		else if (o.mode & NDI_TO_AV_TYPE_LIBYUV) {
 			if ((code = av_frame_get_buffer(frame_rgb, 0)) < 0) {
 				qDebug() << "alloc frame buffer rgb failed" << av_err2str(code);
 				return "alloc buffer";
@@ -264,7 +264,7 @@ std::optional<QString> NdiToAv::initOptimalEncoder(const CodecOption& option, AV
 {
 	int err;
 
-	if (option.mode == NDI_TO_AV_MODE_DXFULL_D3D11 || option.mode == NDI_TO_AV_MODE_DXFULL_QSV) {
+	if (option.mode & NDI_TO_AV_TYPE_DXFULL) {
 		// Yeahy, we can elinimate all copy!
 		if (option.name.endsWith("nvenc") || option.name.endsWith("amf")) {
 

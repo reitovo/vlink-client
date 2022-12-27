@@ -22,19 +22,31 @@ extern "C" {
 #include "vts.pb.h"
 
 enum NdiToAvMode {
-    NDI_TO_AV_MODE_INVALID,
+    NDI_TO_AV_MODE_INVALID = 0,
+
+    NDI_TO_AV_TYPE_DXFULL = 0b001,
+    NDI_TO_AV_TYPE_DXMAP = 0b010,
+    NDI_TO_AV_TYPE_LIBYUV = 0b100,
+
+    NDI_TO_AV_FMT_BGRA = 0b01 << 3,
+    NDI_TO_AV_FMT_UYVA = 0b10 << 3,
+
+    NDI_TO_AV_HW_CPU = 0,
+    NDI_TO_AV_HW_D3D11 = 0b01 << 5,
+    NDI_TO_AV_HW_QSV = 0b10 << 5,
+
     // Use D3D11 based hardware acceleration which directly use ID3D11Texture2D as input
-    NDI_TO_AV_MODE_DXFULL_D3D11,
+    NDI_TO_AV_MODE_DXFULL_D3D11 = NDI_TO_AV_TYPE_DXFULL | NDI_TO_AV_FMT_BGRA | NDI_TO_AV_HW_D3D11,
     // Use QSV based hardware acceleration which directly use ID3D11Texture2D as input
-    NDI_TO_AV_MODE_DXFULL_QSV,
+    NDI_TO_AV_MODE_DXFULL_QSV = NDI_TO_AV_TYPE_DXFULL | NDI_TO_AV_FMT_BGRA | NDI_TO_AV_HW_QSV,
     // Use hardware accelerated encoder but it can only use RAM as input, so we need to map the shader
     // based BGRA to NV12 convertion result to memory, which is an overhead.
-    NDI_TO_AV_MODE_DXMAP,
+    NDI_TO_AV_MODE_DXMAP = NDI_TO_AV_TYPE_DXMAP | NDI_TO_AV_FMT_BGRA | NDI_TO_AV_HW_CPU,
     // Don't use any hardware acceleration, use CPU to convert BGRA to NV12 as input
-    NDI_TO_AV_MODE_LIBYUV_BGRA,
+    NDI_TO_AV_MODE_LIBYUV_BGRA = NDI_TO_AV_TYPE_LIBYUV | NDI_TO_AV_FMT_BGRA | NDI_TO_AV_HW_CPU,
     // Don't use any hardware acceleration, use CPU to copy UYVA to NV12 as input, should be better than
     // BGRA to NV12 as it is pure copy. (Will it cost more on NDI side?)
-    NDI_TO_AV_MODE_LIBYUV_UYVA
+    NDI_TO_AV_MODE_LIBYUV_UYVA = NDI_TO_AV_TYPE_LIBYUV | NDI_TO_AV_FMT_UYVA | NDI_TO_AV_HW_CPU
 };
 
 struct CodecOption {
