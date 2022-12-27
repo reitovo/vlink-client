@@ -6,7 +6,7 @@
 
 #include <d3dcompiler.h>
 #include <d3d11.h>
-#include <dxgi1_2.h>
+#include <dxgi1_3.h>
 #include <dxcore.h>
 #include <DirectXMath.h>
 #include <QFile>
@@ -169,8 +169,8 @@ bool DxToFrame::init(bool swap)
     }
 
     IDXGIFactory2 *pDXGIFactory;
-    IDXGIAdapter *pAdapter = NULL;
-    hr = CreateDXGIFactory(IID_IDXGIFactory2, (void **)&pDXGIFactory);
+    IDXGIAdapter *pAdapter = nullptr;
+    hr = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_IDXGIFactory2, (void **)&pDXGIFactory);
     if (FAILED(hr))
         return false;
     qDebug() << "d3d2ndi create dxgi factory";
@@ -200,62 +200,23 @@ bool DxToFrame::init(bool swap)
     if (FAILED(hr))
         return false;
 
-    ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
-    typedef HRESULT (WINAPI * LPDXGIGETDEBUGINTERFACE)(REFIID, void ** );
-    HMODULE dxgidebug = LoadLibraryEx( L"dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-    if ( dxgidebug )
-    {
-        auto dxgiGetDebugInterface = reinterpret_cast<LPDXGIGETDEBUGINTERFACE>(
-                reinterpret_cast<void*>( GetProcAddress( dxgidebug, "DXGIGetDebugInterface" ) ) );
-
-        if ( SUCCEEDED( dxgiGetDebugInterface( IID_PPV_ARGS( dxgiInfoQueue.GetAddressOf() ) ) ) )
-        {
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true );
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true );
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO, true );
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE, true );
-            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true );
-        }
-    }
-
-    ComPtr<ID3D11Debug> d3dDebug;
-    hr = _d3d11_device.As(&d3dDebug);
-    if (SUCCEEDED(hr))
-    {
-        ComPtr<ID3D11InfoQueue> d3dInfoQueue;
-        hr = d3dDebug.As(&d3dInfoQueue);
-        if (SUCCEEDED(hr))
-        {
-            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
-            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
-            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
-        }
-    }
-
     if (swap) {
-        // create swap chain for capture by obs
-        DXGI_MODE_DESC bufferDesc = {};
-        bufferDesc.Width = _width;
-        bufferDesc.Height = _height;
-        bufferDesc.RefreshRate.Numerator = 60;              //（注释1）  显示最大的刷新率  刷新率如果是  60pfs/每1秒
-        bufferDesc.RefreshRate.Denominator = 1;             //（注释1）  显示最大刷新率
-        bufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;                     // 后台缓冲区像素格式
+        auto hwnd = DxgiOutput::getHwnd();
 
-        DXGI_SWAP_CHAIN_DESC swapChainDesc = {};//Dx用来描述交换缓冲区的结构体
+        DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+        desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        desc1.Scaling = DXGI_SCALING_STRETCH;
+        desc1.Height = _height;
+        desc1.Width = _width;
+        desc1.BufferCount = 2;
+        desc1.SampleDesc.Quality = 0;
+        desc1.SampleDesc.Count = 1;
+        desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+        desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
 
-        swapChainDesc.BufferDesc = bufferDesc;                          //多重采样数量和质量级别
-        swapChainDesc.SampleDesc.Count = 1;                             //（注释2）多重采样的结构体描述
-        swapChainDesc.SampleDesc.Quality = 0;                           //（注释2）多重采样的结构体描述
-        swapChainDesc.BufferCount = 1;                                  //交换链中的后台缓冲区数量；我们一般只用一个后台缓冲区来实现双 缓存。当然，你也可以使用两个后台缓冲区来实现三缓存。
-        swapChainDesc.OutputWindow = DxgiOutput::getHwnd();                //这个非常重要，winId()是Qt中QWidget获取操作句柄的函数，这里表示我们把当前QWidget的控制权交给了DX，让DX去管理这个句柄
-        swapChainDesc.Windowed = TRUE;                                  //当设为 true 时，程序以窗口模式运行；当设为 false 时，程序以全屏模式运行
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-
-        hr = pDXGIFactory->CreateSwapChain(_d3d11_device.Get(), &swapChainDesc, this->_swap_chain.GetAddressOf());
-        if (FAILED(hr)) {
+        hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, this->_swap_chain.GetAddressOf());
+        if(FAILED(hr)) {
             qDebug() << "failed to create swapchain";
             return false;
         }

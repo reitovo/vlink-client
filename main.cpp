@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
 #ifdef HAS_CRASHPAD
     initializeCrashpad();
 #endif
-    if(!IsDebuggerPresent())
+    if(!IsDebuggerPresent()){
         qInstallMessageHandler(customMessageHandler);
-    QThread::create(redirectDebugOutput)->start();
+        QThread::create(redirectDebugOutput)->start();
+    }
 
     av_log_set_callback([](void *avcl, int level, const char *fmt, va_list vl) {
         if (level <= AV_LOG_ERROR) {

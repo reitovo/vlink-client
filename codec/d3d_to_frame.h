@@ -8,7 +8,7 @@
 // merge sources from all av2d3d
 struct D3D11_MAPPED_SUBRESOURCE;
 struct ID3D11BlendState;
-struct IDXGISwapChain;
+struct IDXGISwapChain1;
 
 // This class is used by both client and server to generate local ndi source,
 // which can be captured by OBS for use.
@@ -37,7 +37,7 @@ class DxToFrame : public IDebugCollectable {
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
-    ComPtr<IDXGISwapChain> _swap_chain = nullptr;
+    ComPtr<IDXGISwapChain1> _swap_chain = nullptr;
     ComPtr<ID3D11Texture2D> _swap_chain_back_buffer = nullptr;
 
     HANDLE _texture_rgba_target_shared_handle;
