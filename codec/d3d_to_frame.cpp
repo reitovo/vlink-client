@@ -10,6 +10,8 @@
 #include <dxcore.h>
 #include <DirectXMath.h>
 #include <QFile>
+#include <dxgidebug.h>
+#include <comdef.h>
 
 extern "C" {
 #include "libavutil/imgutils.h"
@@ -163,7 +165,7 @@ bool DxToFrame::init(bool swap)
             D3D11_CREATE_DEVICE_BGRA_SUPPORT ;
 
     if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
-        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+        creationFlags |= D3D11_CREATE_DEVICE_DEBUG; 
     }
 
     IDXGIFactory2 *pDXGIFactory;
@@ -171,7 +173,6 @@ bool DxToFrame::init(bool swap)
     hr = CreateDXGIFactory(IID_IDXGIFactory2, (void **)&pDXGIFactory);
     if (FAILED(hr))
         return false;
-
     qDebug() << "d3d2ndi create dxgi factory";
 
     hr = pDXGIFactory->EnumAdapters(0, &pAdapter);
@@ -198,6 +199,40 @@ bool DxToFrame::init(bool swap)
     }
     if (FAILED(hr))
         return false;
+
+    ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+    typedef HRESULT (WINAPI * LPDXGIGETDEBUGINTERFACE)(REFIID, void ** );
+    HMODULE dxgidebug = LoadLibraryEx( L"dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if ( dxgidebug )
+    {
+        auto dxgiGetDebugInterface = reinterpret_cast<LPDXGIGETDEBUGINTERFACE>(
+                reinterpret_cast<void*>( GetProcAddress( dxgidebug, "DXGIGetDebugInterface" ) ) );
+
+        if ( SUCCEEDED( dxgiGetDebugInterface( IID_PPV_ARGS( dxgiInfoQueue.GetAddressOf() ) ) ) )
+        {
+            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true );
+            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true );
+            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO, true );
+            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE, true );
+            dxgiInfoQueue->SetBreakOnSeverity( DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true );
+        }
+    }
+
+    ComPtr<ID3D11Debug> d3dDebug;
+    hr = _d3d11_device.As(&d3dDebug);
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<ID3D11InfoQueue> d3dInfoQueue;
+        hr = d3dDebug.As(&d3dInfoQueue);
+        if (SUCCEEDED(hr))
+        {
+            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_MESSAGE, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_INFO, true);
+            d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+        }
+    }
 
     if (swap) {
         // create swap chain for capture by obs

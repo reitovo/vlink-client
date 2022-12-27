@@ -140,6 +140,11 @@ CollabRoom::~CollabRoom()
 {
     exiting = true;
 
+    auto dxgi = DxgiOutput::getWindow();
+    if (dxgi) {
+        dxgi->deleteLater();
+    }
+
     usageStat.reset();
     heartbeat.reset();
 

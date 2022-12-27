@@ -16,7 +16,7 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
     _hwnd = (HWND)instance->winId();
 
     ui->setupUi(this);
-    //SetWindowLong(_hwnd, GWL_EXSTYLE, WS_EX_NOREDIRECTIONBITMAP);
+    resize(192 * 3, 108 * 3);
 }
 
 DxgiOutput::~DxgiOutput() {
