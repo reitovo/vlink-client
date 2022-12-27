@@ -23,10 +23,18 @@ extern "C" {
 
 enum NdiToAvMode {
     NDI_TO_AV_MODE_INVALID,
+    // Use D3D11 based hardware acceleration which directly use ID3D11Texture2D as input
     NDI_TO_AV_MODE_DXFULL_D3D11,
+    // Use QSV based hardware acceleration which directly use ID3D11Texture2D as input
     NDI_TO_AV_MODE_DXFULL_QSV,
+    // Use hardware accelerated encoder but it can only use RAM as input, so we need to map the shader
+    // based BGRA to NV12 convertion result to memory, which is an overhead.
     NDI_TO_AV_MODE_DXMAP,
-    NDI_TO_AV_MODE_LIBYUV
+    // Don't use any hardware acceleration, use CPU to convert BGRA to NV12 as input
+    NDI_TO_AV_MODE_LIBYUV_BGRA,
+    // Don't use any hardware acceleration, use CPU to copy UYVA to NV12 as input, should be better than
+    // BGRA to NV12 as it is pure copy. (Will it cost more on NDI side?)
+    NDI_TO_AV_MODE_LIBYUV_UYVA
 };
 
 struct CodecOption {
@@ -46,7 +54,7 @@ private:
 
 private:
     bool inited = false;
-    int xres, yres, frameD, frameN, frameType, fourCC;
+    int xres, yres, frameD, frameN;
 
     AVPacket *packet = nullptr;
     //rgb
@@ -70,9 +78,10 @@ public:
     ~NdiToAv();
 
     QString debugInfo();
+    bool useUYVA();
 
     bool isInited();
-    std::optional<QString> init(int xres, int yres, int d, int n, int type, int cc);
+    std::optional<QString> init(int xres, int yres, int d, int n, bool forceBgra);
     std::optional<QString> initRgb(const CodecOption& option);
     std::optional<QString> initA(const CodecOption& option);
 

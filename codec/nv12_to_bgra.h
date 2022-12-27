@@ -103,8 +103,7 @@ public:
     void enqueueRgb(AVFrame* rgb);
     void enqueueA(AVFrame* a);
     bool nv12ToBgra();
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest);
-
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
 };
 
 #endif // NV12_TO_BGRA_H

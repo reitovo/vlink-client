@@ -16,6 +16,8 @@ static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
 static QList<CodecOption> options = {
+	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV_UYVA, "X264 Fast (H.264)"}, // Cost less CPU
+
 	// Full Hardware Acceleration
 	{"h264_nvenc", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_D3D11, "NVENC Native (H.264)"}, // Least CPU usage, fastest approach
 	{"h264_qsv", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXFULL_QSV,"QSV Native (H.264)"}, // Best quality, slightly slower
@@ -28,13 +30,12 @@ static QList<CodecOption> options = {
 
 	// You don't have a GPU?
 	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_DXMAP, "X264 Mapped (H.264)"}, // Cost reasonable CPU
-	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV, "X264 Software (H.264)"}, // Cost more CPU
+	{"libx264", AV_CODEC_ID_H264, NDI_TO_AV_MODE_LIBYUV_BGRA, "X264 (H.264)"}, // Cost more CPU
 };
 
 NdiToAv::NdiToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
 	qDebug() << "begin ndi2av";
-	onPacketReceived = cb;
-
+	onPacketReceived = cb; 
 }
 
 NdiToAv::~NdiToAv()
@@ -49,6 +50,11 @@ QString NdiToAv::debugInfo()
 	return QString("Ndi->Av (Stream Encoder) %1 Codec: %2").arg(fps.stat()).arg(currentOption.readable);
 }
 
+bool NdiToAv::useUYVA()
+{
+	return currentOption.mode == NDI_TO_AV_MODE_LIBYUV_UYVA;
+}
+
 bool NdiToAv::isInited() {
 	return inited;
 }
@@ -56,7 +62,8 @@ bool NdiToAv::isInited() {
 static AVPixelFormat getPixelFormatOf(NdiToAvMode mode) {
 	switch (mode) {
 	case NDI_TO_AV_MODE_DXMAP:
-	case NDI_TO_AV_MODE_LIBYUV:
+	case NDI_TO_AV_MODE_LIBYUV_BGRA:
+	case NDI_TO_AV_MODE_LIBYUV_UYVA:
 		return AV_PIX_FMT_NV12;
 	case NDI_TO_AV_MODE_DXFULL_D3D11:
 		return AV_PIX_FMT_D3D11;
@@ -66,13 +73,11 @@ static AVPixelFormat getPixelFormatOf(NdiToAvMode mode) {
 	return AV_PIX_FMT_NONE;
 }
 
-std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, int cc) {
+std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, bool forceBgra) {
 	this->xres = xres;
 	this->yres = yres;
 	this->frameD = d;
-	this->frameN = n;
-	this->frameType = ft;
-	this->fourCC = cc;
+	this->frameN = n; 
 
 	qDebug() << "ndi2av init";
 
@@ -102,6 +107,9 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 	bool selected = false;
 	std::optional<QString> err;
 	for (auto& o : opts) {
+		if (forceBgra && o.mode == NDI_TO_AV_MODE_LIBYUV_UYVA)
+			continue;
+
 		auto& e = o.name;
 		err = initRgb(o);
 		if (err.has_value()) {
@@ -118,8 +126,8 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 		}
 		qDebug() << "ndi2av init a encoder" << o.readable << "succeed";
 
+		int code;
 		if (o.mode == NDI_TO_AV_MODE_DXFULL_D3D11 || o.mode == NDI_TO_AV_MODE_DXFULL_QSV) {
-			int code;
 			if ((code = av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0)) != 0) {
 				qWarning("Could not get hw frame rgb %s\n", av_err2str(code));
 				stop();
@@ -130,6 +138,17 @@ std::optional<QString> NdiToAv::init(int xres, int yres, int d, int n, int ft, i
 				stop();
 				continue;
 			}
+		}
+		else if (o.mode == NDI_TO_AV_MODE_LIBYUV_BGRA || o.mode == NDI_TO_AV_MODE_LIBYUV_UYVA) { 
+			if ((code = av_frame_get_buffer(frame_rgb, 0)) < 0) {
+				qDebug() << "alloc frame buffer rgb failed" << av_err2str(code);
+				return "alloc buffer";
+			}
+			if ((code = av_frame_get_buffer(frame_a, 0)) < 0) {
+				qDebug() << "alloc frame buffer a failed" << av_err2str(code);
+				return "alloc buffer";
+			}
+			memset(frame_a->data[1], 128, xres * yres / 2);
 		}
 
 		qDebug() << "using" << o.readable;
@@ -194,14 +213,7 @@ std::optional<QString> NdiToAv::initRgb(const CodecOption& option)
 	}
 	frame_rgb->format = getPixelFormatOf(option.mode);
 	frame_rgb->width = ctx_rgb->width;
-	frame_rgb->height = ctx_rgb->height;
-
-	if (option.mode == NDI_TO_AV_MODE_LIBYUV) {
-		if ((err = av_frame_get_buffer(frame_rgb, 0)) < 0) {
-			qDebug() << "alloc frame buffer failed" << av_err2str(err);
-			return "alloc buffer";
-		}
-	}
+	frame_rgb->height = ctx_rgb->height; 
 
 	return {};
 }
@@ -244,15 +256,7 @@ std::optional<QString> NdiToAv::initA(const CodecOption& option)
 	frame_a->format = getPixelFormatOf(option.mode);
 	frame_a->width = ctx_rgb->width;
 	frame_a->height = ctx_rgb->height;
-
-	if (option.mode == NDI_TO_AV_MODE_LIBYUV) {
-		if ((err = av_frame_get_buffer(frame_a, 0)) < 0) {
-			qDebug() << "alloc frame buffer failed" << av_err2str(err);
-			return "alloc buffer";
-		}
-		memset(frame_a->data[1], 128, xres * yres / 2);
-	}
-
+	 
 	return {};
 }
 
@@ -445,11 +449,16 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 {
 	int ret;
 
-	if (ndi->xres != xres || ndi->yres != yres ||
-		ndi->FourCC != fourCC || ndi->frame_format_type != frameType ||
+	if (ndi->xres != xres || ndi->yres != yres || 
 		ndi->frame_rate_D != frameD || ndi->frame_rate_N != frameN) {
 		qDebug() << "source format changed";
 		return "frame change error";
+	}
+
+	if ((useUYVA() && ndi->FourCC != NDIlib_FourCC_type_UYVA) ||
+		(!useUYVA() && ndi->FourCC != NDIlib_FourCC_type_BGRA)) {
+		qDebug() << "pixel format error";
+		return "pixel format error";
 	}
 
 	QElapsedTimer t;
@@ -465,10 +474,10 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 		nv12->copyFrameQSV(frame_rgb, frame_a);
 	}
 	else if (currentOption.mode == NDI_TO_AV_MODE_DXMAP) {
-		nv12->bgraToNv12(ndi); //~ 340000ns
+		nv12->bgraToNv12(ndi); 
 		nv12->mapFrame(frame_rgb, frame_a);
 	}
-	else if (currentOption.mode == NDI_TO_AV_MODE_LIBYUV) {
+	else if (currentOption.mode == NDI_TO_AV_MODE_LIBYUV_BGRA) {
 		libyuv::ARGBToNV12(ndi->p_data, ndi->line_stride_in_bytes,
 			frame_rgb->data[0], frame_rgb->linesize[0],
 			frame_rgb->data[1], frame_rgb->linesize[1],
@@ -476,6 +485,15 @@ std::optional<QString> NdiToAv::process(NDIlib_video_frame_v2_t* ndi, std::share
 		libyuv::ARGBExtractAlpha(ndi->p_data, ndi->line_stride_in_bytes,
 			frame_a->data[0], frame_a->linesize[0],
 			ndi->xres, ndi->yres);
+	}
+	else if (currentOption.mode == NDI_TO_AV_MODE_LIBYUV_UYVA) {
+		libyuv::UYVYToNV12(ndi->p_data, ndi->line_stride_in_bytes,
+			frame_rgb->data[0], frame_rgb->linesize[0],
+			frame_rgb->data[1], frame_rgb->linesize[1],
+			ndi->xres, ndi->yres); 
+		libyuv::CopyPlane(ndi->p_data + ndi->yres * ndi->line_stride_in_bytes, ndi->xres,
+			frame_a->data[0], frame_a->linesize[0],
+			ndi->xres, ndi->yres); 
 	}
 	//e1.end();
 

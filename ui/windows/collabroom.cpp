@@ -577,17 +577,6 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         return;
     }
 
-    // We now have at least one source, so we create a receiver to look at it.
-    NDIlib_recv_instance_t pNDI_recv = NDIlib_recv_create_v3();
-    if (!pNDI_recv) {
-        emit onNdiToFfmpegError("init error");
-        ndiToFfmpegRunning = false;
-        return;
-    }
-
-    // Connect to our sources
-    NDIlib_recv_connect(pNDI_recv, source);
-
     qDebug() << "ndi to ffmpeg ndi2av";
     // ffmpeg coverter
     NdiToAv cvt([=](auto av) {
@@ -596,6 +585,31 @@ void CollabRoom::ndiToFfmpegWorkerClient()
             client->sendAsync(std::move(av));
         peersLock.unlock();
     });
+
+    auto initErr = cvt.init(1920, 1080, 1001, 60000, false);
+    if (initErr.has_value()) {
+        emit onNdiToFfmpegError(initErr.value());
+        ndiToFfmpegRunning = false;
+    }
+
+    auto useUYVA = cvt.useUYVA();
+    auto fmt = useUYVA ? NDIlib_recv_color_format_fastest : NDIlib_recv_color_format_BGRX_BGRA;
+
+    NDIlib_recv_create_v3_t create; 
+    create.color_format = fmt;
+    create.bandwidth = NDIlib_recv_bandwidth_highest;
+    create.allow_video_fields = false;
+
+    // We now have at least one source, so we create a receiver to look at it.
+    NDIlib_recv_instance_t pNDI_recv = NDIlib_recv_create_v3(&create);
+    if (!pNDI_recv) {
+        emit onNdiToFfmpegError("init error");
+        ndiToFfmpegRunning = false;
+        return;
+    }
+
+    // Connect to our sources
+    NDIlib_recv_connect(pNDI_recv, source);
 
     while (ndiToFfmpegRunning) {
         // The descriptors
@@ -610,32 +624,7 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         //            break;
 
         // Video data
-        case NDIlib_frame_type_video: {
-            if (!cvt.isInited()) {
-                if (video_frame.xres != 1920 || video_frame.yres != 1080) {
-                    emit onNdiToFfmpegError("frame size error");
-                    ndiToFfmpegRunning = false;
-                }
-                if (video_frame.FourCC != NDIlib_FourCC_video_type_BGRA || video_frame.frame_format_type != NDIlib_frame_format_type_progressive) {
-                    emit onNdiToFfmpegError("frame format error");
-                    ndiToFfmpegRunning = false;
-                }
-                if (video_frame.line_stride_in_bytes != video_frame.xres * 4) {
-                    emit onNdiToFfmpegError("line stride error");
-                    ndiToFfmpegRunning = false;
-                }
-
-                auto initErr = cvt.init(video_frame.xres, video_frame.yres,
-                                        video_frame.frame_rate_D, video_frame.frame_rate_N,
-                                        video_frame.frame_format_type, video_frame.FourCC);
-                if (initErr.has_value()) {
-                    emit onNdiToFfmpegError(initErr.value());
-                    ndiToFfmpegRunning = false;
-                }
-                if (!ndiToFfmpegRunning)
-                    goto clean;
-            }
-
+        case NDIlib_frame_type_video: { 
 //            *(uint32_t*)cc = video_frame.FourCC;
 //            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
 
@@ -695,6 +684,12 @@ void CollabRoom::ndiToFfmpegWorkerServer()
         return;
     }
 
+    NdiToDx cvt(d3d);
+    if (!cvt.init()) {
+        emit onNdiToFfmpegError("ndi to dx init failed");
+        return;
+    }
+
     // We now have at least one source, so we create a receiver to look at it.
     NDIlib_recv_instance_t pNDI_recv = NDIlib_recv_create_v3();
     if (!pNDI_recv) {
@@ -704,9 +699,6 @@ void CollabRoom::ndiToFfmpegWorkerServer()
 
     // Connect to our sources
     NDIlib_recv_connect(pNDI_recv, source);
-
-    NdiToDx cvt(d3d);
-    cvt.init();
 
     while (ndiToFfmpegRunning) {
         // The descriptors
@@ -858,7 +850,7 @@ void CollabRoom::ndiSendWorker()
             }
             peersLock.unlock();
         });
-        auto initErr = cvt->init(1920, 1080, 1001, 60000, NDIlib_frame_format_type_progressive, NDIlib_FourCC_type_BGRA);
+        auto initErr = cvt->init(1920, 1080, 1001, 60000, true);
         if (initErr.has_value()) {
             emit onFatalError(initErr.value());
             NDIlib_send_destroy(pNDI_send);
