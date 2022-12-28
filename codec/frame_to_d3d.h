@@ -1,7 +1,7 @@
 #ifndef NDI_TO_D3D_H
 #define NDI_TO_D3D_H
 
-#include "core/debugcenter.h"
+#include "core/debug_center.h"
 #include "core/util.h"
 #include "i_d3d_src.h"
 #include "qmutex.h"

@@ -2,7 +2,7 @@
 #define FRAME_TO_AV_H
 
 #include "bgra_to_nv12.h"
-#include "core/debugcenter.h"
+#include "core/debug_center.h"
 #include "core/util.h"
 #include "d3d_to_frame.h"
 #include <cstdint>

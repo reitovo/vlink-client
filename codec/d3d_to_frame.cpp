@@ -71,6 +71,8 @@ DxToFrame::~DxToFrame()
     COM_RESET(_d3d11_deviceCtx);
     COM_RESET(_d3d11_device);
 
+    CloseHandle(_swap_chain_waitable);
+
     lock.unlock();
     qDebug() << "end d3d2ndi done";
 }
@@ -168,9 +170,13 @@ bool DxToFrame::init(bool swap)
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG; 
     }
 
-    IDXGIFactory2 *pDXGIFactory;
+    IDXGIFactory3 *pDXGIFactory;
     IDXGIAdapter *pAdapter = nullptr;
-    hr = CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_IDXGIFactory2, (void **)&pDXGIFactory);
+    auto dxgiCreateFlag = 0;
+    if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
+        dxgiCreateFlag |= DXGI_CREATE_FACTORY_DEBUG;
+    }
+    hr = CreateDXGIFactory2(dxgiCreateFlag, IID_IDXGIFactory3, (void **)&pDXGIFactory);
     if (FAILED(hr))
         return false;
     qDebug() << "d3d2ndi create dxgi factory";
@@ -214,10 +220,18 @@ bool DxToFrame::init(bool swap)
         desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+        desc1.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
-        hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, this->_swap_chain.GetAddressOf());
-        if(FAILED(hr)) {
-            qDebug() << "failed to create swapchain";
+        ComPtr<IDXGISwapChain1> sw1;
+        hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, sw1.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "failed to create swapchain1";
+            return false;
+        }
+
+        hr = sw1->QueryInterface(__uuidof(IDXGISwapChain2), (void**) _swap_chain.GetAddressOf());
+        if (FAILED(hr)) {
+            qDebug() << "failed to create swapchain2";
             return false;
         }
 
@@ -226,6 +240,14 @@ bool DxToFrame::init(bool swap)
             qDebug() << "failed to get swapchain backbuffer";
             return false;
         }
+
+        hr = _swap_chain->SetMaximumFrameLatency(1);
+        if (FAILED(hr)) {
+            qDebug() << "failed to set maximum delay";
+            return false;
+        }
+
+        _swap_chain_waitable = _swap_chain->GetFrameLatencyWaitableObject();
     }
 
     pDXGIFactory->Release();
@@ -455,6 +477,9 @@ bool DxToFrame::render()
     QElapsedTimer t;
     t.start();
 
+    // Wait for frame before any render task
+    WaitForSingleObjectEx(_swap_chain_waitable, 10, true);
+
     //Elapsed e1("clear");
 
     FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -550,7 +575,7 @@ bool DxToFrame::present() {
     this->_d3d11_deviceCtx->CopyResource(_swap_chain_back_buffer.Get(), _texture_rgba_target_shared.Get());
     this->_d3d11_deviceCtx->Flush();
 
-    HRESULT hr = this->_swap_chain->Present(0, 0);
+    HRESULT hr = this->_swap_chain->Present(1, 0);
     if (FAILED(hr)) {
         qDebug() << "present failed" << HRESULT_CODE(hr);
         return false;

@@ -1,18 +1,18 @@
-#include "smartbuf.h"
+#include "smart_buf.h"
 #include "smartbuf.pb.h"
 #include <memory>
 #include <QDebug>
 #include <brotli/decode.h>
 #include <brotli/encode.h>
 
-smartbuf::smartbuf(int maxSize, std::function<void (const std::string &)> sender, std::function<void (const std::string &)> receiver)
+smart_buf::smart_buf(int maxSize, std::function<void (const std::string &)> sender, std::function<void (const std::string &)> receiver)
 {
     this->maxSize = maxSize;
     this->sender = sender;
     this->receiver = receiver;
 }
 
-void smartbuf::send(const std::string buf)
+void smart_buf::send(const std::string buf)
 {
     txSeq++;
     auto maxPacketSize = maxSize - 24;
@@ -32,7 +32,7 @@ void smartbuf::send(const std::string buf)
     }
 }
 
-void smartbuf::onReceive(const std::string buf)
+void smart_buf::onReceive(const std::string buf)
 {
     auto msg = std::make_unique<SmartBuf>();
     if (msg->ParseFromArray(buf.data(), buf.size())) {

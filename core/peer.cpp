@@ -260,7 +260,7 @@ void Peer::setRemoteSdp(QJsonObject sdp) {
 
 void Peer::initSmartBuf()
 {
-    smartBuf = std::make_unique<smartbuf>(dc->maxMessageSize(), [this](auto data) {
+    smartBuf = std::make_unique<smart_buf>(dc->maxMessageSize(), [this](auto data) {
         dc->send(std::variant<rtc::binary, rtc::string>(data));
     }, [this] (auto data) {
         auto msg = std::make_unique<VtsMsg>();

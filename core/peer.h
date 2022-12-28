@@ -4,7 +4,7 @@
 #include "NatTypeProbe/p2p_api.h"
 #include <QString>
 #include "av_to_d3d.h"
-#include "core/smartbuf.h"
+#include "core/smart_buf.h"
 #include "qthread.h"
 #include "rtc/rtc.hpp"
 #include "vts.pb.h"
@@ -50,7 +50,7 @@ public:
     std::unique_ptr<QThread> dcThread;
     moodycamel::ConcurrentQueue<std::shared_ptr<VtsMsg>> sendQueue;
     moodycamel::ConcurrentQueue<std::unique_ptr<VtsMsg>> recvQueue;
-    std::unique_ptr<smartbuf> smartBuf;
+    std::unique_ptr<smart_buf> smartBuf;
     void sendAsync(std::shared_ptr<VtsMsg> payload);
 
     QString dataStats();

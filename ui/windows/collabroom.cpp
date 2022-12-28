@@ -198,11 +198,13 @@ CollabRoom::~CollabRoom()
 
 QString CollabRoom::debugInfo()
 {
-    return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6")
+    return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
         .arg(isServer ? "Server" : "Client").arg(roomId)
         .arg(peerId).arg(ui->nick->text())
         .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
-        .arg(sendProcessFps.stat());
+        .arg(sendProcessFps.stat())
+        .arg(isServer ? "Frame->Av (NDI Receive) " : "Frame->Dx (NDI Receive) ")
+        .arg(ndiRecvFps.stat());
 }
 
 void CollabRoom::updatePeersUi(QList<PeerUi> peerUis)
@@ -641,6 +643,9 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         NDIlib_audio_frame_v2_t audio_frame;
         char cc[5] = {0};
 
+        QElapsedTimer t;
+        t.start();
+
         switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
         // No data
         //        case NDIlib_frame_type_none:
@@ -651,6 +656,8 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         case NDIlib_frame_type_video: { 
 //            *(uint32_t*)cc = video_frame.FourCC;
 //            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
+
+            ndiRecvFps.add(t.nsecsElapsed());
 
             auto e = cvt.process(&video_frame);
             if (e.has_value()) {
@@ -730,6 +737,9 @@ void CollabRoom::ndiToFfmpegWorkerServer()
         NDIlib_audio_frame_v2_t audio_frame;
         char cc[5] = {0};
 
+        QElapsedTimer t;
+        t.start();
+
         switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
         // No data
         //        case NDIlib_frame_type_none:
@@ -740,6 +750,8 @@ void CollabRoom::ndiToFfmpegWorkerServer()
         case NDIlib_frame_type_video: {
 //            *(uint32_t*)cc = video_frame.FourCC;
 //            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
+
+            ndiRecvFps.add(t.nsecsElapsed());
 
             cvt.update(&video_frame);
 

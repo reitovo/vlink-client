@@ -27,7 +27,7 @@ void redirectDebugOutput();
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 int main(int argc, char *argv[])
-{ 
+{   
     QFile log("vts.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();

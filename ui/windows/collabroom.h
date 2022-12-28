@@ -98,6 +98,7 @@ private:
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;
+    FpsCounter ndiRecvFps;
 
     QMutex peersLock;
     // As server

@@ -67,8 +67,8 @@ set(PROJECT_SOURCES
         core/vtslink.h
         core/util.h core/util.cpp
         core/peer.h core/peer.cpp
-        core/smartbuf.h core/smartbuf.cpp
-        core/debugcenter.h core/debugcenter.cpp
+        core/smart_buf.h core/smart_buf.cpp
+        core/debug_center.h core/debug_center.cpp
         core/usage.h core/usage.cpp
         ui/windows/mainwindow.cpp
         ui/windows/mainwindow.h
@@ -77,12 +77,13 @@ set(PROJECT_SOURCES
         ui/windows/blockinghttprequest.h ui/windows/blockinghttprequest.cpp ui/windows/blockinghttprequest.ui
         ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
         ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
+        ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
         ${SHADER_FILES}
         ${CODEC_FILES}
         ${TS_FILES}
         ${PROTO_FILES}
-        ${PROTO_SRCS} ${PROTO_HDRS}
-        ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui)
+        ${PROTO_SRCS} 
+        ${PROTO_HDRS})
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VTSLink
@@ -143,7 +144,7 @@ target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 #crashpad
 set(USE_ASAN 0) 
 if(USE_ASAN) 
-    target_compile_options(VTSLink -fsanitize=address)
+    target_compile_options(VTSLink PUBLIC -fsanitize=address)
 else()
     target_compile_definitions(VTSLink PUBLIC HAS_CRASHPAD)
     find_package(crashpad CONFIG REQUIRED)

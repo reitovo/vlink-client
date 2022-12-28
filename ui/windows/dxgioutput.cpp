@@ -14,6 +14,8 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
         QMainWindow(parent), ui(new Ui::DxgiOutput) {
     instance = this;
     _hwnd = (HWND)instance->winId();
+    setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     ui->setupUi(this);
     resize(192 * 3, 108 * 3);

@@ -1,4 +1,4 @@
-#include "debugcenter.h"
+#include "debug_center.h"
 
 static QMutex listLock;
 static QList<IDebugCollectable*> collectable;
