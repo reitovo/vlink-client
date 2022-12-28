@@ -575,7 +575,7 @@ bool DxToFrame::present() {
     this->_d3d11_deviceCtx->CopyResource(_swap_chain_back_buffer.Get(), _texture_rgba_target_shared.Get());
     this->_d3d11_deviceCtx->Flush();
 
-    HRESULT hr = this->_swap_chain->Present(1, 0);
+    HRESULT hr = this->_swap_chain->Present(0, 0);
     if (FAILED(hr)) {
         qDebug() << "present failed" << HRESULT_CODE(hr);
         return false;
