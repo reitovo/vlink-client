@@ -10,9 +10,9 @@
 4. 考虑多种网络环境，自动切换P2P及中转两种传输模式
 5. 无需自行部署中转服务器，内置基于腾讯云的中转服务器一键创建部署（付费）
 
-### 代码详解
+### 代码结构
 
-[前往详解](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN)
+[前往介绍页](https://www.wolai.com/reito/kvnFPb7TXrPnjHcKk2x6MK)
 
 ### 编译
 

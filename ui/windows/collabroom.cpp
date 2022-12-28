@@ -41,6 +41,9 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     QSettings settings;
     useNdiSender = settings.value("useNdiSender", false).toBool();
 
+    this->roomId = roomId;
+    this->isServer = isServer;
+
     d3d = std::make_shared<DxToFrame>();
     if (!useNdiSender) {
         auto output = new DxgiOutput();
@@ -53,9 +56,6 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     }
 
     qDebug() << "sender is" << (useNdiSender ? "ndi" : "swap");
-
-    this->roomId = roomId;
-    this->isServer = isServer;
 //    peerId = settings.value("peerId", QString()).toString();
 //    if (peerId.isEmpty()) {
 //        peerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
