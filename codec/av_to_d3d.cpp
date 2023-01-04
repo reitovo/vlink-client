@@ -219,7 +219,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     f->data = std::move(m);
     frameQueue.push(f);
 
-    if (frameQueue.size() < 30) {
+    if (frameQueue.size() < 1) {
         return "buffering";
     }
 
@@ -231,7 +231,8 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
     delete dd;
 
     if (newPts <= pts) {
-        qDebug() << "misordered" << newPts << pts;  
+        qDebug() << "misordered" << newPts << pts;
+        return "misordered";
     }
 
     auto meta = mem->avframe();
