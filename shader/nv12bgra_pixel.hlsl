@@ -18,7 +18,6 @@ struct PixelShaderInput
 
 Texture2D<float>  luminanceChannel   : t0;
 Texture2D<float2> chrominanceChannel : t1;
-Texture2D<float>  alphaChannel       : t2;
 SamplerState      defaultSampler     : s0;
 
 // Derived from https://msdn.microsoft.com/en-us/library/windows/desktop/dd206750(v=vs.85).aspx
@@ -45,9 +44,10 @@ float3 ConvertYUVtoBGR(float3 yuv)
 [numthreads (8,8,1)]
 float4 PS(PixelShaderInput input) : SV_TARGET
 {
-	float y = luminanceChannel.Sample(defaultSampler, input.texCoord);
-	float2 uv = chrominanceChannel.Sample(defaultSampler, input.texCoord);
-        float a = alphaChannel.Sample(defaultSampler, input.texCoord);
+	float y = luminanceChannel.Sample(defaultSampler, float2(input.texCoord.x, input.texCoord.y / 2.0f));
+	float2 uv = chrominanceChannel.Sample(defaultSampler, float2(input.texCoord.x, input.texCoord.y / 2.0f));
+
+    float a = luminanceChannel.Sample(defaultSampler, float2(input.texCoord.x, input.texCoord.y / 2.0f + 0.5f));
 
 	return float4(ConvertYUVtoBGR(float3(y, uv)), a);
 }

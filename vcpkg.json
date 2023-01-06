@@ -14,7 +14,13 @@
       "default-features": true,
       "features": [ "nvcodec", "qsv", "x264", "amf" ]
     },
-    "qt"
+    "qt",
+    "directxtk",
+    {
+      "name": "opencv2",
+      "default-features": true,
+      "features": [ "png" ]
+    }
   ],
   "overrides": [
     {

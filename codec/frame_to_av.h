@@ -69,14 +69,10 @@ private:
     int xres, yres, frameD, frameN;
 
     AVPacket *packet = nullptr;
-    //rgb
-    AVCodecContext *ctx_rgb = nullptr;
-    const AVCodec* codec_rgb = nullptr;
-    AVFrame* frame_rgb = nullptr;
-    //alpha
-    AVCodecContext *ctx_a = nullptr;
-    const AVCodec* codec_a = nullptr;
-    AVFrame* frame_a = nullptr;
+
+    AVCodecContext *ctx = nullptr;
+    const AVCodec* codec = nullptr;
+    AVFrame* frame = nullptr;
 
     CodecOption currentOption;
 
@@ -96,8 +92,7 @@ public:
 
     bool isInited();
     std::optional<QString> init(int xres, int yres, int d, int n, bool forceBgra);
-    std::optional<QString> initRgb(const CodecOption& option);
-    std::optional<QString> initA(const CodecOption& option);
+    std::optional<QString> initCodec(const CodecOption& option);
 
     std::optional<QString> initOptimalEncoder(const CodecOption& option, AVCodecContext * ctx);
     void initEncodingParameter(const CodecOption& option, AVCodecContext * ctx);

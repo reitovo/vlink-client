@@ -63,15 +63,10 @@ std::optional<QString> AvToDx::init()
         return "init nv12 to bgra";
     }
 
-    auto err = initRgb(codecId);
+    auto err = initCodec(codecId);
     if (err.has_value()) {
         qDebug() << "failed to init av2d3d rgb";
         return "init av2d3d rgb";
-    }
-    err = initA(codecId);
-    if (err.has_value()) {
-        qDebug() << "failed to init av2d3d a";
-        return "init av2d3d a";
     }
 
     packet = av_packet_alloc();
@@ -87,29 +82,29 @@ std::optional<QString> AvToDx::init()
     return std::optional<QString>();
 }
 
-std::optional<QString> AvToDx::initRgb(AVCodecID codec_id)
+std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
 {
     int err;
 
-    codec_rgb = avcodec_find_decoder(codec_id);
-    if (!codec_rgb) {
+    codec = avcodec_find_decoder(codec_id);
+    if (!codec) {
         qDebug("Cannot open codec\n");
         return "find av codec";
     }
 
-    ctx_rgb = avcodec_alloc_context3(codec_rgb);
-    if (!ctx_rgb) {
+    ctx = avcodec_alloc_context3(codec);
+    if (!ctx) {
         qDebug("Could not allocate video codec context\n");
         return "codec alloc ctx";
     }
 
-    ctx_rgb->width = xres;
-    ctx_rgb->height = yres;
-    ctx_rgb->time_base.den = ctx_rgb->framerate.num = frameD;
-    ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
-    ctx_rgb->pkt_timebase = ctx_rgb->time_base;
-    ctx_rgb->pix_fmt = AV_PIX_FMT_D3D11;
-    ctx_rgb->get_format = get_hw_format;
+    ctx->width = xres;
+    ctx->height = yres * 2;
+    ctx->time_base.den = ctx->framerate.num = frameD;
+    ctx->time_base.num = ctx->framerate.den = frameN;
+    ctx->pkt_timebase = ctx->time_base;
+    ctx->pix_fmt = AV_PIX_FMT_D3D11;
+    ctx->get_format = get_hw_format;
 
 //    AVBufferRef* hw;
 //    if ((err = av_hwdevice_ctx_create(&hw, AV_HWDEVICE_TYPE_D3D11VA, NULL, NULL, 0)) < 0) {
@@ -128,85 +123,23 @@ std::optional<QString> AvToDx::initRgb(AVCodecID codec_id)
         return "open d3d11 device";
     }
 
-    ctx_rgb->hw_device_ctx = av_buffer_ref(hw2);
-    av_hwdevice_ctx_init(ctx_rgb->hw_device_ctx);
+    ctx->hw_device_ctx = av_buffer_ref(hw2);
+    av_hwdevice_ctx_init(ctx->hw_device_ctx);
     av_buffer_unref(&hw2);
 
-    if ((err = avcodec_open2(ctx_rgb, codec_rgb, nullptr)) < 0) {
+    if ((err = avcodec_open2(ctx, codec, nullptr)) < 0) {
         qDebug("Could not open codec %s\n", av_err2str(err));
         return "open codec";
     }
 
-    frame_rgb = av_frame_alloc();
-    if (!frame_rgb) {
+    frame = av_frame_alloc();
+    if (!frame) {
         qDebug("Could not alloc sw frame\n");
         return "frame alloc";
     }
-    frame_rgb->format = AV_PIX_FMT_NV12;
-    frame_rgb->width = ctx_rgb->width;
-    frame_rgb->height = ctx_rgb->height;
-
-    return std::optional<QString>();
-}
-
-std::optional<QString> AvToDx::initA(AVCodecID codec_id)
-{
-    int err;
-
-    codec_a = avcodec_find_decoder(codec_id);
-    if (!codec_a) {
-        qDebug("Cannot open codec\n");
-        return "find av codec";
-    }
-
-    ctx_a = avcodec_alloc_context3(codec_a);
-    if (!ctx_a) {
-        qDebug("Could not allocate video codec context\n");
-        return "codec alloc ctx";
-    }
-
-    ctx_a->width = xres;
-    ctx_a->height = yres;
-    ctx_a->time_base.den = ctx_a->framerate.num = frameD;
-    ctx_a->time_base.num = ctx_a->framerate.den = frameN;
-    ctx_a->pkt_timebase = ctx_a->time_base;
-    ctx_a->pix_fmt = AV_PIX_FMT_D3D11;
-    ctx_a->get_format = get_hw_format;
-
-//    AVBufferRef* hw;
-//    if ((err = av_hwdevice_ctx_create(&hw, AV_HWDEVICE_TYPE_D3D11VA, NULL, NULL, 0)) < 0) {
-//        fprintf(stderr, "Failed to create specified HW device.\n");
-//        return "create hw";
-//    }
-//    ctx_a->hw_device_ctx = av_buffer_ref(hw);
-//    av_buffer_unref(&hw);
-
-    AVBufferRef* hw2 = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
-    AVHWDeviceContext* device_ctx = reinterpret_cast<AVHWDeviceContext*>(hw2->data);
-    AVD3D11VADeviceContext* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
-    d3d11va_device_ctx->device = bgra->getDevice();
-    if (d3d11va_device_ctx->device == nullptr) {
-        qDebug("av2d3d d3d11 device null");
-        return "open d3d11 device";
-    }
-
-    ctx_a->hw_device_ctx = av_buffer_ref(hw2);
-    av_hwdevice_ctx_init(ctx_a->hw_device_ctx);
-    av_buffer_unref(&hw2);
-
-    if ((err = avcodec_open2(ctx_a, codec_a, nullptr)) < 0) {
-        qDebug("Could not open codec %s\n", av_err2str(err));
-        return "open codec";
-    }
-
-    frame_a = av_frame_alloc();
-    if (!frame_a) {
-        qDebug("Could not alloc sw frame\n");
-        return "frame alloc";
-    }
-    frame_a->format = AV_PIX_FMT_NV12;
-    frame_a->width = ctx_a->width;
-    frame_a->height = ctx_a->height;
+    frame->format = AV_PIX_FMT_NV12;
+    frame->width = ctx->width;
+    frame->height = ctx->height;
 
     return std::optional<QString>();
 }
@@ -257,7 +190,7 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
         packet->size = d.size();
         packet->dts = a.dts();
         packet->pts = a.pts();
-        ret = avcodec_send_packet(ctx_rgb, packet);
+        ret = avcodec_send_packet(ctx, packet);
         if (ret < 0) {
             qDebug() << "error sending packet for rgb decoding" << av_err2str(ret);
             errList.append("send packet");
@@ -266,37 +199,13 @@ std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
 
     //qDebug() << "recv frame rgb";
      
-    ret = avcodec_receive_frame(ctx_rgb, frame_rgb);
+    ret = avcodec_receive_frame(ctx, frame);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
         qDebug() << "error while decoding rgb" << av_err2str(ret);
         errList.append("receive frame");
     }
     else {
-        bgra->enqueueRgb(frame_rgb);
-    }
-
-    for (auto& a : meta.apackets()) {
-        auto& d = a.data();
-        packet->data = (uint8_t*)d.data();
-        packet->size = d.size();
-        packet->dts = a.dts();
-        packet->pts = a.pts();
-        ret = avcodec_send_packet(ctx_a, packet);
-        if (ret < 0) {
-            qDebug() << "error sending packet for a decoding" << av_err2str(ret);
-            errList.append("send packet");
-        }
-    }
-
-    //qDebug() << "recv frame a";
-     
-    ret = avcodec_receive_frame(ctx_a, frame_a);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
-        qDebug() << "error while decoding a" << av_err2str(ret);
-        errList.append("receive frame"); 
-    }
-    else {
-        bgra->enqueueA(frame_a);
+        bgra->enqueueRgb(frame);
     }
 
     //qDebug() << "to bgra";
@@ -334,10 +243,8 @@ void AvToDx::stop()
     bgra = nullptr;
 
     av_packet_free(&packet);
-    av_frame_free(&frame_rgb);
-    av_frame_free(&frame_a);  
-    avcodec_free_context(&ctx_rgb);
-    avcodec_free_context(&ctx_a);
+    av_frame_free(&frame);
+    avcodec_free_context(&ctx);
 }
 
 QString AvToDx::debugInfo()

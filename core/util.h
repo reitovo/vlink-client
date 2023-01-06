@@ -92,4 +92,11 @@ inline QString getGpuVendorName(DeviceAdapterType t) {
 struct ID3D11Device;
 void printDxDebugInfo(ID3D11Device* dev);
 
+struct ID3D11DeviceContext;
+struct ID3D11Resource;
+void saveTextureToFile(
+        ID3D11DeviceContext* pContext,
+        ID3D11Resource* pSource,
+        QString fileName);
+
 #endif // UTIL_H

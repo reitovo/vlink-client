@@ -53,32 +53,32 @@ class BgraToNv12
     ComPtr<ID3D11ShaderResourceView> _downsampleView = nullptr;
 
     ComPtr<ID3D11RenderTargetView> _rtv_bgra_uv = nullptr;
-    ComPtr<ID3D11RenderTargetView> _rtv_nv12_rgb_y = nullptr;
-    ComPtr<ID3D11RenderTargetView> _rtv_nv12_rgb_uv = nullptr;
-    ComPtr<ID3D11RenderTargetView> _rtv_nv12_a_y = nullptr;
-    ComPtr<ID3D11RenderTargetView> _rtv_nv12_a_uv = nullptr;
+    ComPtr<ID3D11RenderTargetView> _rtv_nv12_y = nullptr;
+    ComPtr<ID3D11RenderTargetView> _rtv_nv12_uv = nullptr;
 
     ComPtr<ID3D11Texture2D> _texture_bgra = nullptr;
     ComPtr<ID3D11Texture2D> _texture_uv_target = nullptr;
-    ComPtr<ID3D11Texture2D> _texture_uv_copy_target = nullptr;
-    ComPtr<ID3D11Texture2D> _texture_nv12_rgb_target = nullptr;
-    ComPtr<ID3D11Texture2D> _texture_nv12_a_target = nullptr;
-    // For nvenc, no need to copy
-    ComPtr<ID3D11Texture2D> _texture_nv12_rgb_copy_target = nullptr;
-    ComPtr<ID3D11Texture2D> _texture_nv12_a_copy_target = nullptr;
+    // Resource being set to OM RenderTarget slot 1 is still bound on input!
+    ComPtr<ID3D11Texture2D> _texture_uv_target_copy = nullptr;
+
+    // vertically concat
+    ComPtr<ID3D11Texture2D> _texture_nv12_target = nullptr;
+
+    // For hw, no need to copy
+    ComPtr<ID3D11Texture2D> _texture_nv12_copy_target = nullptr;
 
     ComPtr<ID3DBlob> _bgra_nv24_vertex_shader = nullptr;
     ComPtr<ID3DBlob> _bgra_nv24_pixel_shader = nullptr;
     ComPtr<ID3DBlob> _nv24_nv12_vertex_shader = nullptr;
     ComPtr<ID3DBlob> _nv24_nv12_pixel_shader = nullptr;
 
-    std::array<ID3D11RenderTargetView*, 3> _bgra_nv24_rt;
+    std::array<ID3D11RenderTargetView*, 2> _bgra_nv24_rt;
     std::array<ID3D11ShaderResourceView*, 1> _bgra_nv24_sr;
     std::array<ID3D11RenderTargetView*, 1> _nv24_nv12_rt;
     std::array<ID3D11ShaderResourceView*, 1> _nv24_nv12_sr;
 
-    uint32_t _width{ 0 };
-    uint32_t _height{ 0 };
+    uint32_t _width { 1920 };
+    uint32_t _height { 1080 };
 
     DeviceAdapterType _vendor;
     std::atomic_bool _inited = false;
@@ -93,13 +93,13 @@ public:
 
     bool init();
     bool compileShader();
-    void initViewport(int width, int height);
-    void initDeviceContext(int width, int height);
+    void initViewport();
+    void initDeviceContext();
 
     void setBgraToNv24Context();
     void setNv24ToNv12Context();
 
-    bool createSharedSurf(int width, int height);
+    bool createSharedSurf();
     void releaseSharedSurf();
     ID3D11Device* getDevice();
 
@@ -108,11 +108,11 @@ public:
     bool bgraToNv12(NDIlib_video_frame_v2_t* frame);
     bool bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast);
 
-    bool mapFrame(AVFrame* rgb, AVFrame* a);
+    bool mapFrame(AVFrame* f);
     void unmapFrame();
 
-    void copyFrameD3D11(AVFrame* rgb, AVFrame* a);
-    void copyFrameQSV(AVFrame* rgb, AVFrame* a);
+    void copyFrameD3D11(AVFrame* f);
+    void copyFrameQSV(AVFrame* f);
 };
 
 #endif // BGRANV12_H

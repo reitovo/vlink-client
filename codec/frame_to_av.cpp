@@ -9,7 +9,8 @@
 #include "core/vtslink.h"
 #include "libyuv.h"
 #include <qsettings.h>
-#include "mfx/mfxcommon.h"  
+#include "mfx/mfxcommon.h"
+#include "ScreenGrab.h"
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
@@ -109,44 +110,28 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 			continue;
 
 		auto& e = o.name;
-		err = initRgb(o);
+		err = initCodec(o);
 		if (err.has_value()) {
-			qWarning() << "ndi2av init rgb encoder" << o.readable << "failed" << err.value();
+			qWarning() << "ndi2av init encoder" << o.readable << "failed" << err.value();
 			stop();
 			continue;
 		}
-		qDebug() << "ndi2av init rgb encoder" << o.readable << "succeed";
-		err = initA(o);
-		if (err.has_value()) {
-			qWarning() << "ndi2av init a encoder" << o.readable << "failed" << err.value();
-			stop();
-			continue;
-		}
-		qDebug() << "ndi2av init a encoder" << o.readable << "succeed";
+		qDebug() << "ndi2av init encoder" << o.readable << "succeed";
 
 		int code;
 		if (o.mode & FRAME_TO_AV_TYPE_DXFULL) {
-			if ((code = av_hwframe_get_buffer(ctx_rgb->hw_frames_ctx, frame_rgb, 0)) != 0) {
+			if ((code = av_hwframe_get_buffer(ctx->hw_frames_ctx, frame, 0)) != 0) {
 				qWarning("Could not get hw frame rgb %s\n", av_err2str(code));
-				stop();
-				continue;
-			}
-			if ((code = av_hwframe_get_buffer(ctx_a->hw_frames_ctx, frame_a, 0)) != 0) {
-				qWarning("Could not get hw frame a %s\n", av_err2str(code));
 				stop();
 				continue;
 			}
 		}
 		else if (o.mode & FRAME_TO_AV_TYPE_LIBYUV) {
-			if ((code = av_frame_get_buffer(frame_rgb, 0)) < 0) {
+			if ((code = av_frame_get_buffer(frame, 0)) < 0) {
 				qDebug() << "alloc frame buffer rgb failed" << av_err2str(code);
 				return "alloc buffer";
 			}
-			if ((code = av_frame_get_buffer(frame_a, 0)) < 0) {
-				qDebug() << "alloc frame buffer a failed" << av_err2str(code);
-				return "alloc buffer";
-			}
-			memset(frame_a->data[1], 128, xres * yres / 2);
+			memset(frame->data[1], 128, xres * yres / 2 * 2);
 		}
 
 		qDebug() << "using" << o.readable;
@@ -174,87 +159,45 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 
 #define ASSERT_SUCCESS_RESULT(x) {auto e = x; if (e.has_value()) return e;}
 
-std::optional<QString> FrameToAv::initRgb(const CodecOption& option)
+std::optional<QString> FrameToAv::initCodec(const CodecOption& option)
 {
 	int err;
 
-	codec_rgb = avcodec_find_encoder_by_name(option.name.toStdString().c_str());
-	if (!codec_rgb) {
+    codec = avcodec_find_encoder_by_name(option.name.toStdString().c_str());
+	if (!codec) {
 		qDebug("Cannot open codec\n");
 		return "find av codec";
 	}
 
-	ctx_rgb = avcodec_alloc_context3(codec_rgb);
-	if (!ctx_rgb) {
+    ctx = avcodec_alloc_context3(codec);
+	if (!ctx) {
 		qDebug("Could not allocate video codec context\n");
 		return "codec alloc ctx";
 	}
 
-	ctx_rgb->width = xres;
-	ctx_rgb->height = yres;
-	ctx_rgb->time_base.den = ctx_rgb->framerate.num = frameD;
-	ctx_rgb->time_base.num = ctx_rgb->framerate.den = frameN;
-	ctx_rgb->pkt_timebase = ctx_rgb->time_base;
+    ctx->width = xres;
+    ctx->height = yres * 2;
+    ctx->time_base.den = ctx->framerate.num = frameD;
+    ctx->time_base.num = ctx->framerate.den = frameN;
+    ctx->pkt_timebase = ctx->time_base;
 
-	initEncodingParameter(option, ctx_rgb);
-	ASSERT_SUCCESS_RESULT(initOptimalEncoder(option, ctx_rgb));
+	initEncodingParameter(option, ctx);
+	ASSERT_SUCCESS_RESULT(initOptimalEncoder(option, ctx));
 
-	if ((err = avcodec_open2(ctx_rgb, codec_rgb, nullptr)) < 0) {
+	if ((err = avcodec_open2(ctx, codec, nullptr)) < 0) {
 		qDebug("Could not open codec %s\n", av_err2str(err));
 		return "open codec";
 	}
 
-	frame_rgb = av_frame_alloc();
-	if (!frame_rgb) {
+    frame = av_frame_alloc();
+	if (!frame) {
 		qDebug("Could not alloc sw frame\n");
 		return "frame alloc";
 	}
-	frame_rgb->format = getPixelFormatOf(option.mode);
-	frame_rgb->width = ctx_rgb->width;
-	frame_rgb->height = ctx_rgb->height; 
+    frame->format = getPixelFormatOf(option.mode);
+    frame->width = ctx->width;
+    frame->height = ctx->height;
 
-	return {};
-}
-
-std::optional<QString> FrameToAv::initA(const CodecOption& option)
-{
-	int err;
-
-	codec_a = avcodec_find_encoder_by_name(option.name.toStdString().c_str());
-	if (!codec_a) {
-		qDebug("Cannot open codec\n");
-		return "find av codec";
-	}
-
-	ctx_a = avcodec_alloc_context3(codec_a);
-	if (!ctx_a) {
-		qDebug("Could not allocate video codec context\n");
-		return "codec alloc ctx";
-	}
-
-	ctx_a->width = xres;
-	ctx_a->height = yres;
-	ctx_a->time_base.den = ctx_a->framerate.num = frameD;
-	ctx_a->time_base.num = ctx_a->framerate.den = frameN;
-	ctx_a->pkt_timebase = ctx_a->time_base;
-
-	initEncodingParameter(option, ctx_a);
-	ASSERT_SUCCESS_RESULT(initOptimalEncoder(option, ctx_a));
-
-	if ((err = avcodec_open2(ctx_a, codec_a, nullptr)) < 0) {
-		qDebug("Could not open codec %s\n", av_err2str(err));
-		return "open codec";
-	}
-
-	frame_a = av_frame_alloc();
-	if (!frame_a) {
-		qDebug("Could not alloc sw frame\n");
-		return "frame alloc";
-	}
-	frame_a->format = getPixelFormatOf(option.mode);
-	frame_a->width = ctx_rgb->width;
-	frame_a->height = ctx_rgb->height;
-	 
 	return {};
 }
 
@@ -397,7 +340,8 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-		av_opt_set(ctx->priv_data, "preset", "ull", 0);
+        av_opt_set(ctx->priv_data, "preset", "p4", 0);
+        av_opt_set(ctx->priv_data, "tune", "ull", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
 		av_opt_set_int(ctx->priv_data, "qp", 40, 0);
@@ -465,32 +409,32 @@ std::optional<QString> FrameToAv::process(NDIlib_video_frame_v2_t* ndi)
 	//Elapsed e1("convert");
 	if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_D3D11) {
 		nv12->bgraToNv12(ndi);
-		nv12->copyFrameD3D11(frame_rgb, frame_a);
+		nv12->copyFrameD3D11(frame);
 	}
 	else if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_QSV) {
 		nv12->bgraToNv12(ndi);
-		nv12->copyFrameQSV(frame_rgb, frame_a);
+		nv12->copyFrameQSV(frame);
 	}
 	else if (currentOption.mode == FRAME_TO_AV_MODE_DXMAP) {
 		nv12->bgraToNv12(ndi);
-		nv12->mapFrame(frame_rgb, frame_a);
+		nv12->mapFrame(frame);
 	}
 	else if (currentOption.mode == FRAME_TO_AV_MODE_LIBYUV_BGRA) {
 		libyuv::ARGBToNV12(ndi->p_data, ndi->line_stride_in_bytes,
-			frame_rgb->data[0], frame_rgb->linesize[0],
-			frame_rgb->data[1], frame_rgb->linesize[1],
-			ndi->xres, ndi->yres);
+                           frame->data[0], frame->linesize[0],
+                           frame->data[1], frame->linesize[1],
+                           ndi->xres, ndi->yres);
 		libyuv::ARGBExtractAlpha(ndi->p_data, ndi->line_stride_in_bytes,
-			frame_a->data[0], frame_a->linesize[0],
+			frame->data[0] + ndi->xres * ndi->yres, frame->linesize[0],
 			ndi->xres, ndi->yres);
 	}
 	else if (currentOption.mode == FRAME_TO_AV_MODE_LIBYUV_UYVA) {
 		libyuv::UYVYToNV12(ndi->p_data, ndi->line_stride_in_bytes,
-			frame_rgb->data[0], frame_rgb->linesize[0],
-			frame_rgb->data[1], frame_rgb->linesize[1],
-			ndi->xres, ndi->yres);
+                           frame->data[0], frame->linesize[0],
+                           frame->data[1], frame->linesize[1],
+                           ndi->xres, ndi->yres);
 		libyuv::CopyPlane(ndi->p_data + ndi->yres * ndi->line_stride_in_bytes, ndi->xres,
-			frame_a->data[0], frame_a->linesize[0],
+            frame->data[0] + ndi->xres * ndi->yres, frame->linesize[0],
 			ndi->xres, ndi->yres);
 	}
 	//e1.end();
@@ -510,11 +454,11 @@ std::optional<QString> FrameToAv::processFast(const std::shared_ptr<DxToFrame>& 
 
     if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_D3D11) {
         nv12->bgraToNv12Fast(fast);
-        nv12->copyFrameD3D11(frame_rgb, frame_a);
+        nv12->copyFrameD3D11(frame);
     }
     else if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_QSV) {
         nv12->bgraToNv12Fast(fast);
-        nv12->copyFrameQSV(frame_rgb, frame_a);
+        nv12->copyFrameQSV(frame);
     }
 
     auto r = processInternal();
@@ -537,10 +481,8 @@ void FrameToAv::stop()
 	pts = 0;
 	nv12 = nullptr;
 	av_packet_free(&packet);
-	av_frame_free(&frame_rgb);
-	av_frame_free(&frame_a);
-	avcodec_free_context(&ctx_rgb);
-	avcodec_free_context(&ctx_a);
+	av_frame_free(&frame);
+	avcodec_free_context(&ctx);
 }
 
 const QList<CodecOption>& FrameToAv::getEncoders() {
@@ -551,7 +493,7 @@ std::optional<QString> FrameToAv::processInternal() {
     int ret;
 
     pts++;
-    frame_rgb->pts = frame_a->pts = pts;
+    frame->pts = pts;
     auto msg = std::make_shared<VtsMsg>();
     msg->set_type(VTS_MSG_AVFRAME);
     auto avFrame = msg->mutable_avframe();
@@ -559,8 +501,12 @@ std::optional<QString> FrameToAv::processInternal() {
 
     QStringList err;
 
+//    auto* device_ctx = reinterpret_cast<AVHWDeviceContext*>(ctx->hw_device_ctx->data);
+//    auto* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
+//    saveTextureToFile(d3d11va_device_ctx->device_context, (ID3D11Texture2D*) frame->data[0], "./bgra_nv12_output.png");
+
     //Elapsed e2("encode");
-    ret = avcodec_send_frame(ctx_rgb, frame_rgb);
+    ret = avcodec_send_frame(ctx, frame);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
         err.append("send frame");
@@ -568,7 +514,7 @@ std::optional<QString> FrameToAv::processInternal() {
 
     while (ret >= 0) {
         packet->stream_index = 0;
-        ret = avcodec_receive_packet(ctx_rgb, packet);
+        ret = avcodec_receive_packet(ctx, packet);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
             break;
         else if (ret < 0) {
@@ -584,31 +530,6 @@ std::optional<QString> FrameToAv::processInternal() {
 
         av_packet_unref(packet);
     }
-
-    ret = avcodec_send_frame(ctx_a, frame_a);
-    if (ret < 0) {
-        qDebug() << "error sending frame for a encoding" << av_err2str(ret);
-        err.append("send frame");
-    }
-
-    while (ret >= 0) {
-        ret = avcodec_receive_packet(ctx_a, packet);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-            break;
-        else if (ret < 0) {
-            qDebug() << "error recving packet for a encoding";
-            err.append("recv packet");
-        }
-
-        //qDebug() << "a packet" << packet->size;
-        auto d = avFrame->add_apackets();
-        d->mutable_data()->assign((const char*)packet->data, packet->size);
-        d->set_dts(packet->dts);
-        d->set_pts(packet->pts);
-
-        av_packet_unref(packet);
-    }
-    //e2.end();
 
     if (currentOption.mode == FRAME_TO_AV_MODE_DXMAP) {
         nv12->unmapFrame();

@@ -18,9 +18,8 @@ struct PixelShaderInput
 
 struct PS_OUTPUT
 {
-    float  rgb_y   : SV_Target0;
-    float2 rgb_uv  : SV_Target1;
-    float  a_y     : SV_Target2;
+    float  p_y   : SV_Target0;
+    float2 p_uv  : SV_Target1;
 };
 
 Texture2D<float4> bgraChannel        : t0;
@@ -39,15 +38,21 @@ static const float3x3 RGBtoYUVCoeffMatrix =
 PS_OUTPUT PS(PixelShaderInput input) : SV_TARGET
 {
         PS_OUTPUT output;
-        float4 bgra = bgraChannel.Sample(defaultSampler, input.texCoord);
+        if (input.texCoord.y <= 0.5f) {
+            float4 bgra = bgraChannel.Sample(defaultSampler, float2(input.texCoord.x, input.texCoord.y * 2));
 
-        float3 rgb = bgra.rgb;
-        float3 yuv = mul(rgb, RGBtoYUVCoeffMatrix);
-        yuv += float3(0.062745f, 0.501960f, 0.501960f);
-        yuv = saturate(yuv);
+            float3 rgb = bgra.rgb;
+            float3 yuv = mul(rgb, RGBtoYUVCoeffMatrix);
+            yuv += float3(0.062745f, 0.501960f, 0.501960f);
+            yuv = saturate(yuv);
 
-        output.rgb_y = yuv.x;
-        output.rgb_uv = yuv.yz;
-        output.a_y = bgra.a;
+            output.p_y = yuv.x;
+            output.p_uv = yuv.yz;
+        } else {
+            float4 bgra = bgraChannel.Sample(defaultSampler, float2(input.texCoord.x, input.texCoord.y * 2 - 1));
+
+            output.p_y = bgra.a;
+            output.p_uv = float2(0.501960f, 0.501960f);
+        }
         return output;
 }

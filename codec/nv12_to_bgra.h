@@ -64,11 +64,9 @@ class Nv12ToBgra
     ComPtr<ID3D11PixelShader> _d3d11_pixelShader = nullptr;
     ComPtr<ID3D11Buffer> _d3d11_vertexBuffer = nullptr;
 
-    ComPtr<ID3D11Texture2D> _texture_nv12_rgb = nullptr;
-    ComPtr<ID3D11Texture2D> _texture_nv12_a = nullptr;
+    ComPtr<ID3D11Texture2D> _texture_nv12 = nullptr;
     ComPtr<ID3D11ShaderResourceView> _luminanceView = nullptr;
     ComPtr<ID3D11ShaderResourceView> _chrominanceView = nullptr;
-    ComPtr<ID3D11ShaderResourceView> _alphaView = nullptr;
     ComPtr<ID3D11RenderTargetView> _renderTargetView = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba_target = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba_copy = nullptr;
@@ -77,12 +75,11 @@ class Nv12ToBgra
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
     DxFrameBuffer _frame_rgb_queue;
-    DxFrameBuffer _frame_a_queue;
 
     HANDLE _texture_rgba_copy_shared = nullptr;
 
-    uint32_t _width{ 0 };
-    uint32_t _height{ 0 };
+    uint32_t _width{ 1920 };
+    uint32_t _height{ 1080 };
 
     std::atomic_bool _inited = false;
 
@@ -94,14 +91,13 @@ public:
 
     bool init();
     bool compileShader();
-    void resetDeviceContext(int width, int height);
-    bool createSharedSurf(int width, int height);
+    void resetDeviceContext();
+    bool createSharedSurf();
     void createFramePool();
     void releaseSharedSurf();
     ID3D11Device* getDevice();
      
     void enqueueRgb(AVFrame* rgb);
-    void enqueueA(AVFrame* a);
     bool nv12ToBgra();
     bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
 };

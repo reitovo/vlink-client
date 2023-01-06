@@ -1,5 +1,6 @@
 #include "nv12_to_bgra.h"
 #include "core/util.h"
+#include "ScreenGrab.h"
 #include <d3d11.h>
 #include <dxcore.h>
 #include <DirectXMath.h>
@@ -64,6 +65,8 @@ Nv12ToBgra::~Nv12ToBgra() {
 
 bool Nv12ToBgra::compileShader()
 {
+    ID3DBlob* errs;
+
     QFile f1(":/shader/nv12bgra_vertex.hlsl");
     f1.open(QIODevice::ReadOnly);
     auto s = QString(f1.readAll()).toStdString();
@@ -78,9 +81,11 @@ bool Nv12ToBgra::compileShader()
     f2.open(QIODevice::ReadOnly);
     s = QString(f2.readAll()).toStdString();
     hr = D3DCompile(s.c_str(), s.size(), nullptr, nullptr, nullptr,
-                    "PS", "ps_5_0", 0, 0, _pixel_shader.GetAddressOf(), nullptr);
+                    "PS", "ps_5_0", 0, 0, _pixel_shader.GetAddressOf(), &errs);
     if (FAILED(hr)) {
         qCritical() << "failed compiling nv12bgra pixel shader";
+        auto e = std::string((char*)errs->GetBufferPointer(), errs->GetBufferSize());
+        qCritical("%s", e.c_str());
         return false;
     }
 
@@ -95,10 +100,8 @@ void Nv12ToBgra::releaseSharedSurf()
 
     COM_RESET(_chrominanceView);
     COM_RESET(_luminanceView);
-    COM_RESET(_alphaView);
 
-    COM_RESET(_texture_nv12_rgb);
-    COM_RESET(_texture_nv12_a);
+    COM_RESET(_texture_nv12);
     COM_RESET(_texture_rgba_target);
     COM_RESET(_texture_rgba_copy);
 
@@ -122,7 +125,7 @@ void Nv12ToBgra::enqueueRgb(AVFrame* rgb)
 
     auto f = _frame_rgb_queue.getFree();
 
-    D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
+    D3D11_BOX srcBox = { 0, 0, 0, _width, _height * 2, 1 };
 
     ID3D11Texture2D* textureRgb = (ID3D11Texture2D*)rgb->data[0];
     const int textureRgbIndex = (int)rgb->data[1];
@@ -137,30 +140,6 @@ void Nv12ToBgra::enqueueRgb(AVFrame* rgb)
     _frame_rgb_queue.enqueue(f, rgb->pts);
 }
 
-void Nv12ToBgra::enqueueA(AVFrame* a)
-{
-    if (a->format != AV_PIX_FMT_D3D11)
-        return;
-    if (!a->hw_frames_ctx)
-        return;
-
-    auto f = _frame_a_queue.getFree();
-
-    D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
-
-    ID3D11Texture2D* textureA = (ID3D11Texture2D*)a->data[0];
-    const int textureAIndex = (int)a->data[1];
-    //qDebug() << "copy a" << textureA << textureAIndex;
-
-    //bind/copy ffmpeg hw texture -> local d3d11 texture
-    this->_d3d11_deviceCtx->CopySubresourceRegion(
-        f.Get(), 0, 0, 0, 0,
-        textureA, textureAIndex, &srcBox
-    );
-
-    _frame_a_queue.enqueue(f, a->pts);
-}
-
 void Nv12ToBgra::createFramePool()
 {
     HRESULT hr;
@@ -170,7 +149,7 @@ void Nv12ToBgra::createFramePool()
     ZeroMemory(&texDesc_nv12, sizeof(texDesc_nv12));
     texDesc_nv12.Format = DXGI_FORMAT_NV12;
     texDesc_nv12.Width = _width;
-    texDesc_nv12.Height = _height;
+    texDesc_nv12.Height = _height * 2;
     texDesc_nv12.ArraySize = 1;
     texDesc_nv12.MipLevels = 1;
     texDesc_nv12.BindFlags = 0;
@@ -187,15 +166,6 @@ void Nv12ToBgra::createFramePool()
             return;
         }
         _frame_rgb_queue.addFree(tex);
-    }
-
-    for (int i = 0; i < 5; ++i) {
-        hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, tex.GetAddressOf());
-        if (FAILED(hr)) {
-            qDebug() << "nv12bgra create frame pool failed" << HRESULT_CODE(hr);
-            return;
-        }
-        _frame_a_queue.addFree(tex);
     }
 
     qDebug() << "nv12bgra create frame pool";
@@ -327,13 +297,8 @@ bool Nv12ToBgra::init()
 
     qDebug() << "nv12bgra create vertex buffer";
 
-    auto width = 1920;
-    auto height = 1080;
-
-    this->_width = width;
-    this->_height = height;
-    auto ret = createSharedSurf(width, height);
-    resetDeviceContext(width, height);
+    auto ret = createSharedSurf();
+    resetDeviceContext();
     createFramePool();
 
     _inited = true;
@@ -342,7 +307,7 @@ bool Nv12ToBgra::init()
     return ret;
 }
 
-void Nv12ToBgra::resetDeviceContext(int width, int height)
+void Nv12ToBgra::resetDeviceContext()
 {
     //init set
     this->_d3d11_deviceCtx->IASetInputLayout(this->_d3d11_inputLayout.Get());
@@ -359,10 +324,9 @@ void Nv12ToBgra::resetDeviceContext(int width, int height)
     qDebug() << "nv12bgra set context params";
 
     //SharedSurf
-    std::array<ID3D11ShaderResourceView*, 3> const textureViews = {
+    std::array<ID3D11ShaderResourceView*, 2> const textureViews = {
         this->_luminanceView.Get(),
-        this->_chrominanceView.Get(),
-        this->_alphaView.Get()
+        this->_chrominanceView.Get()
     };
     this->_d3d11_deviceCtx->PSSetShaderResources(0, textureViews.size(), textureViews.data());
     this->_d3d11_deviceCtx->OMSetRenderTargets(1, this->_renderTargetView.GetAddressOf(), nullptr);
@@ -370,8 +334,8 @@ void Nv12ToBgra::resetDeviceContext(int width, int height)
     qDebug() << "nv12bgra set context textures";
 
     D3D11_VIEWPORT VP;
-    VP.Width = static_cast<FLOAT>(width);
-    VP.Height = static_cast<FLOAT>(height);
+    VP.Width = static_cast<FLOAT>(_width);
+    VP.Height = static_cast<FLOAT>(_height);
     VP.MinDepth = 0.0f;
     VP.MaxDepth = 1.0f;
     VP.TopLeftX = 0;
@@ -379,14 +343,14 @@ void Nv12ToBgra::resetDeviceContext(int width, int height)
     this->_d3d11_deviceCtx->RSSetViewports(1, &VP);
     //this->_d3d11_deviceCtx->Dispatch(8, 8, 1);
     this->_d3d11_deviceCtx->Dispatch(
-                (UINT)ceil(width * 1.0 / 8),
-                (UINT)ceil(height * 1.0 / 8),
+                (UINT)ceil(_width * 1.0 / 8),
+                (UINT)ceil(_height * 2 * 1.0 / 8),
                 1);
 
     qDebug() << "nv12bgra set context viewport";
 }
 
-bool Nv12ToBgra::createSharedSurf(int width, int height)
+bool Nv12ToBgra::createSharedSurf()
 {
     //
     HRESULT hr{ 0 };
@@ -394,8 +358,8 @@ bool Nv12ToBgra::createSharedSurf(int width, int height)
     D3D11_TEXTURE2D_DESC texDesc_nv12;
     ZeroMemory(&texDesc_nv12, sizeof(texDesc_nv12));
     texDesc_nv12.Format = DXGI_FORMAT_NV12;
-    texDesc_nv12.Width = width;
-    texDesc_nv12.Height = height;
+    texDesc_nv12.Width = _width;
+    texDesc_nv12.Height = _height * 2;
     texDesc_nv12.ArraySize = 1;
     texDesc_nv12.MipLevels = 1;
     texDesc_nv12.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -405,28 +369,19 @@ bool Nv12ToBgra::createSharedSurf(int width, int height)
     texDesc_nv12.SampleDesc.Quality = 0;
     texDesc_nv12.MiscFlags = 0;
 
-    hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_rgb.GetAddressOf());
+    hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12.GetAddressOf());
     if (FAILED(hr))
         return false;
 
     qDebug() << "nv12bgra create texture nv12 rgb";
 
     std::string name = "nv12bgra nv12 rgb";
-    _texture_nv12_rgb->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
-
-    hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_a.GetAddressOf());
-    if (FAILED(hr))
-        return false;
-
-    qDebug() << "nv12bgra create texture nv12 a";
-
-    name = "nv12bgra nv12 a";
-    _texture_nv12_a->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
+    _texture_nv12->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const luminancePlaneDesc
-            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12_rgb.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8_UNORM);
-    hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12_rgb.Get(), &luminancePlaneDesc, this->_luminanceView.GetAddressOf());
+            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8_UNORM);
+    hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12.Get(), &luminancePlaneDesc, this->_luminanceView.GetAddressOf());
     if (FAILED(hr))
         return false;
 
@@ -434,31 +389,22 @@ bool Nv12ToBgra::createSharedSurf(int width, int height)
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const chrominancePlaneDesc
-            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12_rgb.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8_UNORM);
-    hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12_rgb.Get(), &chrominancePlaneDesc, this->_chrominanceView.GetAddressOf());
+            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8_UNORM);
+    hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12.Get(), &chrominancePlaneDesc, this->_chrominanceView.GetAddressOf());
     if (FAILED(hr))
         return false;
 
     qDebug() << "nv12bgra create shader resview nv12 rgb c";
 
-    //
-    D3D11_SHADER_RESOURCE_VIEW_DESC const alphaPlaneDesc
-            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12_a.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8_UNORM);
-    hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12_a.Get(), &alphaPlaneDesc, this->_alphaView.GetAddressOf());
-    if (FAILED(hr))
-        return false;
-
-    qDebug() << "nv12bgra create shader resview nv12 a";
-
 
     D3D11_TEXTURE2D_DESC texDesc_rgba;
     ZeroMemory(&texDesc_rgba, sizeof(texDesc_rgba));
     texDesc_rgba.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    texDesc_rgba.Width = width;
-    texDesc_rgba.Height = height;
+    texDesc_rgba.Width = _width;
+    texDesc_rgba.Height = _height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
-    texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+    texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;
     texDesc_rgba.Usage = D3D11_USAGE_DEFAULT;
     texDesc_rgba.CPUAccessFlags = 0;
     texDesc_rgba.SampleDesc.Count = 1;
@@ -515,24 +461,16 @@ bool Nv12ToBgra::nv12ToBgra()
         return false;
     }
 
-    if (_frame_rgb_queue.size() == 0 || _frame_a_queue.size() == 0)
+    if (_frame_rgb_queue.size() == 0)
         return false;
-
-    if (_frame_rgb_queue.topPts() != _frame_a_queue.topPts()) {
-        qDebug() << "rgb a unaligned" << _frame_rgb_queue.topPts() << _frame_a_queue.topPts();
-        _frame_rgb_queue.clear();
-        _frame_a_queue.clear();
-        return false;
-    }
 
     auto rgb = _frame_rgb_queue.dequeue();
-    auto a = _frame_a_queue.dequeue();
      
-    this->_d3d11_deviceCtx->CopyResource(this->_texture_nv12_rgb.Get(), rgb.Get());
-    this->_d3d11_deviceCtx->CopyResource(this->_texture_nv12_a.Get(), a.Get()); 
+    this->_d3d11_deviceCtx->CopyResource(this->_texture_nv12.Get(), rgb.Get());
+
+    //saveTextureToFile(_d3d11_deviceCtx.Get(), _texture_nv12.Get(), "./nv12_bgra_input.png");
 
     _frame_rgb_queue.addFree(rgb);
-    _frame_a_queue.addFree(a);
 
     //    qDebug() << "clear";
     //    FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -546,6 +484,8 @@ bool Nv12ToBgra::nv12ToBgra()
     //qDebug() << "copy to buffer";
     this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
     this->_d3d11_deviceCtx->Flush();
+
+    //saveTextureToFile(_d3d11_deviceCtx.Get(), _texture_rgba_copy.Get(), "./nv12_bgra_output.png");
 
     lock.unlock();
 

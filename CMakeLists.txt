@@ -189,6 +189,13 @@ add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if
         "${NDI_SDK_DIR}/Bin/x64/Processing.NDI.Lib.x64.dll"
         $<TARGET_FILE_DIR:VTSLink>)
 
+find_package(directxtk CONFIG REQUIRED)
+target_link_libraries(VTSLink PRIVATE Microsoft::DirectXTK)
+
+set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/x64-windows/share/opencv2")
+find_package(OpenCV REQUIRED)
+target_link_libraries(VTSLink PRIVATE opencv_core opencv_imgproc opencv_contrib)
+
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)
 # Brotli decoder library

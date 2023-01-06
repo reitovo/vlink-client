@@ -50,20 +50,15 @@ private:
 
     AVPacket *packet = nullptr;
     //rgb
-    AVCodecContext *ctx_rgb = nullptr;
-    const AVCodec* codec_rgb = nullptr;
-    AVFrame* frame_rgb = nullptr;
-    //alpha
-    AVCodecContext *ctx_a = nullptr;
-    const AVCodec* codec_a = nullptr;
-    AVFrame* frame_a = nullptr;
+    AVCodecContext *ctx = nullptr;
+    const AVCodec* codec = nullptr;
+    AVFrame* frame = nullptr;
 
     int pts = 0; 
 
     FpsCounter fps;
 
-    std::optional<QString> initRgb(AVCodecID);
-    std::optional<QString> initA(AVCodecID);
+    std::optional<QString> initCodec(AVCodecID);
 
     QThread processThread;
 

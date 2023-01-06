@@ -1,5 +1,116 @@
 #include "util.h"
+#include "DirectXHelpers.h"
 #include <d3d11.h>
+#include <wrl/client.h>
+#include "libyuv.h"
+#include "opencv2/opencv.hpp"
+
+using Microsoft::WRL::ComPtr;
+
+namespace
+{
+    //--------------------------------------------------------------------------------------
+    HRESULT CaptureTexture(
+            _In_ ID3D11DeviceContext* pContext,
+            _In_ ID3D11Resource* pSource,
+            D3D11_TEXTURE2D_DESC& desc,
+            ComPtr<ID3D11Texture2D>& pStaging) noexcept
+    {
+        if (!pContext || !pSource)
+            return E_INVALIDARG;
+
+        D3D11_RESOURCE_DIMENSION resType = D3D11_RESOURCE_DIMENSION_UNKNOWN;
+        pSource->GetType(&resType);
+
+        if (resType != D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+        {
+            return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+        }
+
+        ComPtr<ID3D11Texture2D> pTexture;
+        HRESULT hr = pSource->QueryInterface(IID_GRAPHICS_PPV_ARGS(pTexture.GetAddressOf()));
+        if (FAILED(hr))
+            return hr;
+
+        assert(pTexture);
+
+        pTexture->GetDesc(&desc);
+
+
+        ComPtr<ID3D11Device> d3dDevice;
+        pContext->GetDevice(d3dDevice.GetAddressOf());
+
+        if (desc.SampleDesc.Count > 1)
+        {
+            // MSAA content must be resolved before being copied to a staging texture
+            desc.SampleDesc.Count = 1;
+            desc.SampleDesc.Quality = 0;
+
+            ComPtr<ID3D11Texture2D> pTemp;
+            hr = d3dDevice->CreateTexture2D(&desc, nullptr, pTemp.GetAddressOf());
+            if (FAILED(hr))
+                return hr;
+
+            assert(pTemp);
+
+            const DXGI_FORMAT fmt = desc.Format;
+
+            UINT support = 0;
+            hr = d3dDevice->CheckFormatSupport(fmt, &support);
+            if (FAILED(hr))
+                return hr;
+
+            if (!(support & D3D11_FORMAT_SUPPORT_MULTISAMPLE_RESOLVE))
+                return E_FAIL;
+
+            for (UINT item = 0; item < desc.ArraySize; ++item)
+            {
+                for (UINT level = 0; level < desc.MipLevels; ++level)
+                {
+                    const UINT index = D3D11CalcSubresource(level, item, desc.MipLevels);
+                    pContext->ResolveSubresource(pTemp.Get(), index, pSource, index, fmt);
+                }
+            }
+
+            desc.BindFlags = 0;
+            desc.MiscFlags &= D3D11_RESOURCE_MISC_TEXTURECUBE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            desc.Usage = D3D11_USAGE_STAGING;
+
+            hr = d3dDevice->CreateTexture2D(&desc, nullptr, pStaging.ReleaseAndGetAddressOf());
+            if (FAILED(hr))
+                return hr;
+
+            assert(pStaging);
+
+            pContext->CopyResource(pStaging.Get(), pTemp.Get());
+        }
+        else if ((desc.Usage == D3D11_USAGE_STAGING) && (desc.CPUAccessFlags & D3D11_CPU_ACCESS_READ))
+        {
+            // Handle case where the source is already a staging texture we can use directly
+            pStaging = pTexture;
+        }
+        else
+        {
+            // Otherwise, create a staging texture from the non-MSAA source
+            desc.BindFlags = 0;
+            desc.MiscFlags &= D3D11_RESOURCE_MISC_TEXTURECUBE;
+            desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+            desc.Usage = D3D11_USAGE_STAGING;
+
+            hr = d3dDevice->CreateTexture2D(&desc, nullptr, pStaging.ReleaseAndGetAddressOf());
+            if (FAILED(hr))
+                return hr;
+
+            assert(pStaging);
+
+            pContext->CopyResource(pStaging.Get(), pSource);
+        }
+
+        return S_OK;
+    }
+} // anonymous namespace
+
 
 Elapsed::Elapsed(const QString &name)
 {
@@ -43,6 +154,35 @@ void printDxDebugInfo(ID3D11Device *dev)
     }
 
     debug_info_queue->ClearStoredMessages();
+}
+
+void saveTextureToFile(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, QString name) {
+    D3D11_TEXTURE2D_DESC desc = {};
+    ComPtr<ID3D11Texture2D> pStaging;
+    HRESULT hr = CaptureTexture(pContext, pSource, desc, pStaging);
+    if (FAILED(hr))
+        return;
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    hr = pContext->Map(pStaging.Get(), 0, D3D11_MAP_READ, 0, &mapped);
+    if (FAILED(hr))
+        return;
+
+    auto bgra = std::make_unique<uint8_t[]>(desc.Width * desc.Height * 4);
+
+    if (desc.Format == DXGI_FORMAT_NV12) {
+        libyuv::NV12ToARGB((uint8_t*)mapped.pData, mapped.RowPitch,
+                           (uint8_t*)mapped.pData + mapped.RowPitch * desc.Height, mapped.RowPitch,
+                           bgra.get(), desc.Width * 4, desc.Width, desc.Height);
+    } else if (desc.Format == DXGI_FORMAT_B8G8R8A8_UNORM) {
+        libyuv::ARGBCopy((uint8_t*)mapped.pData, mapped.RowPitch, bgra.get(), desc.Width*4, desc.Width, desc.Height);
+    }
+
+    pContext->Unmap(pStaging.Get(), 0);
+
+    cv::Mat mat(desc.Height, desc.Width, CV_8UC4, bgra.get());
+    cv::imshow(name.toStdString(), mat);
+    cv::waitKey(1);
 }
 
 void FpsCounter::add(long nsConsumed)

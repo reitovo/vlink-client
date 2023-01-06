@@ -10,6 +10,7 @@
 #include <dxgi1_2.h>
 #include <mfx/mfxcommon.h>
 #include <mfx/mfxstructures.h>
+#include <directxtk/ScreenGrab.h>
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -125,19 +126,15 @@ void BgraToNv12::releaseSharedSurf()
 	COM_RESET(_bgraView);
 	COM_RESET(_downsampleView);
 
-	COM_RESET(_rtv_nv12_rgb_y);
-	COM_RESET(_rtv_nv12_rgb_uv);
-	COM_RESET(_rtv_nv12_a_y);
-	COM_RESET(_rtv_nv12_a_uv);
+	COM_RESET(_rtv_nv12_y);
+	COM_RESET(_rtv_nv12_uv);
 	COM_RESET(_rtv_bgra_uv);
 
 	COM_RESET(_texture_bgra);
 	COM_RESET(_texture_uv_target);
-	COM_RESET(_texture_uv_copy_target);
-	COM_RESET(_texture_nv12_rgb_target);
-	COM_RESET(_texture_nv12_a_target);
-	COM_RESET(_texture_nv12_rgb_copy_target);
-	COM_RESET(_texture_nv12_a_copy_target);
+    COM_RESET(_texture_uv_target_copy);
+	COM_RESET(_texture_nv12_target);
+	COM_RESET(_texture_nv12_copy_target);
 
 	this->_width = 0;
 	this->_height = 0;
@@ -297,11 +294,9 @@ bool BgraToNv12::init()
 
 	qDebug() << "bgranv12 create vertex buffer";
 
-	auto width = 1920;
-	auto height = 1080;
-	auto ret = createSharedSurf(width, height);
-	initDeviceContext(width, height);
-	initViewport(width, height);
+	auto ret = createSharedSurf();
+	initDeviceContext();
+	initViewport();
 
 	_inited = true;
 
@@ -309,7 +304,7 @@ bool BgraToNv12::init()
 	return ret;
 }
 
-void BgraToNv12::initDeviceContext(int width, int height)
+void BgraToNv12::initDeviceContext()
 {
 	//init
 	this->_d3d11_deviceCtx->IASetInputLayout(this->_d3d11_inputLayout.Get());
@@ -328,9 +323,8 @@ void BgraToNv12::initDeviceContext(int width, int height)
 	};
 
 	_bgra_nv24_rt = {
-		this->_rtv_nv12_rgb_y.Get(),
-		this->_rtv_bgra_uv.Get(),
-		this->_rtv_nv12_a_y.Get(),
+		this->_rtv_nv12_y.Get(),
+		this->_rtv_bgra_uv.Get()
 	};
 
 	//SharedSurf
@@ -339,21 +333,18 @@ void BgraToNv12::initDeviceContext(int width, int height)
 	};
 
 	_nv24_nv12_rt = {
-		this->_rtv_nv12_rgb_uv.Get()
+		this->_rtv_nv12_uv.Get()
 	};
 
 	qDebug() << "bgranv12 set context textures";
 
 	//this->_d3d11_deviceCtx->Dispatch(8, 8, 1);
 	this->_d3d11_deviceCtx->Dispatch(
-		(UINT)ceil(width * 1.0 / 8),
-		(UINT)ceil(height * 1.0 / 8),
+		(UINT)ceil(_width * 1.0 / 8),
+		(UINT)ceil(_height * 2 * 1.0 / 8),
 		1);
 
 	qDebug() << "bgranv12 set dispatch";
-
-	this->_width = width;
-	this->_height = height;
 }
 
 void BgraToNv12::setBgraToNv24Context()
@@ -372,11 +363,11 @@ void BgraToNv12::setNv24ToNv12Context()
 	this->_d3d11_deviceCtx->PSSetShader(this->_d3d11_nv24_nv12_ps.Get(), nullptr, 0);
 }
 
-void BgraToNv12::initViewport(int width, int height)
+void BgraToNv12::initViewport()
 {
 	D3D11_VIEWPORT VP;
-	VP.Width = static_cast<FLOAT>(width);
-	VP.Height = static_cast<FLOAT>(height);
+	VP.Width = static_cast<FLOAT>(_width);
+	VP.Height = static_cast<FLOAT>(_height * 2);
 	VP.MinDepth = 0.0f;
 	VP.MaxDepth = 1.0f;
 	VP.TopLeftX = 0;
@@ -386,7 +377,7 @@ void BgraToNv12::initViewport(int width, int height)
 	qDebug() << "bgranv12 set context viewport";
 }
 
-bool BgraToNv12::createSharedSurf(int width, int height)
+bool BgraToNv12::createSharedSurf()
 {
 	//
 	HRESULT hr{ 0 };
@@ -395,8 +386,8 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	D3D11_TEXTURE2D_DESC texDesc_input_bgra;
 	ZeroMemory(&texDesc_input_bgra, sizeof(texDesc_input_bgra));
 	texDesc_input_bgra.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	texDesc_input_bgra.Width = width;
-	texDesc_input_bgra.Height = height;
+	texDesc_input_bgra.Width = _width;
+	texDesc_input_bgra.Height = _height;
 	texDesc_input_bgra.ArraySize = 1;
 	texDesc_input_bgra.MipLevels = 1;
 	texDesc_input_bgra.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -428,8 +419,8 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	D3D11_TEXTURE2D_DESC texDesc_nv12;
 	ZeroMemory(&texDesc_nv12, sizeof(texDesc_nv12));
 	texDesc_nv12.Format = DXGI_FORMAT_NV12;
-	texDesc_nv12.Width = width;
-	texDesc_nv12.Height = height;
+	texDesc_nv12.Width = _width;
+	texDesc_nv12.Height = _height * 2;
 	texDesc_nv12.ArraySize = 1;
 	texDesc_nv12.MipLevels = 1;
 	texDesc_nv12.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -439,51 +430,33 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	texDesc_nv12.SampleDesc.Quality = 0;
 	texDesc_nv12.MiscFlags = 0;
 
-	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_rgb_target.GetAddressOf());
+	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_target.GetAddressOf());
 	if (FAILED(hr))
 		return false;
 
-	qDebug() << "bgranv12 create texture nv12 rgb";
+	qDebug() << "bgranv12 create texture nv12";
 
-	name = "bgranv12 nv12 rgb";
-	_texture_nv12_rgb_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
-
-	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_a_target.GetAddressOf());
-	if (FAILED(hr))
-		return false;
-
-	qDebug() << "bgranv12 create texture nv12 a";
-
-	name = "bgranv12 nv12 a";
-	_texture_nv12_a_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
+	name = "bgranv12 nv12";
+    _texture_nv12_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 
 	texDesc_nv12.BindFlags = 0;
 	texDesc_nv12.Usage = D3D11_USAGE_STAGING;
 	texDesc_nv12.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_rgb_copy_target.GetAddressOf());
+	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_copy_target.GetAddressOf());
 	if (FAILED(hr))
 		return false;
 
 	qDebug() << "bgranv12 create texture nv12 rgb copy";
 
 	name = "bgranv12 nv12 rgb copy";
-	_texture_nv12_rgb_copy_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
-
-	hr = this->_d3d11_device->CreateTexture2D(&texDesc_nv12, nullptr, this->_texture_nv12_a_copy_target.GetAddressOf());
-	if (FAILED(hr))
-		return false;
-
-	qDebug() << "bgranv12 create texture nv12 a copy";
-
-	name = "bgranv12 nv12 a copy";
-	_texture_nv12_a_copy_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
+    _texture_nv12_copy_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 
 	// create a full size uv plane for rgb
 	D3D11_TEXTURE2D_DESC texDesc_uv;
 	ZeroMemory(&texDesc_uv, sizeof(texDesc_uv));
 	texDesc_uv.Format = DXGI_FORMAT_R8G8_UNORM;
-	texDesc_uv.Width = width;
-	texDesc_uv.Height = height;
+	texDesc_uv.Width = _width;
+	texDesc_uv.Height = _height * 2;
 	texDesc_uv.ArraySize = 1;
 	texDesc_uv.MipLevels = 1;
 	texDesc_uv.BindFlags = D3D11_BIND_RENDER_TARGET;
@@ -501,19 +474,19 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	name = "bgranv12 bgra uv";
 	_texture_uv_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 
-	texDesc_uv.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	hr = this->_d3d11_device->CreateTexture2D(&texDesc_uv, nullptr, this->_texture_uv_copy_target.GetAddressOf());
-	if (FAILED(hr))
-		return false;
+    texDesc_uv.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    hr = this->_d3d11_device->CreateTexture2D(&texDesc_uv, nullptr, this->_texture_uv_target_copy.GetAddressOf());
+    if (FAILED(hr))
+        return false;
 
-	qDebug() << "bgranv12 create texture bgra uv copy";
+    qDebug() << "bgranv12 create texture bgra uv copy";
 
-	name = "bgranv12 bgra uv copy";
-	_texture_uv_copy_target->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
+    name = "bgranv12 bgra uv copy";
+    _texture_uv_target_copy->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC const downsamplePlaneDesc
-		= CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_uv_copy_target.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8_UNORM);
-	hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_uv_copy_target.Get(), &downsamplePlaneDesc, this->_downsampleView.GetAddressOf());
+		= CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_uv_target_copy.Get(), D3D11_SRV_DIMENSION_TEXTURE2D, DXGI_FORMAT_R8G8_UNORM);
+	hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_uv_target_copy.Get(), &downsamplePlaneDesc, this->_downsampleView.GetAddressOf());
 	if (FAILED(hr))
 		return false;
 
@@ -522,26 +495,16 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 	rtvDesc.Format = DXGI_FORMAT_R8_UNORM;
 	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.MipSlice = 0;
-	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_rgb_target.Get(), &rtvDesc, this->_rtv_nv12_rgb_y.GetAddressOf());
+	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_target.Get(), &rtvDesc, this->_rtv_nv12_y.GetAddressOf());
 	if (FAILED(hr))
 		return false;
-	qDebug() << "bgranv12 create nv12 rgb y rtv";
-
-	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_a_target.Get(), &rtvDesc, this->_rtv_nv12_a_y.GetAddressOf());
-	if (FAILED(hr))
-		return false;
-	qDebug() << "bgranv12 create nv12 rgb uv rtv";
+	qDebug() << "bgranv12 create nv12 y rtv";
 
 	rtvDesc.Format = DXGI_FORMAT_R8G8_UNORM;
-	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_rgb_target.Get(), &rtvDesc, this->_rtv_nv12_rgb_uv.GetAddressOf());
+	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_target.Get(), &rtvDesc, this->_rtv_nv12_uv.GetAddressOf());
 	if (FAILED(hr))
 		return false;
-	qDebug() << "bgranv12 create nv12 a y rtv";
-
-	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_nv12_a_target.Get(), &rtvDesc, this->_rtv_nv12_a_uv.GetAddressOf());
-	if (FAILED(hr))
-		return false;
-	qDebug() << "bgranv12 create nv12 a uv rtv";
+	qDebug() << "bgranv12 create nv12 uv rtv";
 
 	// create a full size uv rtv for rgb
 	hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_uv_target.Get(), &rtvDesc, this->_rtv_bgra_uv.GetAddressOf());
@@ -551,7 +514,7 @@ bool BgraToNv12::createSharedSurf(int width, int height)
 
 	// Set alpha stream's uv to 128, as it is a grayscale alpha channel stream
 	FLOAT a_uv_color[4] = { 0.501960, 0.501960, 0.501960, 1 };
-	this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_nv12_a_uv.Get(), a_uv_color);
+	this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_nv12_uv.Get(), a_uv_color);
 
 	qDebug() << "bgranv12 create render target views";
 
@@ -571,6 +534,7 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame)
 		return false;
 	}
 
+    // raw bgra tex, 1x height
 	D3D11_BOX dstBox = { 0, 0, 0, _width, _height, 1 };
 
 	//Elapsed e1("update subresource"); //~300000 ns
@@ -583,9 +547,7 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame)
 	this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
 	//e2.end();
 
-	//Elapsed e3("copy"); //~4000 ns
-	this->_d3d11_deviceCtx->CopyResource(_texture_uv_copy_target.Get(), _texture_uv_target.Get());
-	//e3.end();
+    this->_d3d11_deviceCtx->CopyResource(_texture_uv_target_copy.Get(), _texture_uv_target.Get());
 
 	//Elapsed e4("draw 2"); //~11100 ns
 	setNv24ToNv12Context();
@@ -604,7 +566,6 @@ bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast)
     if (!_inited) {
         return false;
     }
-    D3D11_BOX dstBox = { 0, 0, 0, _width, _height, 1 };
 
     //Elapsed e1("update subresource"); //~300000 ns
     if (fast != nullptr) {
@@ -619,9 +580,7 @@ bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast)
     this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
     //e2.end();
 
-    //Elapsed e3("copy"); //~4000 ns
-    this->_d3d11_deviceCtx->CopyResource(_texture_uv_copy_target.Get(), _texture_uv_target.Get());
-    //e3.end();
+    this->_d3d11_deviceCtx->CopyResource(_texture_uv_target_copy.Get(), _texture_uv_target.Get());
 
     //Elapsed e4("draw 2"); //~11100 ns
     setNv24ToNv12Context();
@@ -634,7 +593,7 @@ bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast)
 }
 
 // Extremely slow on some devices
-bool BgraToNv12::mapFrame(AVFrame* rgb, AVFrame* a)
+bool BgraToNv12::mapFrame(AVFrame* f)
 {
 	if (!_inited)
 		return false;
@@ -645,33 +604,21 @@ bool BgraToNv12::mapFrame(AVFrame* rgb, AVFrame* a)
 
 	lock.lock();
 
-	this->_d3d11_deviceCtx->CopyResource(_texture_nv12_rgb_copy_target.Get(),
-		_texture_nv12_rgb_target.Get());
-	this->_d3d11_deviceCtx->CopyResource(_texture_nv12_a_copy_target.Get(),
-		_texture_nv12_a_target.Get());
+	this->_d3d11_deviceCtx->CopyResource(_texture_nv12_copy_target.Get(),
+		_texture_nv12_target.Get());
 
 	D3D11_MAPPED_SUBRESOURCE ms;
 	//get texture output
 	//render target view only 1 sub resource https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-subresources
-	HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_nv12_rgb_copy_target.Get(),
+	HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_nv12_copy_target.Get(),
 		/*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
 	if (FAILED(hr))
 		return false;
 
-	rgb->data[0] = (uint8_t*)ms.pData;
-	rgb->data[1] = (uint8_t*)ms.pData + ms.RowPitch * _height;
-	rgb->linesize[0] = ms.RowPitch;
-	rgb->linesize[1] = ms.RowPitch;
-
-	hr = this->_d3d11_deviceCtx->Map(this->_texture_nv12_a_copy_target.Get(),
-		/*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
-	if (FAILED(hr))
-		return false;
-
-	a->data[0] = (uint8_t*)ms.pData;
-	a->data[1] = (uint8_t*)ms.pData + ms.RowPitch * _height;
-	a->linesize[0] = ms.RowPitch;
-	a->linesize[1] = ms.RowPitch;
+	f->data[0] = (uint8_t*)ms.pData;
+	f->data[1] = (uint8_t*)ms.pData + ms.RowPitch * _height * 2;
+	f->linesize[0] = ms.RowPitch;
+	f->linesize[1] = ms.RowPitch;
 
 	lock.unlock();
 
@@ -690,24 +637,22 @@ void BgraToNv12::unmapFrame()
 
 	lock.lock();
 
-	this->_d3d11_deviceCtx->Unmap(this->_texture_nv12_rgb_copy_target.Get(), 0);
-	this->_d3d11_deviceCtx->Unmap(this->_texture_nv12_a_copy_target.Get(), 0);
+	this->_d3d11_deviceCtx->Unmap(this->_texture_nv12_copy_target.Get(), 0);
 
 	lock.unlock();
 
 	_mapped = false;
 }
 
-void BgraToNv12::copyFrameD3D11(AVFrame* rgb, AVFrame* a)
+void BgraToNv12::copyFrameD3D11(AVFrame* f)
 {
 	if (!_inited)
 		return;
 
-	D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
-	this->_d3d11_deviceCtx->CopySubresourceRegion((ID3D11Resource*)rgb->data[0], (int)rgb->data[1], 0, 0, 0,
-		_texture_nv12_rgb_target.Get(), 0, &srcBox);
-	this->_d3d11_deviceCtx->CopySubresourceRegion((ID3D11Resource*)a->data[0], (int)a->data[1], 0, 0, 0,
-		_texture_nv12_a_target.Get(), 0, &srcBox);
+    // nv12 tex, 2x height
+	D3D11_BOX srcBox = { 0, 0, 0, _width, _height * 2, 1 };
+	this->_d3d11_deviceCtx->CopySubresourceRegion((ID3D11Resource*)f->data[0], (int)f->data[1], 0, 0, 0,
+		_texture_nv12_target.Get(), 0, &srcBox);
 }
 
 static void getD3D11TextureFromQSV(AVFrame* frame, ID3D11Resource** tex, int* id) {
@@ -717,20 +662,17 @@ static void getD3D11TextureFromQSV(AVFrame* frame, ID3D11Resource** tex, int* id
 	*id = pair->second == (mfxMemId)MFX_INFINITE ? 0 : (int)pair->second;
 }
 
-void BgraToNv12::copyFrameQSV(AVFrame* rgb, AVFrame* a)
+void BgraToNv12::copyFrameQSV(AVFrame* f)
 {
 	if (!_inited)
 		return;
 
-	D3D11_BOX srcBox = { 0, 0, 0, _width, _height, 1 };
+    // nv12 tex, 2x height
+	D3D11_BOX srcBox = { 0, 0, 0, _width, _height * 2, 1 };
 	ID3D11Resource* tex;
 	int id;
 
-	getD3D11TextureFromQSV(rgb, &tex, &id); 
+	getD3D11TextureFromQSV(f, &tex, &id);
 	this->_d3d11_deviceCtx->CopySubresourceRegion(tex, id, 0, 0, 0,
-		_texture_nv12_rgb_target.Get(), 0, &srcBox);
-
-	getD3D11TextureFromQSV(a, &tex, &id);
-	this->_d3d11_deviceCtx->CopySubresourceRegion(tex, id, 0, 0, 0,
-		_texture_nv12_a_target.Get(), 0, &srcBox);
+		_texture_nv12_target.Get(), 0, &srcBox);
 }
