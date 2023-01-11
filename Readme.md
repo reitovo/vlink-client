@@ -12,9 +12,11 @@
 
 ### 代码结构
 
-[前往介绍页](https://www.wolai.com/reito/kvnFPb7TXrPnjHcKk2x6MK)
+[前往介绍页](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN)
 
 ### 编译
+
+目前由于项目使用自己的`vcpkg`分支，还有一些PR正在流程中，因此目前无法正常编译，请等待PR被合并
 
 项目界面基于`Qt`，但使用`vcpkg`及`CMake`进行管理
 
