@@ -10,7 +10,6 @@
 #include "libyuv.h"
 #include <qsettings.h>
 #include "mfx/mfxcommon.h"
-#include "ScreenGrab.h"
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
@@ -344,7 +343,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         av_opt_set(ctx->priv_data, "tune", "ull", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
-		av_opt_set_int(ctx->priv_data, "qp", 40, 0);
+		av_opt_set_int(ctx->priv_data, "qp", 32, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
@@ -376,13 +375,13 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//av_opt_set_int(ctx->priv_data, "idr_interval", 1, 0);
 
 		ctx->flags |= AV_CODEC_FLAG_QSCALE;
-		ctx->global_quality = 36 * FF_QP2LAMBDA;
+		ctx->global_quality = 32 * FF_QP2LAMBDA;
 	}
 	else if (encoder == "libx264") {
 		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
-		av_opt_set_int(ctx->priv_data, "crf", 40, 0);
-		av_opt_set_int(ctx->priv_data, "qp", 40, 0);
+		av_opt_set_int(ctx->priv_data, "crf", 32, 0);
+		av_opt_set_int(ctx->priv_data, "qp", 32, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
 }
@@ -523,7 +522,7 @@ std::optional<QString> FrameToAv::processInternal() {
         }
 
         //qDebug() << "rgb packet" << packet->size;
-        auto d = avFrame->add_rgbpackets();
+        auto d = avFrame->add_packets();
         d->mutable_data()->assign((const char*)packet->data, packet->size);
         d->set_dts(packet->dts);
         d->set_pts(packet->pts);

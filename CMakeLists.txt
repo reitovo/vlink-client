@@ -28,8 +28,9 @@ set(PROTO_FILES
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 
 set(TS_FILES
-    translations/VTSLink_zh_CN.ts
-    translations/VTSLink_en_US.ts)
+        translations/VTSLink_zh_CN.ts
+        translations/VTSLink_en_US.ts
+        translations/VTSLink_ja_JP.ts)
 
 set(CODEC_FILES
         codec/frame_to_av.h
@@ -62,6 +63,7 @@ include_directories(.)
 include_directories(codec)
 
 set(PROJECT_SOURCES
+        token.h
         main.cpp
         resources.qrc
         core/vtslink.h
@@ -78,12 +80,14 @@ set(PROJECT_SOURCES
         ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
         ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
         ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
+        ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
         ${SHADER_FILES}
         ${CODEC_FILES}
         ${TS_FILES}
         ${PROTO_FILES}
         ${PROTO_SRCS} 
-        ${PROTO_HDRS})
+        ${PROTO_HDRS}
+        )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VTSLink
@@ -142,15 +146,22 @@ target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 #target_link_libraries(VTSLink PRIVATE ${WINSPARKLE_LIBRARY})
 
 #crashpad
-set(USE_ASAN 0) 
-if(USE_ASAN) 
+set(USE_ASAN OFF)
+set(USE_CRASHPAD ON)
+set(USE_DIRECTXTK_OPENCV OFF)
+
+if (USE_ASAN)
+    message(STATUS "Use Asan")
     target_compile_options(VTSLink PUBLIC -fsanitize=address)
-else()
+endif()
+
+if (USE_CRASHPAD AND NOT USE_ASAN)
+    message(STATUS "Use Crashpad")
     target_compile_definitions(VTSLink PUBLIC HAS_CRASHPAD)
     find_package(crashpad CONFIG REQUIRED)
     target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
 endif()
- 
+
 add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"
         $<TARGET_FILE_DIR:VTSLink>)
@@ -189,12 +200,33 @@ add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if
         "${NDI_SDK_DIR}/Bin/x64/Processing.NDI.Lib.x64.dll"
         $<TARGET_FILE_DIR:VTSLink>)
 
-find_package(directxtk CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE Microsoft::DirectXTK)
+# for debug purpose
+# directxtk
+if (USE_DIRECTXTK_OPENCV)
+    message(STATUS "Use DirectXTK")
+    target_compile_definitions(VTSLink PUBLIC HAS_DIRECTXTK)
+    find_package(directxtk CONFIG REQUIRED)
+    target_link_libraries(VTSLink PRIVATE Microsoft::DirectXTK)
+endif()
 
-set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/x64-windows/share/opencv2")
-find_package(OpenCV REQUIRED)
-target_link_libraries(VTSLink PRIVATE opencv_core opencv_imgproc opencv_contrib)
+# for debug purpose
+# opencv
+if (USE_DIRECTXTK_OPENCV)
+    message(STATUS "Use OpenCV")
+    target_compile_definitions(VTSLink PUBLIC HAS_OPENCV)
+    set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/x64-windows/share/opencv2")
+    find_package(OpenCV REQUIRED)
+    target_link_libraries(VTSLink PRIVATE opencv_core opencv_imgproc opencv_contrib)
+endif()
+
+# qrencode
+find_path(QRENCODE_INCLUDE_DIR NAMES qrencode.h)
+find_library(QRENCODE_LIBRARY_RELEASE qrencode)
+find_library(QRENCODE_LIBRARY_DEBUG qrencoded)
+set(QRENCODE_LIBRARIES optimized ${QRENCODE_LIBRARY_RELEASE} debug ${QRENCODE_LIBRARY_DEBUG})
+
+target_include_directories(VTSLink PRIVATE ${QRENCODE_INCLUDE_DIR})
+target_link_libraries(VTSLink PRIVATE ${QRENCODE_LIBRARIES})
 
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)
@@ -220,7 +252,6 @@ endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION ${CMAKE_INSTALL_BINDIR}
     FILES_MATCHING PATTERN "*.dll")
-     
 
 install(TARGETS VTSLink
     BUNDLE  DESTINATION .

@@ -15,6 +15,7 @@ extern "C" {
 }
  
 #include <Windows.h>
+#include "token.h"
 
 #ifdef HAS_CRASHPAD
 #include <client/crash_report_database.h>
@@ -28,7 +29,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 
 int main(int argc, char *argv[])
 {   
-    QFile log("vts.log");
+    QFile log("../vtslink.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();
 
@@ -112,11 +113,16 @@ void initializeCrashpad() {
     //改为自己的crashpad_handler.exe 路径
     QString exePath = "./crashpad_handler.exe";
 
-    std::string url("http://127.0.0.1:8000");
-    arguments.push_back("--no-rate-limit");
+    // Register your own token at backtrace.io!
+    std::string url("https://submit.backtrace.io/reito/" VTSLINK_BACKTRACE_SUBMIT_TOKEN "/minidump");
+    annotations["token"] = VTSLINK_BACKTRACE_SUBMIT_TOKEN;
+    annotations["format"] = "minidump";
+
+    arguments.emplace_back("--no-rate-limit");
+    arguments.emplace_back("--attachment=../vtslink.log");
 
     //放dump的文件夹 按需改
-    base::FilePath db(QString("crash").toStdWString());
+    base::FilePath db(QString("../crash").toStdWString());
     //crashpad_handler.exe 按需改
     base::FilePath handler(exePath.toStdWString());
 
@@ -178,7 +184,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
         break;
     }
 
-    QFile outFile("vts.log");
+    QFile outFile("../vtslink.log");
     outFile.open(QIODevice::WriteOnly | QIODevice::Append);
 
     QTextStream textStream(&outFile);

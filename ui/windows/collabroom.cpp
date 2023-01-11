@@ -30,6 +30,8 @@ extern "C" {
 #include "d3d_to_frame.h"
 #include "core/usage.h"
 #include "dxgioutput.h"
+#include "buyrelay.h"
+#include <QDesktopServices>
 
 CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     QDialog(parent),
@@ -74,7 +76,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         qDebug() << "Turn server" << turnServer;
     }
 
-    this->setWindowTitle(QString("%1 (%2) (%3:%4)").arg(tr("联动")).arg(role).arg(peerId.left(4)).arg(roomId.left(4)));
+    this->setWindowTitle(tr("VTube Studio 联动"));
 
     connectWebsocket();
 
@@ -90,6 +92,17 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->updateTurnServer, &QPushButton::clicked, this, &CollabRoom::updateTurnServer);
     connect(ui->relayHideShow, &QPushButton::clicked, this, &CollabRoom::toggleTurnVisible);
     connect(ui->openSettings, &QPushButton::clicked, this, &CollabRoom::openSetting);
+    connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
+
+    connect(ui->tutorialFaq, &QPushButton::clicked, this, [=]() {
+       QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
+    });
+    connect(ui->knowWhenRelay, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/7R2Z4gPzcZSvPVRUy9fkrP"));
+    });
+    connect(ui->knowDeployRelay, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/osFxEHHuiZNF3JMrhS6zV2"));
+    });
 
     // Not required, but "correct" (see the SDK documentation).
     if (!NDIlib_initialize()) {
@@ -203,7 +216,7 @@ QString CollabRoom::debugInfo()
         .arg(peerId).arg(ui->nick->text())
         .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
         .arg(sendProcessFps.stat())
-        .arg(isServer ? "Frame->Av (NDI Receive) " : "Frame->Dx (NDI Receive) ")
+        .arg(isServer ? "Frame->Dx (NDI Receive) " : "Frame->Av (NDI Receive) ")
         .arg(ndiRecvFps.stat());
 }
 
@@ -311,6 +324,14 @@ void CollabRoom::updateTurnServer()
 
     MainWindow::instance()->tray->showMessage(tr("设置成功"), tr("所有联动人将重新连接，请稍后"),
                                               MainWindow::instance()->tray->icon());
+
+    QJsonObject dto;
+    dto["type"] = "get";
+    QJsonDocument doc(dto);
+    auto content = QString::fromUtf8(doc.toJson());
+    qDebug() << content;
+
+    wsSendAsync(content.toStdString());
 }
 
 void CollabRoom::toggleTurnVisible()
@@ -439,6 +460,7 @@ void CollabRoom::connectWebsocket()
                 QThread::msleep(100);
             }
             qDebug() << "nat type" << QString(natProb.DescribeNatType(type).c_str());
+            localNatType = type;
 
             QJsonObject dto;
             dto["nat"] = type;
@@ -576,10 +598,10 @@ void CollabRoom::updatePeers(QJsonArray peers)
         }
     }
 
-    if (badNatList.empty()) {
-        ui->relayHint->setText(tr("当前无需中转服务器"));
+    if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat || localNatType == StunTypeRestrictedNat) {
+        ui->relayHint->setText(tr("当前无需中转服务器。如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。如需删除中转服务器，请清空地址后点击「连接中转服务器」即可"));
     } else {
-        ui->relayHint->setText(tr("当前需要中转服务器，因为以下用户 NAT 类型无法直接连接：") + badNatList.join(", "));
+        ui->relayHint->setText(tr("当前可能需要中转服务器。因为以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") + tr("。但如果连接各方网络存在 IPv6 可以使用，或许仍可以建立连接，请以最终是否能成功连接为准。"));
     }
 
     emit onUpdatePeersUi(peerUis);
@@ -612,7 +634,7 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         peersLock.unlock();
     });
 
-    auto initErr = cvt.init(1920, 1080, 1001, 60000, false);
+    auto initErr = cvt.init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, false);
     if (initErr.has_value()) {
         emit onNdiToFfmpegError(initErr.value());
         ndiToFfmpegRunning = false;
@@ -636,6 +658,11 @@ void CollabRoom::ndiToFfmpegWorkerClient()
 
     // Connect to our sources
     NDIlib_recv_connect(pNDI_recv, source);
+
+    int frameD = VTSLINK_FRAME_D;
+    int frameN = VTSLINK_FRAME_N;
+    int64_t frameCount = 0;
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (ndiToFfmpegRunning) {
         // The descriptors
@@ -667,6 +694,16 @@ void CollabRoom::ndiToFfmpegWorkerClient()
             }
 
             NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
+
+            frameCount++;
+            int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+            int64_t nextTime = startTime + frameTime;
+            int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            auto sleepTime = nextTime - currentTime;
+            if (sleepTime > 0) {
+                QThread::usleep(sleepTime);
+            }
+
             break;
         }
 
@@ -731,6 +768,11 @@ void CollabRoom::ndiToFfmpegWorkerServer()
     // Connect to our sources
     NDIlib_recv_connect(pNDI_recv, source);
 
+    int frameD = VTSLINK_FRAME_D;
+    int frameN = VTSLINK_FRAME_N;
+    int64_t frameCount = 0;
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
     while (ndiToFfmpegRunning) {
         // The descriptors
         NDIlib_video_frame_v2_t video_frame;
@@ -756,6 +798,16 @@ void CollabRoom::ndiToFfmpegWorkerServer()
             cvt.update(&video_frame);
 
             NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
+
+            frameCount++;
+            int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+            int64_t nextTime = startTime + frameTime;
+            int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            auto sleepTime = nextTime - currentTime;
+            if (sleepTime > 0) {
+                QThread::usleep(sleepTime);
+            }
+
             break;
         }
 
@@ -807,7 +859,19 @@ void CollabRoom::ndiFindWorker()
         return;
     }
 
+    ndiSourceCount = 0;
+    auto time = QDateTime::currentDateTime();
     while(!exiting) {
+        if (ndiSourceCount == 0 && (QDateTime::currentDateTime() - time).count() > 2000) {
+            time = QDateTime::currentDateTime();
+            NDIlib_find_destroy(pNDI_find);
+            pNDI_find = NDIlib_find_create_v2();
+            if (!pNDI_find) {
+                emit onFatalError(tr("启动 NDI 发现组件失败"));
+                return;
+            }
+        }
+
         // Wait up till 250ms to check for new sources to be added or removed
         if (!NDIlib_find_wait_for_sources(pNDI_find, 250 /* milliseconds */)) {
             continue;
@@ -864,12 +928,12 @@ void CollabRoom::ndiSendWorker()
 
     // We are going to create a 1920x1080 interlaced frame at 60Hz.
     NDIlib_video_frame_v2_t NDI_video_frame;
-    NDI_video_frame.xres = 1920;
-    NDI_video_frame.yres = 1080;
+    NDI_video_frame.xres = VTSLINK_FRAME_WIDTH;
+    NDI_video_frame.yres = VTSLINK_FRAME_HEIGHT;
     NDI_video_frame.FourCC = NDIlib_FourCC_type_BGRA;
-    NDI_video_frame.frame_rate_D = 1001;
-    NDI_video_frame.frame_rate_N = 60000;
-    NDI_video_frame.line_stride_in_bytes = 1920 * 4;
+    NDI_video_frame.frame_rate_D = VTSLINK_FRAME_D;
+    NDI_video_frame.frame_rate_N = VTSLINK_FRAME_N;
+    NDI_video_frame.line_stride_in_bytes = VTSLINK_FRAME_WIDTH * 4;
 
     qDebug() << "ndi send ndi2av";
     // ffmpeg coverter
@@ -884,7 +948,7 @@ void CollabRoom::ndiSendWorker()
             }
             peersLock.unlock();
         });
-        auto initErr = cvt->init(1920, 1080, 1001, 60000, true);
+        auto initErr = cvt->init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, true);
         if (initErr.has_value()) {
             emit onFatalError(initErr.value());
             NDIlib_send_destroy(pNDI_send);
@@ -1031,8 +1095,8 @@ void CollabRoom::dxgiSendWorker() {
     // ffmpeg coverter
     std::unique_ptr<FrameToAv> cvt = nullptr;
 
-    int frameD = 1001;
-    int frameN = 60000;
+    int frameD = VTSLINK_FRAME_D;
+    int frameN = VTSLINK_FRAME_N;
 
     if (isServer) {
         cvt = std::make_unique<FrameToAv>([=](auto av) {
@@ -1043,7 +1107,7 @@ void CollabRoom::dxgiSendWorker() {
             }
             peersLock.unlock();
         });
-        auto initErr = cvt->init(1920, 1080, frameD, frameN, true);
+        auto initErr = cvt->init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, frameD, frameN, true);
         if (initErr.has_value()) {
             emit onFatalError(initErr.value());
             return;
@@ -1089,4 +1153,32 @@ void CollabRoom::dxgiSendWorker() {
     }
 
     qInfo() << "end dxgi sender";
+}
+
+void CollabRoom::openBuyRelay() {
+    auto buy = new BuyRelay(this);
+    buy->exec();
+    auto turn = buy->getTurnServer();
+    if (turn.has_value()) {
+        turnServer = turn.value();
+        ui->relayInput->setText(turnServer);
+        qDebug() << "bought relay" << turnServer;
+
+        QSettings settings;
+        settings.setValue("turnServer", turnServer);
+        qDebug() << "update turn server" << turnServer;
+
+        peersLock.lock();
+        servers.clear();
+        peersLock.unlock();
+
+        QJsonObject dto;
+        dto["type"] = "get";
+        QJsonDocument doc(dto);
+        auto content = QString::fromUtf8(doc.toJson());
+        qDebug() << content;
+
+        wsSendAsync(content.toStdString());
+    }
+    buy->deleteLater();
 }

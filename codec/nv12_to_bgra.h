@@ -11,6 +11,7 @@ extern "C" {
 #include <QString>
 #include <d3dcompiler.h>
 #include <queue>
+#include "core/vtslink.h"
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
@@ -74,12 +75,10 @@ class Nv12ToBgra
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
-    DxFrameBuffer _frame_rgb_queue;
-
     HANDLE _texture_rgba_copy_shared = nullptr;
 
-    uint32_t _width{ 1920 };
-    uint32_t _height{ 1080 };
+    uint32_t _width{ VTSLINK_FRAME_WIDTH };
+    uint32_t _height{ VTSLINK_FRAME_HEIGHT };
 
     std::atomic_bool _inited = false;
 
@@ -93,12 +92,10 @@ public:
     bool compileShader();
     void resetDeviceContext();
     bool createSharedSurf();
-    void createFramePool();
     void releaseSharedSurf();
     ID3D11Device* getDevice();
-     
-    void enqueueRgb(AVFrame* rgb);
-    bool nv12ToBgra();
+
+    bool nv12ToBgra(AVFrame* f);
     bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
 };
 

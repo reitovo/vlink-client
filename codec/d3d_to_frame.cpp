@@ -71,8 +71,6 @@ DxToFrame::~DxToFrame()
     COM_RESET(_d3d11_deviceCtx);
     COM_RESET(_d3d11_device);
 
-    CloseHandle(_swap_chain_waitable);
-
     lock.unlock();
     qDebug() << "end d3d2ndi done";
 }
@@ -134,8 +132,8 @@ bool DxToFrame::init(bool swap)
 {
     HRESULT hr;
 
-    auto width = 1920;
-    auto height = 1080;
+    auto width = VTSLINK_FRAME_WIDTH;
+    auto height = VTSLINK_FRAME_HEIGHT;
     _width = width;
     _height = height;
 
@@ -220,7 +218,6 @@ bool DxToFrame::init(bool swap)
         desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-        desc1.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
         ComPtr<IDXGISwapChain1> sw1;
         hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, sw1.GetAddressOf());
@@ -239,15 +236,7 @@ bool DxToFrame::init(bool swap)
         if (FAILED(hr)) {
             qDebug() << "failed to get swapchain backbuffer";
             return false;
-        }
-
-        hr = _swap_chain->SetMaximumFrameLatency(1);
-        if (FAILED(hr)) {
-            qDebug() << "failed to set maximum delay";
-            return false;
-        }
-
-        _swap_chain_waitable = _swap_chain->GetFrameLatencyWaitableObject();
+        } 
     }
 
     pDXGIFactory->Release();
@@ -476,9 +465,6 @@ bool DxToFrame::render()
 
     QElapsedTimer t;
     t.start();
-
-    // Wait for frame before any render task
-    WaitForSingleObjectEx(_swap_chain_waitable, 10, true);
 
     //Elapsed e1("clear");
 

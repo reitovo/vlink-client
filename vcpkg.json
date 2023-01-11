@@ -16,6 +16,7 @@
     },
     "qt",
     "directxtk",
+    "libqrencode",
     {
       "name": "opencv2",
       "default-features": true,

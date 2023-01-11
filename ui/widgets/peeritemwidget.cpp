@@ -39,7 +39,7 @@ void PeerItemWidget::setPeerUi(PeerUi p)
         break;
     }
     case NatType::StunTypeConeNat: {
-        natType = tr("全锥 NAT");
+        natType = tr("锥型 NAT");
         break;
     }
     case NatType::StunTypeRestrictedNat: {

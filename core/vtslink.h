@@ -4,4 +4,9 @@
 #define VTSLINK_HTTP_BASEURL "https://vts.reito.fun"
 #define VTSLINK_WS_BASEURL "wss://vts.reito.fun" 
 
+#define VTSLINK_FRAME_WIDTH 1920
+#define VTSLINK_FRAME_HEIGHT 1080
+#define VTSLINK_FRAME_D 1001
+#define VTSLINK_FRAME_N 60000
+
 #endif // VTSLINK_H

@@ -6,6 +6,7 @@ extern "C" {
 #include "libavutil/frame.h"
 }
 
+#include "core/vtslink.h"
 #include "qmutex.h"
 #include <memory>
 #include <wrl/client.h>
@@ -77,8 +78,8 @@ class BgraToNv12
     std::array<ID3D11RenderTargetView*, 1> _nv24_nv12_rt;
     std::array<ID3D11ShaderResourceView*, 1> _nv24_nv12_sr;
 
-    uint32_t _width { 1920 };
-    uint32_t _height { 1080 };
+    uint32_t _width { VTSLINK_FRAME_WIDTH };
+    uint32_t _height { VTSLINK_FRAME_HEIGHT };
 
     DeviceAdapterType _vendor;
     std::atomic_bool _inited = false;

@@ -75,6 +75,7 @@ void Peer::startServer()
     rtc::Configuration config;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
+    //config.iceServers.emplace_back("stun:stun.stunprotocol.org:3478");
 
     if (!room->turnServer.isEmpty())
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
@@ -120,6 +121,7 @@ void Peer::startServer()
         std::cout << "Server datachannel open" << std::endl;
         initSmartBuf();
         dcInited = true;
+        printSelectedCandidate();
     });
 
     dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
@@ -141,6 +143,7 @@ void Peer::startClient(QJsonObject serverSdp)
     rtc::Configuration config;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
+    //config.iceServers.emplace_back("stun:stun.stunprotocol.org:3478");
 
     auto turnServer = serverSdp["turn"].toString();
     if (!turnServer.isEmpty())
@@ -185,9 +188,10 @@ void Peer::startClient(QJsonObject serverSdp)
         qDebug() << "Client incoming server data channel " << QString::fromStdString(pc->remoteAddress().value());
 
         dc->onOpen([this]() {
-            qDebug() << "Server datachannel open";
+            qDebug() << "Client datachannel open";
             initSmartBuf();
             dcInited = true;
+            printSelectedCandidate();
         });
 
         dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
@@ -199,7 +203,7 @@ void Peer::startClient(QJsonObject serverSdp)
 
         dc->onClosed([this]() {
             dcInited = false;
-            qDebug() << "Server datachannel closed";
+            qDebug() << "Client datachannel closed";
             smartBuf.reset();
         });
     });
@@ -299,4 +303,19 @@ long Peer::rtt()
         return v->count();
     }
     return 0;
+}
+
+void Peer::printSelectedCandidate() {
+    if (pc == nullptr)
+        return;
+
+    rtc::Candidate local, remote;
+    if (!pc->getSelectedCandidatePair(&local, &remote)) {
+        return;
+    }
+
+    qDebug() << "Local Selected Candidate";
+    qDebug() << QString::fromStdString(std::string(local));
+    qDebug() << "Remote Selected Candidate";
+    qDebug() << QString::fromStdString(std::string(remote));
 }

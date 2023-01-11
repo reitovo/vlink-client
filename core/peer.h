@@ -34,6 +34,8 @@ class Peer : public PeerUi {
 
     QMutex dcLock;
 
+    void printSelectedCandidate();
+
 public:
     Peer(CollabRoom* room, QString remoteId, QDateTime timeVersion);
     ~Peer();

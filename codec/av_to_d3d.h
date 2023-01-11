@@ -26,7 +26,7 @@ extern "C" {
 #include <queue>
 
 struct UnorderedFrame {
-    int pts;
+    int64_t pts;
     std::unique_ptr<VtsMsg> data;
 };
 
@@ -54,22 +54,26 @@ private:
     const AVCodec* codec = nullptr;
     AVFrame* frame = nullptr;
 
-    int pts = 0; 
+    int64_t pts = 0;
 
     FpsCounter fps;
 
     std::optional<QString> initCodec(AVCodecID);
 
-    QThread processThread;
-
+    std::atomic_bool processThreadRunning = false;
+    std::unique_ptr<QThread> processThread;
     std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
+    QMutex frameQueueLock;
+
+    void processWorker();
+    std::optional<QString> processFrame();
 
 public:
     AvToDx(std::shared_ptr<DxToFrame> d3d);
     ~AvToDx();
      
     std::optional<QString> init();
-    std::optional<QString> process(std::unique_ptr<VtsMsg> m);
+    void process(std::unique_ptr<VtsMsg> m);
     void reset();
     void stop();
 

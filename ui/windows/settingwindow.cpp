@@ -16,6 +16,7 @@ SettingWindow::SettingWindow(CollabRoom *parent) :
         ui(new Ui::SettingWindow) {
     room = parent;
     init();
+
 }
 
 SettingWindow::~SettingWindow() {
@@ -70,5 +71,13 @@ void SettingWindow::init() {
         settings.setValue("showDxgiWindow", v);
         settings.sync();
         qDebug() << "show dxgi window" << v;
+    });
+
+    connect(ui->actionSendLog, &QAction::triggered, this, [&]() {
+
+    });
+
+    connect(ui->actionCrash, &QAction::triggered, this, [&]() {
+       throw std::exception("active crashed");
     });
 }

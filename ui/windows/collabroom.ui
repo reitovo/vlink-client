@@ -658,47 +658,13 @@
     <string>复制联动 ID 至剪贴板</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="knowWhenRelay">
-   <property name="geometry">
-    <rect>
-     <x>390</x>
-     <y>300</y>
-     <width>329</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>0</width>
-     <height>20</height>
-    </size>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>16777215</width>
-     <height>30</height>
-    </size>
-   </property>
-   <property name="font">
-    <font>
-     <family>MiSans</family>
-     <pointsize>10</pointsize>
-     <italic>false</italic>
-     <bold>false</bold>
-     <stylestrategy>PreferDefault</stylestrategy>
-    </font>
-   </property>
-   <property name="text">
-    <string>详细了解何时需要中转服务器</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="relayHint">
    <property name="geometry">
     <rect>
      <x>390</x>
-     <y>246</y>
+     <y>206</y>
      <width>329</width>
-     <height>51</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="sizePolicy">
@@ -722,7 +688,7 @@
     </font>
    </property>
    <property name="text">
-    <string>当前无需中转服务器</string>
+    <string/>
    </property>
    <property name="alignment">
     <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
@@ -742,7 +708,13 @@
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_3">
     <item>
-     <widget class="QPushButton" name="knowAddOBS">
+     <widget class="QPushButton" name="tutorialFaq">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -765,12 +737,18 @@
        </font>
       </property>
       <property name="text">
-       <string>添加联动画面至 OBS</string>
+       <string>使用说明与常见问题</string>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QPushButton" name="openSettings">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -779,7 +757,7 @@
       </property>
       <property name="maximumSize">
        <size>
-        <width>50</width>
+        <width>10000</width>
         <height>30</height>
        </size>
       </property>
@@ -816,6 +794,46 @@
    <property name="text">
     <string>CPU: 0.0% FPS: 0.0</string>
    </property>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget_4">
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>300</y>
+     <width>331</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_7">
+    <item>
+     <widget class="QPushButton" name="knowWhenRelay">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>MiSans</family>
+        <pointsize>10</pointsize>
+        <italic>false</italic>
+        <bold>false</bold>
+        <stylestrategy>PreferDefault</stylestrategy>
+       </font>
+      </property>
+      <property name="text">
+       <string>详细了解何时需要中转服务器</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources>

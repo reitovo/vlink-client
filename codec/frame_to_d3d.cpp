@@ -149,8 +149,8 @@ bool FrameToDx::init()
     pAdapter->Release();
 
 
-    auto width = 1920;
-    auto height = 1080;
+    auto width = VTSLINK_FRAME_WIDTH;
+    auto height = VTSLINK_FRAME_HEIGHT;
     auto ret = createSharedSurf(width, height);
 
     _inited = true;

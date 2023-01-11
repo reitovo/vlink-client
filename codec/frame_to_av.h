@@ -76,7 +76,7 @@ private:
 
     CodecOption currentOption;
 
-    int pts = 0;
+    int64_t pts = 0;
     std::function<void(std::shared_ptr<VtsMsg>)> onPacketReceived = nullptr;
 
     FpsCounter fps;

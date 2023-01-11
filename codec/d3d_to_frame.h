@@ -41,7 +41,6 @@ class DxToFrame : public IDebugCollectable {
     ComPtr<ID3D11Texture2D> _swap_chain_back_buffer = nullptr;
 
     HANDLE _texture_rgba_target_shared_handle;
-    HANDLE _swap_chain_waitable;
 
     uint32_t _width{ 0 };
     uint32_t _height{ 0 };

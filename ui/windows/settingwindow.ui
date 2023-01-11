@@ -131,17 +131,44 @@
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+    </font>
+   </property>
    <widget class="QMenu" name="menu">
+    <property name="font">
+     <font>
+      <family>MiSans</family>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="title">
      <string>调试</string>
     </property>
-    <addaction name="actionr"/>
+    <addaction name="actionSendLog"/>
+    <addaction name="actionCrash"/>
    </widget>
    <addaction name="menu"/>
   </widget>
-  <action name="actionr">
+  <action name="actionSendLog">
    <property name="text">
     <string>上传日志</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>MiSans</family>
+    </font>
+   </property>
+  </action>
+  <action name="actionCrash">
+   <property name="text">
+    <string>崩溃</string>
+   </property>
+   <property name="font">
+    <font>
+     <family>MiSans</family>
+    </font>
    </property>
   </action>
  </widget>

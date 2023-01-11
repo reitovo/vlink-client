@@ -1,12 +1,19 @@
 #include "util.h"
-#include "DirectXHelpers.h"
 #include <d3d11.h>
 #include <wrl/client.h>
 #include "libyuv.h"
+
+#ifdef HAS_DIRECTXTK
+#include "DirectXHelpers.h"
+#endif
+
+#ifdef HAS_OPENCV
 #include "opencv2/opencv.hpp"
+#endif
 
 using Microsoft::WRL::ComPtr;
 
+#ifdef HAS_DIRECTXTK
 namespace
 {
     //--------------------------------------------------------------------------------------
@@ -110,7 +117,7 @@ namespace
         return S_OK;
     }
 } // anonymous namespace
-
+#endif
 
 Elapsed::Elapsed(const QString &name)
 {
@@ -157,6 +164,7 @@ void printDxDebugInfo(ID3D11Device *dev)
 }
 
 void saveTextureToFile(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, QString name) {
+#ifdef HAS_OPENCV
     D3D11_TEXTURE2D_DESC desc = {};
     ComPtr<ID3D11Texture2D> pStaging;
     HRESULT hr = CaptureTexture(pContext, pSource, desc, pStaging);
@@ -183,6 +191,7 @@ void saveTextureToFile(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, Q
     cv::Mat mat(desc.Height, desc.Width, CV_8UC4, bgra.get());
     cv::imshow(name.toStdString(), mat);
     cv::waitKey(1);
+#endif
 }
 
 void FpsCounter::add(long nsConsumed)

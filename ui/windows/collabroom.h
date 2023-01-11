@@ -62,6 +62,7 @@ private slots:
     void fatalError(QString reason);
 
     void openSetting();
+    void openBuyRelay();
 
 private:
     QString errorToReadable(const QString& e);
@@ -99,6 +100,8 @@ private:
     FpsCounter outputFps;
     FpsCounter sendProcessFps;
     FpsCounter ndiRecvFps;
+
+    NatType localNatType;
 
     QMutex peersLock;
     // As server

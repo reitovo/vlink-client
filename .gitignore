@@ -76,3 +76,4 @@ CMakeLists.txt.user*
 /.vscode
 /.idea
 /CMakeSettings.json
+/token.h

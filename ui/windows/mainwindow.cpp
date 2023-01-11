@@ -6,12 +6,10 @@
 #include <QTranslator>
 #include <QPushButton>
 
-static MainWindow* _instance;
+static MainWindow *_instance;
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
+        : QMainWindow(parent), ui(new Ui::MainWindow) {
     _instance = this;
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
@@ -23,9 +21,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(actionExit()));
 
-    connect(ui->actionLangZh, &QAction::triggered, this, [this]{ actionSetLang("zh_CN"); });
-    connect(ui->actionLangEn, &QAction::triggered, this, [this]{ actionSetLang("en_US"); });
-    connect(ui->actionLangJa, &QAction::triggered, this, [this]{ actionSetLang("ja_JP"); });
+    connect(ui->actionLangZh, &QAction::triggered, this, [this] { actionSetLang("zh_CN"); });
+    connect(ui->actionLangEn, &QAction::triggered, this, [this] { actionSetLang("en_US"); });
+    connect(ui->actionLangJa, &QAction::triggered, this, [this] {
+        tray->showMessage(tr("Not Translated Yet"), tr("Not translated yet, sorry for that."), tray->icon());
+        actionSetLang("ja_JP");
+    });
 
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
     connect(ui->btnCreateRoom, SIGNAL(clicked()), this, SLOT(createRoom()));
@@ -40,27 +41,26 @@ MainWindow::MainWindow(QWidget *parent)
     iterateCodec();
     iterateHwAccels();
 
-
+    QSettings settings;
+    auto lang = settings.value("languageCode", "zh_CN").toString();
+    actionSetLang(lang);
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     _instance = nullptr;
     delete ui;
+    tray->hide();
 }
 
-MainWindow *MainWindow::instance()
-{
+MainWindow *MainWindow::instance() {
     return _instance;
 }
 
-void MainWindow::actionExit()
-{
+void MainWindow::actionExit() {
     close();
 }
 
-void MainWindow::joinRoom()
-{
+void MainWindow::joinRoom() {
     auto roomId = ui->iptRoomId->text();
     qDebug("Join room id %s", qPrintable(roomId));
 
@@ -80,8 +80,7 @@ void MainWindow::joinRoom()
 //    });
 }
 
-void MainWindow::createRoom()
-{
+void MainWindow::createRoom() {
     auto roomId = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
     qDebug() << "Create room id" << roomId;
@@ -95,17 +94,19 @@ void MainWindow::createRoom()
     });
 }
 
-void MainWindow::actionSetLang(QString code)
-{
-    QTranslator translator;
+void MainWindow::actionSetLang(QString code) {
+    qApp->removeTranslator(&translator);
     if (translator.load(":/i18n/VTSLink_" + code)) {
         qApp->installTranslator(&translator);
         ui->retranslateUi(this);
+
+        QSettings settings;
+        settings.setValue("languageCode", code);
+        settings.sync();
     }
 }
 
-void MainWindow::iterateCodec()
-{
+void MainWindow::iterateCodec() {
     void *iter = NULL;
     const AVCodec *codec = NULL;
 
@@ -145,11 +146,10 @@ void MainWindow::iterateCodec()
     }
 }
 
-void MainWindow::iterateHwAccels()
-{
+void MainWindow::iterateHwAccels() {
     qDebug() << "available hwaccels";
     AVHWDeviceType type = AV_HWDEVICE_TYPE_NONE;
-    while((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE) {
+    while ((type = av_hwdevice_iterate_types(type)) != AV_HWDEVICE_TYPE_NONE) {
         auto t = av_hwdevice_get_type_name(type);
         qDebug() << t;
     }

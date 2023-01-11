@@ -49,10 +49,10 @@ std::optional<QString> AvToDx::init()
 
     qDebug() << "av2d3d init";
 
-    xres = 1920;
-    yres = 1080;
-    frameD = 1001;
-    frameN = 60000;
+    xres = VTSLINK_FRAME_WIDTH;
+    yres = VTSLINK_FRAME_HEIGHT;
+    frameD = VTSLINK_FRAME_D;
+    frameN = VTSLINK_FRAME_N;
     codecId = AV_CODEC_ID_H264;
 
     qDebug() << "av2d3d using codec" << avcodec_get_name(codecId);
@@ -75,11 +75,18 @@ std::optional<QString> AvToDx::init()
         return "av packet alloc";
     }
 
+    processThreadRunning = true;
+    processThread = std::unique_ptr<QThread>(QThread::create([this]() {
+        processWorker();
+    }));
+    processThread->setObjectName("AvToDx Worker");
+    processThread->start();
+
     inited = true;
 
     qDebug() << "av2d3d init done";
 
-    return std::optional<QString>();
+    return {};
 }
 
 std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
@@ -144,86 +151,16 @@ std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
     return std::optional<QString>();
 }
 
-std::optional<QString> AvToDx::process(std::unique_ptr<VtsMsg> m)
+void AvToDx::process(std::unique_ptr<VtsMsg> m)
 {
     // enqueue for reordering
-    UnorderedFrame* f = new UnorderedFrame;
+    auto f = new UnorderedFrame;
     f->pts = m->avframe().pts();
     f->data = std::move(m);
+
+    frameQueueLock.lock();
     frameQueue.push(f);
-
-    if (frameQueue.size() < 1) {
-        return "buffering";
-    }
-
-    auto dd = frameQueue.top();
-    frameQueue.pop();
-
-    auto mem = std::move(dd->data);
-    auto newPts = dd->pts;
-    delete dd;
-
-    if (newPts <= pts) {
-        qDebug() << "misordered" << newPts << pts;
-        return "misordered";
-    }
-
-    auto meta = mem->avframe();
-    //qDebug() << "av2d3d pts" << meta.pts();
-    pts = meta.pts(); 
-
-    if (!inited) {
-        qDebug() << "not inited";
-        return "not inited";
-    }
-
-    int ret;
-
-    QElapsedTimer t;
-    t.start();
-
-    QStringList errList; 
-
-    for (auto& a : meta.rgbpackets()) {
-        auto& d = a.data();
-        packet->data = (uint8_t*) d.data();
-        packet->size = d.size();
-        packet->dts = a.dts();
-        packet->pts = a.pts();
-        ret = avcodec_send_packet(ctx, packet);
-        if (ret < 0) {
-            qDebug() << "error sending packet for rgb decoding" << av_err2str(ret);
-            errList.append("send packet");
-        }
-    }
-
-    //qDebug() << "recv frame rgb";
-     
-    ret = avcodec_receive_frame(ctx, frame);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
-        qDebug() << "error while decoding rgb" << av_err2str(ret);
-        errList.append("receive frame");
-    }
-    else {
-        bgra->enqueueRgb(frame);
-    }
-
-    //qDebug() << "to bgra";
-
-    //qDebug() << "rgb" << frame_rgb->pts << meta.rgbpackets_size() << "a" << frame_a->pts << meta.apackets_size();
-
-    if (!errList.empty()) {
-        auto e = errList.join(", ");
-        qDebug() << "one or more error occoured" << e;   
-    } 
-      
-    bgra->nv12ToBgra(); 
-
-    fps.add(t.nsecsElapsed()); 
-
-//    auto ee = t.nsecsElapsed();
-//    qDebug() << "av2d3d elapsed" << ee;
-    return std::optional<QString>();
+    frameQueueLock.unlock();
 }
 
 void AvToDx::reset()
@@ -245,6 +182,14 @@ void AvToDx::stop()
     av_packet_free(&packet);
     av_frame_free(&frame);
     avcodec_free_context(&ctx);
+
+    processThreadRunning = false;
+    if (processThread != nullptr && !processThread->isFinished() && !processThread->wait(500)) {
+        qWarning() << "uneasy to exit av2d3d worker";
+        processThread->terminate();
+        processThread->wait(500);
+        processThread = nullptr;
+    }
 }
 
 QString AvToDx::debugInfo()
@@ -257,4 +202,109 @@ bool AvToDx::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D
     if (!inited)
         return false;
     return bgra->copyTo(dev, ctx, dest);
+}
+
+void AvToDx::processWorker() {
+    int64_t frameCount = 0;
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+
+    while (processThreadRunning) {
+
+        auto err = processFrame();
+        if (err.has_value()) {
+            QThread::msleep(1);
+            continue;
+        }
+
+        frameCount++;
+        int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+        int64_t nextTime = startTime + frameTime;
+        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+        auto sleepTime = nextTime - currentTime;
+        if (sleepTime > 0) {
+            QThread::usleep(sleepTime);
+        }
+    }
+}
+
+std::optional<QString> AvToDx::processFrame() {
+    frameQueueLock.lock();
+
+    if (frameQueue.empty()) {
+        frameQueueLock.unlock();
+        return "buffering";
+    }
+
+    if (frameQueue.size() > 10) {
+        while (frameQueue.size() > 5) {
+            frameQueue.pop();
+        }
+    }
+
+    auto dd = frameQueue.top();
+    frameQueue.pop();
+    frameQueueLock.unlock();
+
+    auto mem = std::move(dd->data);
+    auto newPts = dd->pts;
+    delete dd;
+
+    if (newPts <= pts) {
+        qDebug() << "misordered" << newPts << pts;
+        return "misordered";
+    }
+
+    auto meta = mem->avframe();
+    //qDebug() << "av2d3d pts" << meta.pts();
+    pts = meta.pts();
+
+    if (!inited) {
+        qDebug() << "not inited";
+        return "not inited";
+    }
+
+    int ret;
+
+    QElapsedTimer t;
+    t.start();
+
+    QStringList errList;
+
+    for (auto& a : meta.packets()) {
+        auto& d = a.data();
+        packet->data = (uint8_t*) d.data();
+        packet->size = d.size();
+        packet->dts = a.dts();
+        packet->pts = a.pts();
+        ret = avcodec_send_packet(ctx, packet);
+        if (ret < 0) {
+            qDebug() << "error sending packet for decoding" << av_err2str(ret);
+            errList.append("send packet");
+        }
+    }
+
+    //qDebug() << "recv frame rgb";
+
+    ret = avcodec_receive_frame(ctx, frame);
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
+        qDebug() << "error while decoding rgb" << av_err2str(ret);
+        errList.append("receive frame");
+    }
+
+    //qDebug() << "to bgra";
+
+    //qDebug() << "rgb" << frame_rgb->pts << meta.rgbpackets_size() << "a" << frame_a->pts << meta.apackets_size();
+
+    if (!errList.empty()) {
+        auto e = errList.join(", ");
+        qDebug() << "one or more error occoured" << e;
+    }
+
+    bgra->nv12ToBgra(frame);
+
+    fps.add(t.nsecsElapsed());
+
+    return {};
 }

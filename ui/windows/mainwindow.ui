@@ -725,13 +725,26 @@
      <x>0</x>
      <y>0</y>
      <width>401</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>16777215</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+     <pointsize>9</pointsize>
+    </font>
    </property>
    <widget class="QMenu" name="menu">
     <property name="font">
      <font>
       <family>MiSans</family>
+      <pointsize>9</pointsize>
      </font>
     </property>
     <property name="title">
@@ -745,6 +758,7 @@
     <property name="font">
      <font>
       <family>MiSans</family>
+      <pointsize>9</pointsize>
      </font>
     </property>
     <property name="title">
@@ -758,12 +772,14 @@
     <property name="font">
      <font>
       <family>MiSans</family>
+      <pointsize>9</pointsize>
      </font>
     </property>
     <property name="title">
      <string>关于</string>
     </property>
     <addaction name="actionVersion"/>
+    <addaction name="actionqq"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -775,7 +791,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
@@ -785,7 +801,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
@@ -795,7 +811,7 @@
    </property>
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
@@ -805,14 +821,14 @@
    </property>
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
   <action name="actionVersion">
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
@@ -822,8 +838,16 @@
    </property>
    <property name="font">
     <font>
-     <family>Microsoft YaHei</family>
+     <family>Microsoft YaHei UI</family>
     </font>
+   </property>
+  </action>
+  <action name="actionqq">
+   <property name="text">
+    <string>加入QQ群反馈问题：771477837</string>
+   </property>
+   <property name="font">
+    <font/>
    </property>
   </action>
  </widget>

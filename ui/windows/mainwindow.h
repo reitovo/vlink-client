@@ -23,6 +23,8 @@ public:
 
 private:
     Ui::MainWindow *ui;
+
+    QTranslator translator;
     void actionSetLang(QString code);
 
     void iterateCodec();
