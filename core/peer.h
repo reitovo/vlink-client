@@ -42,6 +42,7 @@ public:
 
     bool connected();
     bool usingTurn();
+    bool failed();
 
     void startServer();
     void startClient(QJsonObject serverSdp);
@@ -55,9 +56,11 @@ public:
     std::unique_ptr<smart_buf> smartBuf;
     void sendAsync(std::shared_ptr<VtsMsg> payload);
 
+    rtc::Description processLocalDescription(rtc::Description desc);
+
     QString dataStats();
     QDateTime timeVersion();
-    void setRemoteSdp(QJsonObject sdp);
+    void setClientRemoteSdp(QJsonObject sdp);
     void initSmartBuf();
 
     void decode(std::unique_ptr<VtsMsg> m);

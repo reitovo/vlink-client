@@ -48,8 +48,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() {
     _instance = nullptr;
+    qDebug() << "destroy main window";
     delete ui;
     tray->hide();
+    qDebug() << "bye";
+    exit(0);
 }
 
 MainWindow *MainWindow::instance() {

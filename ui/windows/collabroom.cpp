@@ -34,9 +34,8 @@ extern "C" {
 #include <QDesktopServices>
 
 CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::CollabRoom)
-{
+        QDialog(parent),
+        ui(new Ui::CollabRoom) {
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
@@ -85,6 +84,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(this, &CollabRoom::onRoomExit, this, &CollabRoom::exitRoom);
     connect(this, &CollabRoom::onNdiToFfmpegError, this, &CollabRoom::ndiToFfmpegError);
     connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
+    connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleNdiToFfmpeg);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -95,7 +95,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
 
     connect(ui->tutorialFaq, &QPushButton::clicked, this, [=]() {
-       QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
     });
     connect(ui->knowWhenRelay, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/7R2Z4gPzcZSvPVRUy9fkrP"));
@@ -149,8 +149,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     }
 }
 
-CollabRoom::~CollabRoom()
-{
+CollabRoom::~CollabRoom() {
     exiting = true;
 
     auto dxgi = DxgiOutput::getWindow();
@@ -188,7 +187,7 @@ CollabRoom::~CollabRoom()
 
     peersLock.lock();
     if (isServer) {
-        for (auto& a : servers) {
+        for (auto &a: servers) {
             if (a.second != nullptr) {
                 a.second->close();
                 a.second = nullptr;
@@ -209,19 +208,17 @@ CollabRoom::~CollabRoom()
     qWarning() << "room exit";
 }
 
-QString CollabRoom::debugInfo()
-{
+QString CollabRoom::debugInfo() {
     return QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
-        .arg(isServer ? "Server" : "Client").arg(roomId)
-        .arg(peerId).arg(ui->nick->text())
-        .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
-        .arg(sendProcessFps.stat())
-        .arg(isServer ? "Frame->Dx (NDI Receive) " : "Frame->Av (NDI Receive) ")
-        .arg(ndiRecvFps.stat());
+            .arg(isServer ? "Server" : "Client").arg(roomId)
+            .arg(peerId).arg(ui->nick->text())
+            .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
+            .arg(sendProcessFps.stat())
+            .arg(isServer ? "Frame->Dx (NDI Receive) " : "Frame->Av (NDI Receive) ")
+            .arg(ndiRecvFps.stat());
 }
 
-void CollabRoom::updatePeersUi(QList<PeerUi> peerUis)
-{
+void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
     qDebug() << "update peer ui";
 
     while (ui->peerList->count() < peerUis.count()) {
@@ -241,15 +238,14 @@ void CollabRoom::updatePeersUi(QList<PeerUi> peerUis)
     }
 
     auto idx = 0;
-    for (auto& p : peerUis) {
+    for (auto &p: peerUis) {
         auto item = ui->peerList->item(idx++);
-        auto widget = reinterpret_cast<PeerItemWidget*>(ui->peerList->itemWidget(item));
+        auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
         widget->setPeerUi(p);
     }
 }
 
-void CollabRoom::updateNdiSourcesUi(QStringList list)
-{
+void CollabRoom::updateNdiSourcesUi(QStringList list) {
     while (ui->ndiSourceSelect->count() < list.count()) {
         ui->ndiSourceSelect->addItem("");
     }
@@ -263,16 +259,15 @@ void CollabRoom::updateNdiSourcesUi(QStringList list)
     }
 }
 
-void CollabRoom::copyRoomId()
-{
+void CollabRoom::copyRoomId() {
     auto cb = QApplication::clipboard();
     cb->setText(roomId);
-    MainWindow::instance()->tray->showMessage(tr("复制成功"), tr("请不要在直播画面中展示房间ID！\n已复制到剪贴板，快分享给参加联动的人吧~"),
+    MainWindow::instance()->tray->showMessage(tr("复制成功"),
+                                              tr("请不要在直播画面中展示房间ID！\n已复制到剪贴板，快分享给参加联动的人吧~"),
                                               MainWindow::instance()->tray->icon());
 }
 
-void CollabRoom::exitRoom(QString reason)
-{
+void CollabRoom::exitRoom(QString reason) {
     QString error = reason;
     if (reason == "host leave") {
         error = tr("房主已离开");
@@ -289,8 +284,7 @@ void CollabRoom::exitRoom(QString reason)
     close();
 }
 
-void CollabRoom::setNick()
-{
+void CollabRoom::setNick() {
     auto n = ui->nick->text();
     if (n.length() > 16) {
         n = n.left(16);
@@ -309,8 +303,7 @@ void CollabRoom::setNick()
     wsSendAsync(content.toStdString());
 }
 
-void CollabRoom::updateTurnServer()
-{
+void CollabRoom::updateTurnServer() {
     auto ipt = ui->relayInput->text();
     turnServer = ipt;
 
@@ -334,8 +327,7 @@ void CollabRoom::updateTurnServer()
     wsSendAsync(content.toStdString());
 }
 
-void CollabRoom::toggleTurnVisible()
-{
+void CollabRoom::toggleTurnVisible() {
     if (ui->relayInput->echoMode() == QLineEdit::Normal) {
         ui->relayInput->setEchoMode(QLineEdit::Password);
         ui->relayHideShow->setIcon(QIcon(":/images/show.png"));
@@ -345,8 +337,7 @@ void CollabRoom::toggleTurnVisible()
     }
 }
 
-void CollabRoom::ndiToFfmpegError(QString reason)
-{
+void CollabRoom::ndiToFfmpegError(QString reason) {
     stopNdiToFfmpegWorker();
 
     QMessageBox::critical(this, tr("NDI 错误"), errorToReadable(reason));
@@ -356,20 +347,17 @@ void CollabRoom::ndiToFfmpegError(QString reason)
     ui->ndiSourceSelect->setEnabled(true);
 }
 
-void CollabRoom::fatalError(QString reason)
-{
+void CollabRoom::fatalError(QString reason) {
     QMessageBox::critical(this, tr("致命错误"), errorToReadable(reason));
     close();
 }
 
-void CollabRoom::openSetting()
-{
+void CollabRoom::openSetting() {
     auto w = new SettingWindow(this);
     w->show();
 }
 
-void CollabRoom::toggleNdiToFfmpeg()
-{
+void CollabRoom::toggleNdiToFfmpeg() {
     if (!ndiToFfmpegRunning) {
         startNdiToFfmpeg();
     } else {
@@ -377,8 +365,7 @@ void CollabRoom::toggleNdiToFfmpeg()
     }
 }
 
-void CollabRoom::startNdiToFfmpeg()
-{
+void CollabRoom::startNdiToFfmpeg() {
     if (!isServer) {
         peersLock.lock();
         if (client == nullptr || !client->connected()) {
@@ -410,8 +397,7 @@ void CollabRoom::startNdiToFfmpeg()
     ndiToFfmpegThread->start();
 }
 
-void CollabRoom::stopNdiToFfmpeg()
-{
+void CollabRoom::stopNdiToFfmpeg() {
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(false);
 
@@ -423,8 +409,7 @@ void CollabRoom::stopNdiToFfmpeg()
     });
 }
 
-void CollabRoom::connectWebsocket()
-{
+void CollabRoom::connectWebsocket() {
     qDebug("Connect to reito server websocket");
     ws = std::make_unique<rtc::WebSocket>();
 
@@ -447,8 +432,8 @@ void CollabRoom::connectWebsocket()
         auto t = QThread::create([=]() {
             qDebug() << "Start nat type determine";
             CNatProb natProb;
-            if (!natProb.Init("stun.qq.com")) {
-                cout<<"natProb init failed."<<endl;
+            if (!natProb.Init("stun.miwifi.com")) {
+                qDebug() << "natProb init failed.";
             }
             int retry = 0;
             NatType type;
@@ -494,7 +479,7 @@ void CollabRoom::connectWebsocket()
             if (type == "peers") {
                 auto peers = frame["peers"].toArray();
                 updatePeers(peers);
-            } else if (type == "bye")  {
+            } else if (type == "bye") {
                 exiting = true;
                 emit onRoomExit("host leave");
             } else if (type == "error") {
@@ -508,11 +493,10 @@ void CollabRoom::connectWebsocket()
     ws->open(VTSLINK_WS_BASEURL "/api/room/join");
 }
 
-void CollabRoom::updatePeers(QJsonArray peers)
-{
+void CollabRoom::updatePeers(QJsonArray peers) {
     if (isServer) {
         QList<QString> alive;
-        for (auto peer : peers) {
+        for (auto peer: peers) {
             auto p = peer.toObject();
             auto svr = p["isServer"].toBool();
             // Find clients
@@ -535,23 +519,34 @@ void CollabRoom::updatePeers(QJsonArray peers)
                     auto ver = clientSdp["time"].toInteger();
                     if (ver == servers[id]->timeVersion().toMSecsSinceEpoch()) {
                         qDebug() << "client offered sdp to us";
-                        servers[id]->setRemoteSdp(clientSdp);
+                        servers[id]->setClientRemoteSdp(clientSdp);
                     }
                 }
             }
         }
-        // If one leaves, remove it.
         peersLock.lock();
-        for (auto it = servers.begin(); it != servers.end(); ) {
+        // If one leaves, remove it.
+        for (auto it = servers.begin(); it != servers.end();) {
             if (!alive.contains(it->first)) {
                 it = servers.erase(it);
             } else {
                 it++;
             }
         }
+
+        // If one failed, remote it.
+        for (auto it = servers.begin(); it != servers.end();) {
+            if (it->second->failed()) {
+                emit
+                it = servers.erase(it);
+            } else {
+                it++;
+            }
+        }
+
         peersLock.unlock();
     } else {
-        for (auto peer : peers) {
+        for (auto peer: peers) {
             auto p = peer.toObject();
             auto svr = p["isServer"].toBool();
             // Find server
@@ -582,7 +577,7 @@ void CollabRoom::updatePeers(QJsonArray peers)
     // Update UI and calculate nat
     QStringList badNatList;
     QList<PeerUi> peerUis;
-    for (auto peer : peers) {
+    for (auto peer: peers) {
         PeerUi u;
         auto p = peer.toObject();
         u.peerId = p["id"].toString();
@@ -593,25 +588,28 @@ void CollabRoom::updatePeers(QJsonArray peers)
         peerUis.append(u);
 
         if (u.nat != StunTypeOpen && u.nat != StunTypeRestrictedNat && u.nat != StunTypeConeNat
-                && u.nat != StunTypePortRestrictedNat && u.nat != StunTypeUnavailable) {
+            && u.nat != StunTypePortRestrictedNat && u.nat != StunTypeUnavailable) {
             badNatList.append(u.nick.isEmpty() ? QString("%1%2").arg(tr("用户")).arg(u.peerId.left(4)) : u.nick);
         }
     }
 
-    if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat || localNatType == StunTypeRestrictedNat) {
-        ui->relayHint->setText(tr("当前无需中转服务器。如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。如需删除中转服务器，请清空地址后点击「连接中转服务器」即可"));
+    if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
+        localNatType == StunTypeRestrictedNat) {
+        ui->relayHint->setText(
+                tr("当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
     } else {
-        ui->relayHint->setText(tr("当前可能需要中转服务器。因为以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") + tr("。但如果连接各方网络存在 IPv6 可以使用，或许仍可以建立连接，请以最终是否能成功连接为准。"));
+        ui->relayHint->setText(
+                tr("当前可能需要中转服务器。\n以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") +
+                tr("。\n但如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
     }
 
     emit onUpdatePeersUi(peerUis);
 }
 
-void CollabRoom::ndiToFfmpegWorkerClient()
-{
+void CollabRoom::ndiToFfmpegWorkerClient() {
     qInfo() << "ndi to ffmpeg client start";
 
-    const NDIlib_source_t* source = nullptr;
+    const NDIlib_source_t *source = nullptr;
     auto name = ui->ndiSourceSelect->currentText();
     for (auto i = 0; i < ndiSourceCount; ++i) {
         if (name == ndiSources[i].p_ndi_name) {
@@ -643,7 +641,7 @@ void CollabRoom::ndiToFfmpegWorkerClient()
     auto useUYVA = cvt.useUYVA();
     auto fmt = useUYVA ? NDIlib_recv_color_format_fastest : NDIlib_recv_color_format_BGRX_BGRA;
 
-    NDIlib_recv_create_v3_t create; 
+    NDIlib_recv_create_v3_t create;
     create.color_format = fmt;
     create.bandwidth = NDIlib_recv_bandwidth_highest;
     create.allow_video_fields = false;
@@ -662,7 +660,8 @@ void CollabRoom::ndiToFfmpegWorkerClient()
     int frameD = VTSLINK_FRAME_D;
     int frameN = VTSLINK_FRAME_N;
     int64_t frameCount = 0;
-    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (ndiToFfmpegRunning) {
         // The descriptors
@@ -674,59 +673,60 @@ void CollabRoom::ndiToFfmpegWorkerClient()
         t.start();
 
         switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
-        // No data
-        //        case NDIlib_frame_type_none:
-        //            printf("No data received.\n");
-        //            break;
+            // No data
+            //        case NDIlib_frame_type_none:
+            //            printf("No data received.\n");
+            //            break;
 
-        // Video data
-        case NDIlib_frame_type_video: { 
+            // Video data
+            case NDIlib_frame_type_video: {
 //            *(uint32_t*)cc = video_frame.FourCC;
 //            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
 
-            ndiRecvFps.add(t.nsecsElapsed());
+                ndiRecvFps.add(t.nsecsElapsed());
 
-            auto e = cvt.process(&video_frame);
-            if (e.has_value()) {
-                emit onNdiToFfmpegError(e.value());
+                auto e = cvt.process(&video_frame);
+                if (e.has_value()) {
+                    emit onNdiToFfmpegError(e.value());
+                    ndiToFfmpegRunning = false;
+                    goto clean;
+                }
+
+                NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
+
+                frameCount++;
+                int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+                int64_t nextTime = startTime + frameTime;
+                int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                auto sleepTime = nextTime - currentTime;
+                if (sleepTime > 0) {
+                    QThread::usleep(sleepTime);
+                }
+
+                break;
+            }
+
+                // Audio data
+                //        case NDIlib_frame_type_audio:
+                //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
+                //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
+                //            break;
+
+            case NDIlib_frame_type_error:
+                emit onNdiToFfmpegError("frame error");
                 ndiToFfmpegRunning = false;
                 goto clean;
-            }
-
-            NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
-
-            frameCount++;
-            int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
-            int64_t nextTime = startTime + frameTime;
-            int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            auto sleepTime = nextTime - currentTime;
-            if (sleepTime > 0) {
-                QThread::usleep(sleepTime);
-            }
-
-            break;
-        }
-
-            // Audio data
-            //        case NDIlib_frame_type_audio:
-            //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
-            //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
-            //            break;
-
-        case NDIlib_frame_type_error:
-            emit onNdiToFfmpegError("frame error");
-            ndiToFfmpegRunning = false;
-            goto clean;
-        case NDIlib_frame_type_none:
-        case NDIlib_frame_type_audio:
-        case NDIlib_frame_type_metadata:
-        case NDIlib_frame_type_status_change:
-        case NDIlib_frame_type_max:
-            break;
+            case NDIlib_frame_type_none:
+            case NDIlib_frame_type_audio:
+            case NDIlib_frame_type_metadata:
+            case NDIlib_frame_type_status_change:
+            case NDIlib_frame_type_max:
+                break;
         }
     }
 
-clean:
+    clean:
     cvt.stop();
     // Destroy the receiver
     NDIlib_recv_destroy(pNDI_recv);
@@ -734,11 +734,10 @@ clean:
     qInfo() << "ndi to ffmpeg client exit";
 }
 
-void CollabRoom::ndiToFfmpegWorkerServer()
-{
+void CollabRoom::ndiToFfmpegWorkerServer() {
     qInfo() << "ndi to ffmpeg server start";
 
-    const NDIlib_source_t* source = nullptr;
+    const NDIlib_source_t *source = nullptr;
     auto name = ui->ndiSourceSelect->currentText();
     for (auto i = 0; i < ndiSourceCount; ++i) {
         if (name == ndiSources[i].p_ndi_name) {
@@ -771,7 +770,8 @@ void CollabRoom::ndiToFfmpegWorkerServer()
     int frameD = VTSLINK_FRAME_D;
     int frameN = VTSLINK_FRAME_N;
     int64_t frameCount = 0;
-    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (ndiToFfmpegRunning) {
         // The descriptors
@@ -783,62 +783,62 @@ void CollabRoom::ndiToFfmpegWorkerServer()
         t.start();
 
         switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
-        // No data
-        //        case NDIlib_frame_type_none:
-        //            printf("No data received.\n");
-        //            break;
+            // No data
+            //        case NDIlib_frame_type_none:
+            //            printf("No data received.\n");
+            //            break;
 
-        // Video data
-        case NDIlib_frame_type_video: {
+            // Video data
+            case NDIlib_frame_type_video: {
 //            *(uint32_t*)cc = video_frame.FourCC;
 //            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
 
-            ndiRecvFps.add(t.nsecsElapsed());
+                ndiRecvFps.add(t.nsecsElapsed());
 
-            cvt.update(&video_frame);
+                cvt.update(&video_frame);
 
-            NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
+                NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
 
-            frameCount++;
-            int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
-            int64_t nextTime = startTime + frameTime;
-            int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            auto sleepTime = nextTime - currentTime;
-            if (sleepTime > 0) {
-                QThread::usleep(sleepTime);
+                frameCount++;
+                int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+                int64_t nextTime = startTime + frameTime;
+                int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                auto sleepTime = nextTime - currentTime;
+                if (sleepTime > 0) {
+                    QThread::usleep(sleepTime);
+                }
+
+                break;
             }
 
-            break;
-        }
+                // Audio data
+                //        case NDIlib_frame_type_audio:
+                //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
+                //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
+                //            break;
 
-            // Audio data
-            //        case NDIlib_frame_type_audio:
-            //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
-            //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
-            //            break;
-
-        case NDIlib_frame_type_error:
-            emit onNdiToFfmpegError("frame error");
-            ndiToFfmpegRunning = false;
-            goto clean;
-        case NDIlib_frame_type_none:
-        case NDIlib_frame_type_audio:
-        case NDIlib_frame_type_metadata:
-        case NDIlib_frame_type_status_change:
-        case NDIlib_frame_type_max:
-            break;
+            case NDIlib_frame_type_error:
+                emit onNdiToFfmpegError("frame error");
+                ndiToFfmpegRunning = false;
+                goto clean;
+            case NDIlib_frame_type_none:
+            case NDIlib_frame_type_audio:
+            case NDIlib_frame_type_metadata:
+            case NDIlib_frame_type_status_change:
+            case NDIlib_frame_type_max:
+                break;
         }
     }
 
-clean:
+    clean:
     // Destroy the receiver
     NDIlib_recv_destroy(pNDI_recv);
 
     qInfo() << "ndi to ffmpeg server exit";
 }
 
-void CollabRoom::stopNdiToFfmpegWorker()
-{
+void CollabRoom::stopNdiToFfmpegWorker() {
     ndiToFfmpegRunning = false;
     if (ndiToFfmpegThread != nullptr && !ndiToFfmpegThread->isFinished() && !ndiToFfmpegThread->wait(500)) {
         qWarning() << "uneasy to exit ndi convert thread";
@@ -848,8 +848,7 @@ void CollabRoom::stopNdiToFfmpegWorker()
     }
 }
 
-void CollabRoom::ndiFindWorker()
-{
+void CollabRoom::ndiFindWorker() {
     qInfo() << "start ndi find";
 
     // We are going to create an NDI finder that locates sources on the network.
@@ -861,7 +860,7 @@ void CollabRoom::ndiFindWorker()
 
     ndiSourceCount = 0;
     auto time = QDateTime::currentDateTime();
-    while(!exiting) {
+    while (!exiting) {
         if (ndiSourceCount == 0 && (QDateTime::currentDateTime() - time).count() > 2000) {
             time = QDateTime::currentDateTime();
             NDIlib_find_destroy(pNDI_find);
@@ -886,7 +885,7 @@ void CollabRoom::ndiFindWorker()
         QStringList sources;
         printf("Network sources (%u found).\n", no_sources);
         for (uint32_t i = 0; i < no_sources; i++) {
-            qDebug() << QString("%1. %2 %3").arg(i+1).arg(ndiSources[i].p_ndi_name).arg(ndiSources[i].p_url_address);
+            qDebug() << QString("%1. %2 %3").arg(i + 1).arg(ndiSources[i].p_ndi_name).arg(ndiSources[i].p_url_address);
             auto name = QString(ndiSources[i].p_ndi_name);
             if (!name.contains("(VTS Link)")) {
                 sources.append(name);
@@ -901,8 +900,7 @@ void CollabRoom::ndiFindWorker()
     qInfo() << "end ndi find";
 }
 
-void CollabRoom::ndiSendWorker()
-{
+void CollabRoom::ndiSendWorker() {
     qInfo() << "start ndi sender";
 
     // Create an NDI source that is called "My Video and Audio" and is clocked to the video.
@@ -912,7 +910,7 @@ void CollabRoom::ndiSendWorker()
 
     // We create the NDI sender
     NDIlib_send_instance_t pNDI_send = NDIlib_send_create(&NDI_send_create_desc);
-    if (!pNDI_send){
+    if (!pNDI_send) {
         // try with suffix
         auto role = isServer ? "Server" : "Client";
         qDebug() << "Role is" << (role) << peerId;
@@ -943,7 +941,7 @@ void CollabRoom::ndiSendWorker()
         cvt = std::make_unique<FrameToAv>([=](auto av) {
             peersLock.lock();
             // This approach is bandwidth consuming, should be replaced by relay approach
-            for(auto & s : servers) {
+            for (auto &s: servers) {
                 s.second->sendAsync(av);
             }
             peersLock.unlock();
@@ -976,16 +974,15 @@ void CollabRoom::ndiSendWorker()
                 sendProcessFps.add(t1.nsecsElapsed());
 
                 // blocking
-                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame); 
+                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame);
             }
 
             d3d->unmapNdi();
 
             outputFps.add(t.nsecsElapsed());
-        }
-        else {
+        } else {
             QThread::msleep(1);
-        } 
+        }
     }
 
     // Destroy the NDI sender
@@ -998,34 +995,32 @@ void CollabRoom::ndiSendWorker()
     qInfo() << "end ndi sender";
 }
 
-void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer* peer) const
-{
+void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer *peer) const {
     // receive av from remote peer
     switch (m->type()) {
-    case VTS_MSG_AVFRAME: {
-        peer->decode(std::move(m));
-        break;
-    }
-    case VTS_MSG_AVSTOP: {
-        peer->resetDecoder();
-        break;
-    }
-    case VTS_MSG_HEARTBEAT: {
-        // server first, then client reply
-        qDebug() << "receive dc heartbeat from" << peer->peerId;
-        if (!isServer) {
-            peer->sendHeartbeat();
+        case VTS_MSG_AVFRAME: {
+            peer->decode(std::move(m));
+            break;
         }
-        break;
-    }
-    default: {
-        break;
-    }
+        case VTS_MSG_AVSTOP: {
+            peer->resetDecoder();
+            break;
+        }
+        case VTS_MSG_HEARTBEAT: {
+            // server first, then client reply
+            qDebug() << "receive dc heartbeat from" << peer->peerId;
+            if (!isServer) {
+                peer->sendHeartbeat();
+            }
+            break;
+        }
+        default: {
+            break;
+        }
     }
 }
 
-void CollabRoom::wsSendAsync(const std::string& content)
-{
+void CollabRoom::wsSendAsync(const std::string &content) {
     if (exiting)
         return;
 
@@ -1039,7 +1034,7 @@ void CollabRoom::wsSendAsync(const std::string& content)
     t->start();
 }
 
-QString CollabRoom::errorToReadable(const QString& reason) {
+QString CollabRoom::errorToReadable(const QString &reason) {
     QString err = reason;
     if (reason == "init error") {
         err = tr("初始化错误");
@@ -1063,8 +1058,8 @@ QString CollabRoom::errorToReadable(const QString& reason) {
 
 void CollabRoom::usageStatUpdate() {
     ui->usageStat->setText(QString("CPU: %1% FPS: %2")
-        .arg(QString::number(usage::getCpuUsage(), 'f', 1))
-        .arg(QString::number(outputFps.fps(), 'f', 1)) 
+                                   .arg(QString::number(usage::getCpuUsage(), 'f', 1))
+                                   .arg(QString::number(outputFps.fps(), 'f', 1))
     );
 }
 
@@ -1072,9 +1067,9 @@ void CollabRoom::heartbeatUpdate() {
     QJsonObject dict;
 
     peersLock.lock();
-    for (auto& s : servers) {
+    for (auto &s: servers) {
         s.second->sendHeartbeat();
-        dict[s.second->peerId] = (qint64)s.second->rtt();
+        dict[s.second->peerId] = (qint64) s.second->rtt();
     }
     peersLock.unlock();
 
@@ -1102,7 +1097,7 @@ void CollabRoom::dxgiSendWorker() {
         cvt = std::make_unique<FrameToAv>([=](auto av) {
             peersLock.lock();
             // This approach is bandwidth consuming, should be replaced by relay approach
-            for(auto & s : servers) {
+            for (auto &s: servers) {
                 s.second->sendAsync(av);
             }
             peersLock.unlock();
@@ -1115,7 +1110,8 @@ void CollabRoom::dxgiSendWorker() {
     }
 
     int64_t frameCount = 0;
-    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (!exiting) {
         QElapsedTimer t;
@@ -1139,7 +1135,8 @@ void CollabRoom::dxgiSendWorker() {
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
         int64_t nextTime = startTime + frameTime;
-        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
@@ -1181,4 +1178,38 @@ void CollabRoom::openBuyRelay() {
         wsSendAsync(content.toStdString());
     }
     buy->deleteLater();
+}
+
+void CollabRoom::rtcFailed(Peer *peer) {
+    qDebug() << "rtc failed";
+    auto nick = peer->nick.isEmpty() ? tr("用户") + peer->peerId.first(4) : peer->nick;
+    if (isServer) {
+        auto tray = MainWindow::instance()->tray.get();
+        tray->showMessage(tr("连接失败"),
+                          QString(tr("与 %1 的连接失败，可能需要中转服务器！") + tr("正在尝试重新连接")).arg(nick));
+
+        peersLock.lock();
+
+        for (auto it = servers.begin(); it != servers.end();) {
+            if (it->second.get() == peer) {
+                qDebug() << "destroy peer for reconnect";
+                it = servers.erase(it);
+            } else {
+                it++;
+            }
+        }
+
+        peersLock.unlock();
+
+        QJsonObject dto;
+        dto["type"] = "get";
+        QJsonDocument doc(dto);
+        auto content = QString::fromUtf8(doc.toJson());
+        qDebug() << content;
+
+        wsSendAsync(content.toStdString());
+    } else {
+        auto tray = MainWindow::instance()->tray.get();
+        tray->showMessage(tr("连接失败"), QString(tr("与 %1 的连接失败，请等待服务器重新连接")).arg(nick));
+    }
 }

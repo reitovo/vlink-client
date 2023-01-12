@@ -13,22 +13,25 @@
 extern "C" {
 #include <libavutil\avutil.h>
 }
- 
+
 #include <Windows.h>
 #include "token.h"
 
 #ifdef HAS_CRASHPAD
+
 #include <client/crash_report_database.h>
 #include <client/settings.h>
 #include <client/crashpad_client.h>
+
 void initializeCrashpad();
+
 #endif
 
 void redirectDebugOutput();
+
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
-int main(int argc, char *argv[])
-{   
+int main(int argc, char *argv[]) {
     QFile log("../vtslink.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();
@@ -36,7 +39,7 @@ int main(int argc, char *argv[])
 #ifdef HAS_CRASHPAD
     initializeCrashpad();
 #endif
-    if(!IsDebuggerPresent()){
+    if (!IsDebuggerPresent()) {
         qInstallMessageHandler(customMessageHandler);
         QThread::create(redirectDebugOutput)->start();
     }
@@ -52,27 +55,27 @@ int main(int argc, char *argv[])
 
     rtc::InitLogger(rtc::LogLevel::Debug, [](rtc::LogLevel level, std::string message) {
         switch (level) {
-        case rtc::LogLevel::Verbose:
-        case rtc::LogLevel::Debug: {
-            qDebug(message.c_str());
-            break;
-        }
-        case rtc::LogLevel::Info: {
-            qInfo(message.c_str());
-            break;
-        }
-        case rtc::LogLevel::Warning: {
-            qWarning(message.c_str());
-            break;
-        }
-        case rtc::LogLevel::Error: {
-            qCritical(message.c_str());
-            break;
-        }
-        case rtc::LogLevel::Fatal: {
-            qFatal(message.c_str());
-            break;
-        }
+            case rtc::LogLevel::Verbose:
+            case rtc::LogLevel::Debug: {
+                qDebug(message.c_str());
+                break;
+            }
+            case rtc::LogLevel::Info: {
+                qInfo(message.c_str());
+                break;
+            }
+            case rtc::LogLevel::Warning: {
+                qWarning(message.c_str());
+                break;
+            }
+            case rtc::LogLevel::Error: {
+                qCritical(message.c_str());
+                break;
+            }
+            case rtc::LogLevel::Fatal: {
+                qFatal(message.c_str());
+                break;
+            }
         }
     });
 
@@ -88,7 +91,7 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
+    for (const QString &locale: uiLanguages) {
         const QString baseName = "VTSLink_" + QLocale(locale).name();
         if (translator.load(":/i18n/" + baseName)) {
             a.installTranslator(&translator);
@@ -98,13 +101,14 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.show();
-     
-    auto ret = a.exec(); 
+
+    auto ret = a.exec();
 
     return ret;
 }
 
 #ifdef HAS_CRASHPAD
+
 void initializeCrashpad() {
     using namespace crashpad;
     std::map<std::string, std::string> annotations;
@@ -145,7 +149,7 @@ void initializeCrashpad() {
                                    arguments,
                                    true,
                                    true);
-    if (ret == false)  {
+    if (ret == false) {
         return;
     }
 
@@ -155,33 +159,32 @@ void initializeCrashpad() {
         return;
     }
 }
+
 #endif
 
-void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
-{
+void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
     Q_UNUSED(context);
 
     QString dt = QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss");
     QString txt = QString("[%1] ").arg(dt);
 
-    switch (type)
-    {
-    case QtInfoMsg:
-        txt += QString("{Info}     %1").arg(msg);
-        break;
-    case QtDebugMsg:
-        txt += QString("{Debug}    %1").arg(msg);
-        break;
-    case QtWarningMsg:
-        txt += QString("{Warning}  %1").arg(msg);
-        break;
-    case QtCriticalMsg:
-        txt += QString("{Critical} %1").arg(msg);
-        break;
-    case QtFatalMsg:
-        txt += QString("{Fatal}    %1").arg(msg);
-        abort();
-        break;
+    switch (type) {
+        case QtInfoMsg:
+            txt += QString("{Info}     %1").arg(msg);
+            break;
+        case QtDebugMsg:
+            txt += QString("{Debug}    %1").arg(msg);
+            break;
+        case QtWarningMsg:
+            txt += QString("{Warning}  %1").arg(msg);
+            break;
+        case QtCriticalMsg:
+            txt += QString("{Critical} %1").arg(msg);
+            break;
+        case QtFatalMsg:
+            txt += QString("{Fatal}    %1").arg(msg);
+            abort();
+            break;
     }
 
     QFile outFile("../vtslink.log");
@@ -194,9 +197,9 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 const int MAX_DebugBuffer = 4096;
 
 typedef struct dbwin_buffer {
-    DWORD   dwProcessId;
-    char    data[4096-sizeof(DWORD)];
-}DEBUGBUFFER,*PDEBUGBUFFER;
+    DWORD dwProcessId;
+    char data[4096 - sizeof(DWORD)];
+} DEBUGBUFFER, *PDEBUGBUFFER;
 
 void redirectDebugOutput() {
     HANDLE hMapping = NULL;
@@ -208,22 +211,19 @@ void redirectDebugOutput() {
 
     // 打开事件句柄
     hAckEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("DBWIN_BUFFER_READY"));
-    if(hAckEvent == NULL)
-    {
+    if (hAckEvent == NULL) {
         CloseHandle(hAckEvent);
         return;
     }
 
     hReadyEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("DBWIN_DATA_READY"));
-    if(hReadyEvent == NULL)
-    {
+    if (hReadyEvent == NULL) {
         CloseHandle(hReadyEvent);
         return;
     }
     // 创建文件映射
     hMapping = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, MAX_DebugBuffer, TEXT("DBWIN_BUFFER"));
-    if(hMapping == NULL)
-    {
+    if (hMapping == NULL) {
         CloseHandle(hMapping);
         return;
     }
@@ -232,13 +232,11 @@ void redirectDebugOutput() {
     pdbBuffer = (PDEBUGBUFFER) MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
 
     // 循环
-    while( true )
-    {
+    while (true) {
         // 激活事件
         SetEvent(hAckEvent);
         // 等待缓冲区数据
-        if ( WaitForSingleObject(hReadyEvent, INFINITE) == WAIT_OBJECT_0 )
-        {
+        if (WaitForSingleObject(hReadyEvent, INFINITE) == WAIT_OBJECT_0) {
             if (pdbBuffer->dwProcessId == thisProcId) {
                 // 保存信息，这就是我们想要的，有了这个信息，想打log或是输出到控制台就都可以啦
                 qDebug() << QString("%1").arg(QString::fromUtf8(pdbBuffer->data));

@@ -44,6 +44,7 @@ signals:
     void onRoomExit(QString);
     void onNdiToFfmpegError(QString);
     void onFatalError(QString);
+    void onRtcFailed(Peer*);
 
 private slots:
     void updatePeersUi(QList<PeerUi> peerUis);
@@ -60,6 +61,7 @@ private slots:
     void stopNdiToFfmpeg();
     void ndiToFfmpegError(QString reason);
     void fatalError(QString reason);
+    void rtcFailed(Peer* peer);
 
     void openSetting();
     void openBuyRelay();

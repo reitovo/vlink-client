@@ -60,13 +60,15 @@ bool CNatProb::GetNatIpAndPort(const string &strLocalIp, const UInt16 &uLocalPor
     {
         if (strLocalIp.empty() || uLocalPort == 0)
         {
-            cout<<"strLocalIp and uLocalPort must not be null."<<endl;
+            OutputDebugString("strLocalIp and uLocalPort must not be null.\n");
             break;
         }
         StunAddress4 localAddr = {0};
         if (!stunParseHostName((char *) strLocalIp.c_str(), localAddr.addr, localAddr.port, uLocalPort))
         {
-            cout << "stunParseHostName failed.  strLocalIp = " << strLocalIp << " uLocalPort = " << uLocalPort << endl;
+            std::ostringstream oss;
+            oss << "stunParseHostName failed.  strLocalIp = " << strLocalIp << " uLocalPort = " << uLocalPort << endl;
+            OutputDebugString(oss.str().c_str());
             break;
         };
         UInt32 interfaceIp = localAddr.addr;
