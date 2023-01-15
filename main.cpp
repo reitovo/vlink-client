@@ -15,7 +15,6 @@ extern "C" {
 }
 
 #include <Windows.h>
-#include "token.h"
 
 #ifdef HAS_CRASHPAD
 

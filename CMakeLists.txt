@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.19)
 
 set(ENV{VCPKG_MAX_CONCURRENCY} 16)  
 
@@ -71,7 +71,6 @@ set(SHADER_FILES
 
 # UI
 set(PROJECT_SOURCES
-        token.h
         main.cpp
         resources.qrc
         core/vtslink.h
@@ -101,6 +100,10 @@ qt_add_executable(VTSLink
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
 )
+
+# Tokens pass from env
+target_compile_definitions(VTSLink PUBLIC -DVTSLINK_BACKTRACE_SUBMIT_TOKEN="$ENV{BACKTRACE_SUBMIT_TOKEN}")
+
 qt_add_translations(VTSLink TS_FILES ${TS_FILES})
 
 include_directories(.)
@@ -247,11 +250,28 @@ install(SCRIPT ${DEPLOY_SCRIPT})
 
 qt_finalize_executable(VTSLink)
 
-#If use IDE other than Qt Creator, we need to copy required plugins and qt.conf correctly
+#If use IDE other than Qt Creator,  we need to copy required plugins and qt.conf correctly
 file(WRITE "${CMAKE_BINARY_DIR}/bin/qt.conf" "[Paths]
 Prefix = ..") 
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     file(COPY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/Qt6/plugins/" DESTINATION "${CMAKE_BINARY_DIR}/plugins/")
 else()
     file(COPY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/Qt6/plugins/" DESTINATION "${CMAKE_BINARY_DIR}/plugins/")
-endif() 
+endif()
+
+# install licenses
+file(GLOB LICENSE_DIRS "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/*")
+foreach(LICENSE_DIR ${LICENSE_DIRS})
+    if (EXISTS ${LICENSE_DIR}/copyright)
+        get_filename_component(LICENSE_LIB_NAME ${LICENSE_DIR} NAME)
+        install(FILES ${LICENSE_DIR}/copyright DESTINATION "license" RENAME ${LICENSE_LIB_NAME})
+    endif()
+endforeach()
+
+# install pdb
+install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION "pdb" FILES_MATCHING PATTERN "*.pdb")
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    install(DIRECTORY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin/" DESTINATION "pdb" FILES_MATCHING PATTERN "*.pdb")
+else()
+    install(DIRECTORY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/" DESTINATION "pdb" FILES_MATCHING PATTERN "*.pdb")
+endif()

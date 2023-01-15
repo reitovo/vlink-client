@@ -66,6 +66,8 @@ private slots:
     void openSetting();
     void openBuyRelay();
 
+    void toggleKeepTop();
+
 private:
     QString errorToReadable(const QString& e);
 
@@ -127,6 +129,8 @@ private:
 
     // d3d
     std::shared_ptr<DxToFrame> d3d;
+
+    bool keepTop = false;
 };
 
 #endif // COLLABROOM_H

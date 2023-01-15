@@ -15,21 +15,27 @@
 [前往介绍页](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN)
 
 ### 编译
- 
+
 项目界面基于`Qt`，但使用`vcpkg`及`CMake`进行管理
 
 1. 安装[vcpkg](https://github.com/microsoft/vcpkg)
+
 2. 使用你喜欢的IDE打开`CMakeLists.txt`
-3. 选择合适的CMake编译路径及安装路径，需要设置以下CMake变量：
+
+3. 选择合适的CMake编译路径及安装路径，设置以下CMake变量：
    - `-DCMAKE_INSTALL_PREFIX="out/install"`
-   
-      > cmake install 的安装输出路径，设置为自己想要的路径
+
+      cmake install 的安装输出路径，设置为自己想要的路径
       
    - `-DVCPKG_INSTALL_OPTIONS=--x-buildtrees-root=E:/b`
-   
-      > 此处 `E:/b` 请设置为任意硬盘根目录尽可能短的路径，因为某些vcpkg依赖编译时目录不能太长
-      
-4. 编译
+
+      此处 `E:/b` 请设置为任意硬盘根目录尽可能短的路径，因为某些vcpkg依赖编译时目录不能太长，并且请选择与项目所在位置同一块硬盘，避免编译失败
+
+4. 设置环境变量，如果IDE支持也可以在IDE对CMake的配置页设置，如`CLion`
+
+![image](https://user-images.githubusercontent.com/29846655/212706928-4a4a8271-103a-4adf-a580-d8045152d7dd.png)
+
+5. 编译
 
 ### 许可证
 

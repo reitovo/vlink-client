@@ -70,10 +70,12 @@
         <location filename="../ui/windows/buyrelay.cpp" line="152"/>
         <location filename="../ui/windows/buyrelay.cpp" line="152"/>
         <location filename="../ui/windows/buyrelay.cpp" line="152"/>
+        <location filename="../ui/windows/buyrelay.cpp" line="152"/>
         <source>创建中转服务器失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/buyrelay.cpp" line="153"/>
         <location filename="../ui/windows/buyrelay.cpp" line="153"/>
         <location filename="../ui/windows/buyrelay.cpp" line="153"/>
         <location filename="../ui/windows/buyrelay.cpp" line="153"/>
@@ -96,10 +98,12 @@
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
+        <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <source>创建成功</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
         <location filename="../ui/windows/buyrelay.cpp" line="159"/>
@@ -206,7 +210,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/windows/collabroom.ui" line="740"/>
+        <location filename="../ui/windows/collabroom.ui" line="743"/>
         <location filename="../ui/windows/collabroom.ui" line="740"/>
         <source>使用说明与常见问题</source>
         <translation type="unfinished"></translation>
@@ -224,24 +228,30 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/windows/collabroom.ui" line="774"/>
+        <location filename="../ui/windows/collabroom.ui" line="777"/>
         <location filename="../ui/windows/collabroom.ui" line="774"/>
         <source>设置</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/windows/collabroom.ui" line="795"/>
+        <location filename="../ui/windows/collabroom.ui" line="811"/>
+        <source>置顶</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/windows/collabroom.ui" line="832"/>
         <location filename="../ui/windows/collabroom.ui" line="795"/>
         <source>CPU: 0.0% FPS: 0.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/windows/collabroom.ui" line="832"/>
+        <location filename="../ui/windows/collabroom.ui" line="869"/>
         <location filename="../ui/windows/collabroom.ui" line="832"/>
         <source>详细了解何时需要中转服务器</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/collabroom.cpp" line="109"/>
         <location filename="../ui/windows/collabroom.cpp" line="109"/>
         <location filename="../ui/windows/collabroom.cpp" line="109"/>
         <location filename="../ui/windows/collabroom.cpp" line="109"/>
@@ -264,6 +274,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="270"/>
         <location filename="../ui/windows/collabroom.cpp" line="265"/>
         <location filename="../ui/windows/collabroom.cpp" line="265"/>
+        <location filename="../ui/windows/collabroom.cpp" line="265"/>
         <source>复制成功</source>
         <translation type="unfinished"></translation>
     </message>
@@ -284,6 +295,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="270"/>
         <location filename="../ui/windows/collabroom.cpp" line="266"/>
         <location filename="../ui/windows/collabroom.cpp" line="266"/>
+        <location filename="../ui/windows/collabroom.cpp" line="266"/>
         <source>请不要在直播画面中展示房间ID！
 已复制到剪贴板，快分享给参加联动的人吧~</source>
         <translation type="unfinished"></translation>
@@ -296,6 +308,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="278"/>
         <location filename="../ui/windows/collabroom.cpp" line="278"/>
         <location filename="../ui/windows/collabroom.cpp" line="278"/>
+        <location filename="../ui/windows/collabroom.cpp" line="273"/>
         <location filename="../ui/windows/collabroom.cpp" line="273"/>
         <location filename="../ui/windows/collabroom.cpp" line="273"/>
         <source>房主已离开</source>
@@ -311,6 +324,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="280"/>
         <location filename="../ui/windows/collabroom.cpp" line="275"/>
         <location filename="../ui/windows/collabroom.cpp" line="275"/>
+        <location filename="../ui/windows/collabroom.cpp" line="275"/>
         <source>协议错误</source>
         <translation type="unfinished"></translation>
     </message>
@@ -322,6 +336,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="282"/>
         <location filename="../ui/windows/collabroom.cpp" line="282"/>
         <location filename="../ui/windows/collabroom.cpp" line="282"/>
+        <location filename="../ui/windows/collabroom.cpp" line="277"/>
         <location filename="../ui/windows/collabroom.cpp" line="277"/>
         <location filename="../ui/windows/collabroom.cpp" line="277"/>
         <source>房间号错误</source>
@@ -337,6 +352,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="284"/>
         <location filename="../ui/windows/collabroom.cpp" line="279"/>
         <location filename="../ui/windows/collabroom.cpp" line="279"/>
+        <location filename="../ui/windows/collabroom.cpp" line="279"/>
         <source>房间不存在</source>
         <translation type="unfinished"></translation>
     </message>
@@ -348,6 +364,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="288"/>
         <location filename="../ui/windows/collabroom.cpp" line="288"/>
         <location filename="../ui/windows/collabroom.cpp" line="288"/>
+        <location filename="../ui/windows/collabroom.cpp" line="283"/>
         <location filename="../ui/windows/collabroom.cpp" line="283"/>
         <location filename="../ui/windows/collabroom.cpp" line="283"/>
         <source>断开连接</source>
@@ -363,6 +380,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="325"/>
         <location filename="../ui/windows/collabroom.cpp" line="318"/>
         <location filename="../ui/windows/collabroom.cpp" line="318"/>
+        <location filename="../ui/windows/collabroom.cpp" line="318"/>
         <source>设置成功</source>
         <translation type="unfinished"></translation>
     </message>
@@ -376,6 +394,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="325"/>
         <location filename="../ui/windows/collabroom.cpp" line="318"/>
         <location filename="../ui/windows/collabroom.cpp" line="318"/>
+        <location filename="../ui/windows/collabroom.cpp" line="318"/>
         <source>所有联动人将重新连接，请稍后</source>
         <translation type="unfinished"></translation>
     </message>
@@ -387,6 +406,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="352"/>
         <location filename="../ui/windows/collabroom.cpp" line="352"/>
         <location filename="../ui/windows/collabroom.cpp" line="352"/>
+        <location filename="../ui/windows/collabroom.cpp" line="343"/>
         <location filename="../ui/windows/collabroom.cpp" line="343"/>
         <location filename="../ui/windows/collabroom.cpp" line="343"/>
         <source>NDI 错误</source>
@@ -407,6 +427,8 @@
         <location filename="../ui/windows/collabroom.cpp" line="415"/>
         <location filename="../ui/windows/collabroom.cpp" line="354"/>
         <location filename="../ui/windows/collabroom.cpp" line="415"/>
+        <location filename="../ui/windows/collabroom.cpp" line="345"/>
+        <location filename="../ui/windows/collabroom.cpp" line="401"/>
         <location filename="../ui/windows/collabroom.cpp" line="345"/>
         <location filename="../ui/windows/collabroom.cpp" line="401"/>
         <location filename="../ui/windows/collabroom.cpp" line="345"/>
@@ -442,6 +464,9 @@
         <location filename="../ui/windows/collabroom.cpp" line="345"/>
         <location filename="../ui/windows/collabroom.cpp" line="379"/>
         <location filename="../ui/windows/collabroom.cpp" line="401"/>
+        <location filename="../ui/windows/collabroom.cpp" line="345"/>
+        <location filename="../ui/windows/collabroom.cpp" line="379"/>
+        <location filename="../ui/windows/collabroom.cpp" line="401"/>
         <source>分享 VTube Studio 画面</source>
         <translation type="unfinished"></translation>
     </message>
@@ -453,6 +478,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="361"/>
         <location filename="../ui/windows/collabroom.cpp" line="361"/>
         <location filename="../ui/windows/collabroom.cpp" line="361"/>
+        <location filename="../ui/windows/collabroom.cpp" line="351"/>
         <location filename="../ui/windows/collabroom.cpp" line="351"/>
         <location filename="../ui/windows/collabroom.cpp" line="351"/>
         <source>致命错误</source>
@@ -468,6 +494,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="386"/>
         <location filename="../ui/windows/collabroom.cpp" line="373"/>
         <location filename="../ui/windows/collabroom.cpp" line="373"/>
+        <location filename="../ui/windows/collabroom.cpp" line="373"/>
         <source>尚未成功连接服务器，无法开始分享</source>
         <translation type="unfinished"></translation>
     </message>
@@ -481,6 +508,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="392"/>
         <location filename="../ui/windows/collabroom.cpp" line="379"/>
         <location filename="../ui/windows/collabroom.cpp" line="379"/>
+        <location filename="../ui/windows/collabroom.cpp" line="379"/>
         <source>停止</source>
         <translation type="unfinished"></translation>
     </message>
@@ -492,6 +520,8 @@
         <location filename="../ui/windows/collabroom.cpp" line="597"/>
         <location filename="../ui/windows/collabroom.cpp" line="597"/>
         <location filename="../ui/windows/collabroom.cpp" line="597"/>
+        <location filename="../ui/windows/collabroom.cpp" line="592"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1185"/>
         <location filename="../ui/windows/collabroom.cpp" line="592"/>
         <location filename="../ui/windows/collabroom.cpp" line="1185"/>
         <location filename="../ui/windows/collabroom.cpp" line="592"/>
@@ -550,6 +580,8 @@
         <location filename="../ui/windows/collabroom.cpp" line="869"/>
         <location filename="../ui/windows/collabroom.cpp" line="857"/>
         <location filename="../ui/windows/collabroom.cpp" line="869"/>
+        <location filename="../ui/windows/collabroom.cpp" line="857"/>
+        <location filename="../ui/windows/collabroom.cpp" line="869"/>
         <source>启动 NDI 发现组件失败</source>
         <translation type="unfinished"></translation>
     </message>
@@ -572,6 +604,8 @@
         <location filename="../ui/windows/collabroom.cpp" line="918"/>
         <location filename="../ui/windows/collabroom.cpp" line="908"/>
         <location filename="../ui/windows/collabroom.cpp" line="918"/>
+        <location filename="../ui/windows/collabroom.cpp" line="908"/>
+        <location filename="../ui/windows/collabroom.cpp" line="918"/>
         <source>联动 (VTS Link)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -583,6 +617,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="924"/>
         <location filename="../ui/windows/collabroom.cpp" line="924"/>
         <location filename="../ui/windows/collabroom.cpp" line="924"/>
+        <location filename="../ui/windows/collabroom.cpp" line="922"/>
         <location filename="../ui/windows/collabroom.cpp" line="922"/>
         <location filename="../ui/windows/collabroom.cpp" line="922"/>
         <source>启动 NDI 视频源失败</source>
@@ -598,6 +633,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1045"/>
         <location filename="../ui/windows/collabroom.cpp" line="1040"/>
         <location filename="../ui/windows/collabroom.cpp" line="1040"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1040"/>
         <source>初始化错误</source>
         <translation type="unfinished"></translation>
     </message>
@@ -609,6 +645,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1047"/>
         <location filename="../ui/windows/collabroom.cpp" line="1047"/>
         <location filename="../ui/windows/collabroom.cpp" line="1047"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1042"/>
         <location filename="../ui/windows/collabroom.cpp" line="1042"/>
         <location filename="../ui/windows/collabroom.cpp" line="1042"/>
         <source>NDI 来源错误</source>
@@ -624,6 +661,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1049"/>
         <location filename="../ui/windows/collabroom.cpp" line="1044"/>
         <location filename="../ui/windows/collabroom.cpp" line="1044"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1044"/>
         <source>NDI 接收断开</source>
         <translation type="unfinished"></translation>
     </message>
@@ -635,6 +673,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1051"/>
         <location filename="../ui/windows/collabroom.cpp" line="1051"/>
         <location filename="../ui/windows/collabroom.cpp" line="1051"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1046"/>
         <location filename="../ui/windows/collabroom.cpp" line="1046"/>
         <location filename="../ui/windows/collabroom.cpp" line="1046"/>
         <source>NDI 帧格式错误(Frame)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）</source>
@@ -650,6 +689,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1053"/>
         <location filename="../ui/windows/collabroom.cpp" line="1048"/>
         <location filename="../ui/windows/collabroom.cpp" line="1048"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1048"/>
         <source>NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「1920 X 1080」</source>
         <translation type="unfinished"></translation>
     </message>
@@ -663,6 +703,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1055"/>
         <location filename="../ui/windows/collabroom.cpp" line="1050"/>
         <location filename="../ui/windows/collabroom.cpp" line="1050"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1050"/>
         <source>NDI 输出源格式发生变化，请不要在分享画面时更改 VTube Studio 中的 NDI 设置</source>
         <translation type="unfinished"></translation>
     </message>
@@ -674,6 +715,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1057"/>
         <location filename="../ui/windows/collabroom.cpp" line="1057"/>
         <location filename="../ui/windows/collabroom.cpp" line="1057"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1052"/>
         <location filename="../ui/windows/collabroom.cpp" line="1052"/>
         <location filename="../ui/windows/collabroom.cpp" line="1052"/>
         <source>NDI 帧格式错误(Stride)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）</source>
@@ -696,6 +738,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="1059"/>
         <location filename="../ui/windows/collabroom.cpp" line="1054"/>
         <location filename="../ui/windows/collabroom.cpp" line="1054"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1054"/>
         <source>无法启动任何编码器！
 如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。</source>
         <translation type="unfinished"></translation>
@@ -705,6 +748,7 @@
         <location filename="../ui/windows/collabroom.cpp" line="79"/>
         <location filename="../ui/windows/collabroom.cpp" line="79"/>
         <location filename="../ui/windows/collabroom.cpp" line="79"/>
+        <location filename="../ui/windows/collabroom.cpp" line="78"/>
         <location filename="../ui/windows/collabroom.cpp" line="78"/>
         <location filename="../ui/windows/collabroom.cpp" line="78"/>
         <source>VTube Studio 联动</source>
@@ -725,11 +769,13 @@
     <message>
         <location filename="../ui/windows/collabroom.cpp" line="602"/>
         <location filename="../ui/windows/collabroom.cpp" line="602"/>
+        <location filename="../ui/windows/collabroom.cpp" line="602"/>
         <source>当前可能需要中转服务器。
 以下用户 IPv4 NAT 类型无法直接连接：</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/collabroom.cpp" line="603"/>
         <location filename="../ui/windows/collabroom.cpp" line="603"/>
         <location filename="../ui/windows/collabroom.cpp" line="603"/>
         <source>。
@@ -741,10 +787,13 @@
         <location filename="../ui/windows/collabroom.cpp" line="1213"/>
         <location filename="../ui/windows/collabroom.cpp" line="1188"/>
         <location filename="../ui/windows/collabroom.cpp" line="1213"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1188"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1213"/>
         <source>连接失败</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/collabroom.cpp" line="1189"/>
         <location filename="../ui/windows/collabroom.cpp" line="1189"/>
         <location filename="../ui/windows/collabroom.cpp" line="1189"/>
         <source>与 %1 的连接失败，可能需要中转服务器！</source>
@@ -753,16 +802,19 @@
     <message>
         <location filename="../ui/windows/collabroom.cpp" line="1189"/>
         <location filename="../ui/windows/collabroom.cpp" line="1189"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1189"/>
         <source>正在尝试重新连接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../ui/windows/collabroom.cpp" line="1213"/>
         <location filename="../ui/windows/collabroom.cpp" line="1213"/>
+        <location filename="../ui/windows/collabroom.cpp" line="1213"/>
         <source>与 %1 的连接失败，请等待服务器重新连接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/collabroom.cpp" line="599"/>
         <location filename="../ui/windows/collabroom.cpp" line="599"/>
         <source>当前应该无需中转服务器。
 如果长时间无法连接，请尝试换一个人创建房间再试。
@@ -895,10 +947,12 @@
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
+        <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <source>Not Translated Yet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
         <location filename="../ui/windows/mainwindow.cpp" line="27"/>
@@ -944,10 +998,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="30"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="30"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="30"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="30"/>
         <source>正在获取 NAT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="34"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="34"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="34"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="34"/>
@@ -970,10 +1026,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="38"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="38"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="38"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="38"/>
         <source>端口受限 NAT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="42"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="42"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="42"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="42"/>
@@ -996,10 +1054,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="46"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="46"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="46"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="46"/>
         <source>受限 NAT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="50"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="50"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="50"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="50"/>
@@ -1022,10 +1082,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="54"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="54"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="54"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="54"/>
         <source>无法获取 NAT</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="58"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="58"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="58"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="58"/>
@@ -1048,10 +1110,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="62"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="62"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="62"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="62"/>
         <source>公网 IP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
@@ -1074,10 +1138,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="69"/>
         <source> (你)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="71"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="71"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="71"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="71"/>
@@ -1100,10 +1166,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="101"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="101"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="101"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="101"/>
         <source>本机</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
@@ -1126,10 +1194,12 @@
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <source>已连接</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>
         <location filename="../ui/widgets/peeritemwidget.cpp" line="104"/>

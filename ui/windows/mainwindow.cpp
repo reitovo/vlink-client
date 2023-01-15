@@ -5,6 +5,7 @@
 
 #include <QTranslator>
 #include <QPushButton>
+#include <QDesktopServices>
 
 static MainWindow *_instance;
 
@@ -31,6 +32,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
     connect(ui->btnCreateRoom, SIGNAL(clicked()), this, SLOT(createRoom()));
     connect(ui->actionOpenSetting, SIGNAL(triggered()), this, SLOT(openSetting()));
+
+    connect(ui->actionLicense, &QAction::triggered, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/eQGuG4smx19LYTqTtmkKtn"));
+    });
 
     tray = std::make_unique<QSystemTrayIcon>(this);
     QIcon icon;

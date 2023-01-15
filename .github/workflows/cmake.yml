@@ -7,30 +7,60 @@ on:
     branches: [ "main" ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: RelWithDebInfo
+  BUILD_TYPE: Debug
+  BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: windows-latest
+    runs-on: self-hosted
+    if: ${{ !contains(github.event.head_commit.message, 'skip-ci') }}
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/out/install -DVCPKG_INSTALL_OPTIONS=--x-buildtrees-root=C:/b
+      - uses: actions/checkout@v3
+        with:
+          repository: 'cnSchwarzer/VTSLink-Client'
+          path: '${{github.workspace}}/vtslink'
+          ref: 'main'
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/out/build --config ${{env.BUILD_TYPE}} --target VTSLink -j8
+      - name: Configure CMake
+        working-directory: ${{github.workspace}}/vtslink
+        run: cmake -G Ninja -B ${{github.workspace}}/vtslink/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/vtslink/out/install
 
-    - name: Install
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/out/build --config ${{env.BUILD_TYPE}} --target install -j8
+      - name: Build
+        working-directory: ${{github.workspace}}/vtslink
+        run: cmake --build ${{github.workspace}}/vtslink/out/build --target VTSLink -j17
 
+      - name: Install
+        working-directory: ${{github.workspace}}/vtslink
+        run: cmake --build ${{github.workspace}}/vtslink/out/build --config ${{env.BUILD_TYPE}} --target install -j17
 
+      - name: Get Updator
+        uses: actions/checkout@v3
+        with:
+          repository: 'cnSchwarzer/Updator'
+          path: '${{github.workspace}}/updator'
+
+      - name: Get Updator config
+        uses: actions/checkout@v3
+        with:
+          repository: 'cnSchwarzer/VTSLink-Client-Action'
+          path: '${{github.workspace}}/ci'
+          token: ${{ secrets.VTSLINK_ACTION_TOKEN }}
+          ref: 'ci'
+
+      - name: Build Updator uploader
+        working-directory: '${{github.workspace}}/updator/Updator.Uploader'
+        run: 'dotnet build -o ${{github.workspace}}/uploader'
+
+      - name: Publish build
+        shell: pwsh
+        run: | 
+          dotnet ${{github.workspace}}/uploader/Updator.Uploader.dll `
+          --config=${{github.workspace}}/ci/config.json `
+          --distribution-root=${{github.workspace}}/vtslink/out/install `
+          --update-log="Commit ${{ github.event.client_payload.commit }}"

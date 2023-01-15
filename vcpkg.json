@@ -10,7 +10,12 @@
     "concurrentqueue",
     "crashpad",
     "libyuv",
-    "qt",
+    {
+      "name": "qtbase",
+      "features": [ "widgets" ]
+    },
+    "qttools",
+    "qttranslations",
     "directxtk",
     "libqrencode",
     "ndi-sdk",
@@ -40,7 +45,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "1522aa5f3a23cdcfc51e41c06ddf8c779c59da3a",
+      "baseline": "f1aa6e37159ccc75efe460aa2086d979cc036335",
       "reference": "reito"
     },
     "registries": [

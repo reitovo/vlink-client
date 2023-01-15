@@ -134,7 +134,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>263</y>
+     <y>264</y>
      <width>361</width>
      <height>30</height>
     </rect>
@@ -707,6 +707,9 @@
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <property name="spacing">
+     <number>5</number>
+    </property>
     <item>
      <widget class="QPushButton" name="tutorialFaq">
       <property name="sizePolicy">
@@ -744,14 +747,14 @@
     <item>
      <widget class="QPushButton" name="openSettings">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="minimumSize">
        <size>
-        <width>0</width>
+        <width>40</width>
         <height>30</height>
        </size>
       </property>
@@ -775,13 +778,47 @@
       </property>
      </widget>
     </item>
+    <item>
+     <widget class="QPushButton" name="keepTop">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>40</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>100000</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>MiSans</family>
+        <pointsize>10</pointsize>
+        <italic>false</italic>
+        <bold>false</bold>
+        <stylestrategy>PreferDefault</stylestrategy>
+       </font>
+      </property>
+      <property name="text">
+       <string>置顶</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QLabel" name="usageStat">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>336</y>
+     <y>337</y>
      <width>711</width>
      <height>20</height>
     </rect>

@@ -37,6 +37,16 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         QDialog(parent),
         ui(new Ui::CollabRoom) {
     ui->setupUi(this);
+
+    QPalette palette;
+    QBrush brush(QColor(255, 124, 159));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
+    ui->copyRoomId->setPalette(palette);
+    ui->btnSharingStatus->setPalette(palette);
+
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     QSettings settings;
@@ -93,6 +103,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->relayHideShow, &QPushButton::clicked, this, &CollabRoom::toggleTurnVisible);
     connect(ui->openSettings, &QPushButton::clicked, this, &CollabRoom::openSetting);
     connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
+    connect(ui->keepTop, &QPushButton::clicked, this, &CollabRoom::toggleKeepTop);
 
     connect(ui->tutorialFaq, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
@@ -1212,4 +1223,19 @@ void CollabRoom::rtcFailed(Peer *peer) {
         auto tray = MainWindow::instance()->tray.get();
         tray->showMessage(tr("连接失败"), QString(tr("与 %1 的连接失败，请等待服务器重新连接")).arg(nick));
     }
+}
+
+void CollabRoom::toggleKeepTop() {
+    keepTop = !keepTop;
+
+    QPalette palette;
+    QBrush brush(keepTop ? QColor::fromRgb(0, 119, 238) : QColor::fromRgb(0, 0, 0));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
+
+    ui->keepTop->setPalette(palette);
+    setWindowFlag(Qt::WindowStaysOnTopHint, keepTop);
+    show();
 }
