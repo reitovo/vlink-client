@@ -3,6 +3,7 @@
 #include <QTimer>
 #include "util.h"
 
+
 Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
     this->room = room;
     this->peerId = id;
