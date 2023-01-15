@@ -19,12 +19,8 @@
 项目界面基于`Qt`，但使用`vcpkg`及`CMake`进行管理
 
 1. 安装[vcpkg](https://github.com/microsoft/vcpkg)
-2. 安装[NDI SDK](https://downloads.ndi.tv/SDK/NDI_SDK/NDI%205%20SDK.exe)
-
-   > 确保环境变量存在指向NDI SDK路径的`NDI_SDK_DIR`，正常安装应该就有
-   
-3. 使用你喜欢的IDE打开`CMakeLists.txt`
-4. 选择合适的CMake编译路径及安装路径，需要设置以下CMake变量：
+2. 使用你喜欢的IDE打开`CMakeLists.txt`
+3. 选择合适的CMake编译路径及安装路径，需要设置以下CMake变量：
    - `-DCMAKE_INSTALL_PREFIX="out/install"`
    
       > cmake install 的安装输出路径，设置为自己想要的路径
@@ -33,7 +29,7 @@
    
       > 此处 `E:/b` 请设置为任意硬盘根目录尽可能短的路径，因为某些vcpkg依赖编译时目录不能太长
       
-5. 编译
+4. 编译
 
 ### 许可证
 

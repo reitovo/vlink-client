@@ -13,10 +13,17 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 20) 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
+# Linguist tools for Qt
+find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
+
+if(${QT_VERSION_MAJOR} LESS 6)
+    message(FATAL_ERROR "Needs Qt6")
+endif()
+
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 qt_standard_project_setup()
 
+# Protobuf CMake generator
 find_package(Protobuf CONFIG REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -27,11 +34,13 @@ set(PROTO_FILES
 )
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 
+# Translation files
 set(TS_FILES
         translations/VTSLink_zh_CN.ts
         translations/VTSLink_en_US.ts
         translations/VTSLink_ja_JP.ts)
 
+# Codes
 set(CODEC_FILES
         codec/frame_to_av.h
         codec/frame_to_av.cpp
@@ -48,6 +57,7 @@ set(CODEC_FILES
         codec/i_d3d_src.h
         codec/i_d3d_src.cpp)
 
+# Shader
 set(SHADER_FILES
         shader/blend_pixel.hlsl
         shader/blend_vertex.hlsl
@@ -59,9 +69,7 @@ set(SHADER_FILES
         shader/bgranv12_downsample_pixel.hlsl
     )
 
-include_directories(.)
-include_directories(codec)
-
+# UI
 set(PROJECT_SOURCES
         token.h
         main.cpp
@@ -88,33 +96,19 @@ set(PROJECT_SOURCES
         ${PROTO_HDRS}
         )
 
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(VTSLink
-        vtslink.rc
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-    )
-# Define target properties for Android with Qt 6 as:
-#    set_property(TARGET VTSLink APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
-#                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
-# For more information, see https://doc.qt.io/qt-6/qt-add-executable.html#target-creation
+qt_add_executable(VTSLink
+    vtslink.rc
+    MANUAL_FINALIZATION
+    ${PROJECT_SOURCES}
+)
+qt_add_translations(VTSLink TS_FILES ${TS_FILES})
 
-    qt_add_translations(VTSLink TS_FILES ${TS_FILES})
-else()
-    if(ANDROID)
-        add_library(VTSLink SHARED
-            ${PROJECT_SOURCES}
-        )
-# Define properties for Android with Qt 5 after find_package() calls as:
-#    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-    else()
-        add_executable(VTSLink
-            ${PROJECT_SOURCES}
-        )
-    endif()
+include_directories(.)
+include_directories(codec)
 
-    qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-endif()
+set(USE_ASAN OFF)
+set(USE_CRASHPAD ON)
+set(USE_DIRECTXTK_OPENCV OFF)
 
 set_target_properties(VTSLink
     PROPERTIES
@@ -130,30 +124,21 @@ target_link_libraries(VTSLink PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 find_package(Qt6 REQUIRED COMPONENTS Network)
 target_link_libraries(VTSLink PRIVATE Qt6::Network)
 
-#natprobe
+# NatProbe
 add_subdirectory(dependency/NatTypeProbe)
 target_link_libraries(VTSLink PRIVATE NatTypeProb)
 
-#libdatachannel
+# libdatachannel
 find_package(LibDataChannel CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE LibDataChannel::LibDataChannel)
 
-#winsparkle
-#find_path(WINSPARKLE_INCLUDE_DIR winsparkle/winsparkle.h)
-#find_library(WINSPARKLE_LIBRARY winsparkle)
-#target_include_directories(VTSLink PRIVATE ${WINSPARKLE_INCLUDE_DIR})
-#target_link_libraries(VTSLink PRIVATE ${WINSPARKLE_LIBRARY})
-
-#crashpad
-set(USE_ASAN OFF)
-set(USE_CRASHPAD ON)
-set(USE_DIRECTXTK_OPENCV OFF)
-
+# Asan, not useful really...
 if (USE_ASAN)
     message(STATUS "Use Asan")
     target_compile_options(VTSLink PUBLIC -fsanitize=address)
 endif()
 
+# CrashPad
 if (USE_CRASHPAD AND NOT USE_ASAN)
     message(STATUS "Use Crashpad")
     target_compile_definitions(VTSLink PUBLIC HAS_CRASHPAD)
@@ -161,6 +146,7 @@ if (USE_CRASHPAD AND NOT USE_ASAN)
     target_link_libraries(VTSLink PRIVATE crashpad crashpad::crashpad)
 endif()
 
+# Copy CrashPad Handler
 add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"
         $<TARGET_FILE_DIR:VTSLink>)
@@ -189,14 +175,13 @@ target_link_libraries(VTSLink PUBLIC PkgConfig::LIBAV)
 
 # libyuv
 find_package(libyuv CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE yuv)
+target_link_libraries(VTSLink PRIVATE yuv) 
 
-# NDI SDK
-string(REPLACE "\\" "/" NDI_SDK_DIR $ENV{NDI_SDK_DIR})
-target_include_directories(VTSLink PRIVATE "${NDI_SDK_DIR}/Include")
-target_link_libraries(VTSLink PRIVATE "${NDI_SDK_DIR}/Lib/x64/Processing.NDI.Lib.x64.lib")
+# ndi-sdk
+target_include_directories(VTSLink PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/ndi-sdk")
+target_link_libraries(VTSLink PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/Processing.NDI.Lib.x64.lib")
 add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${NDI_SDK_DIR}/Bin/x64/Processing.NDI.Lib.x64.dll"
+        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/Processing.NDI.Lib.x64.dll"
         $<TARGET_FILE_DIR:VTSLink>)
 
 # for debug purpose
@@ -213,7 +198,7 @@ endif()
 if (USE_DIRECTXTK_OPENCV)
     message(STATUS "Use OpenCV")
     target_compile_definitions(VTSLink PUBLIC HAS_OPENCV)
-    set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/x64-windows/share/opencv2")
+    set(OpenCV_DIR "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/opencv2")
     find_package(OpenCV REQUIRED)
     target_link_libraries(VTSLink PRIVATE opencv_core opencv_imgproc opencv_contrib)
 endif()
@@ -234,17 +219,14 @@ target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlidec)
 # Brotli encoder library
 target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlienc)
 
-# protobuf
+# protobuf library
 target_link_libraries(VTSLink PRIVATE protobuf::libprotoc protobuf::libprotobuf)
 
 set_target_properties(VTSLink PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER my.example.com
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
 
+# copy ucrtbased if debug
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     install(FILES "C:/Windows/System32/ucrtbased.dll" DESTINATION bin)
 endif()
@@ -263,9 +245,7 @@ qt_generate_deploy_app_script(
 ) 
 install(SCRIPT ${DEPLOY_SCRIPT})
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(VTSLink)
-endif()
+qt_finalize_executable(VTSLink)
 
 #If use IDE other than Qt Creator, we need to copy required plugins and qt.conf correctly
 file(WRITE "${CMAKE_BINARY_DIR}/bin/qt.conf" "[Paths]

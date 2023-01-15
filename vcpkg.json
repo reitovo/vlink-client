@@ -13,6 +13,7 @@
     "qt",
     "directxtk",
     "libqrencode",
+    "ndi-sdk",
     {
       "name": "opencv2",
       "default-features": true,
@@ -41,6 +42,15 @@
       "repository": "https://github.com/cnSchwarzer/vcpkg",
       "baseline": "1522aa5f3a23cdcfc51e41c06ddf8c779c59da3a",
       "reference": "reito"
-    }
+    },
+    "registries": [
+      {
+        "kind": "git",
+        "repository": "https://github.com/cnSchwarzer/vcpkg-registry",
+        "baseline": "fb9eecc3a024fe527fd61f1b1e568a50a5755d5a",
+        "reference": "main",
+        "packages": [ "ndi-sdk" ]
+      }
+    ]
   }
 }
