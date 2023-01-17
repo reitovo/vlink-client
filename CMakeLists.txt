@@ -96,7 +96,7 @@ set(PROJECT_SOURCES
         )
 
 qt_add_executable(VTSLink
-    vtslink.rc
+    ui/vtslink.rc
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
 )
