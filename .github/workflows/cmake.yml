@@ -21,6 +21,10 @@ jobs:
         with:
           arch: x64
 
+      - name: Update vcpkg
+        working-directory: C:/vcpkg
+        run: git fetch reito reito && git reset --hard reito/reito
+
       - uses: actions/checkout@v3
         with:
           repository: 'cnSchwarzer/VTSLink-Client'
