@@ -28,8 +28,7 @@
       "name": "ffmpeg",
       "default-features": true,
       "features": [ "nvcodec", "qsv", "x264", "amf", "use-cuda-llvm", "use-lld-link", "use-clang-cl" ]
-    },
-    "opencv4"
+    }
   ],
   "overrides": [
     {
