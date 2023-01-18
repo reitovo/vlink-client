@@ -17,7 +17,21 @@
     "qttranslations",
     {
       "name": "qtbase",
-      "features": [ "widgets" ]
+      "default-features": false,
+      "features": [
+        "brotli",
+        "concurrent",
+        "freetype",
+        "gui",
+        "icu",
+        "jpeg",
+        "network",
+        "openssl",
+        "pcre2",
+        "png",
+        "thread",
+        "widgets"
+      ]
     },
     {
       "name": "opencv2",
