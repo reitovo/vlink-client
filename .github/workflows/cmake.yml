@@ -37,11 +37,11 @@ jobs:
 
       - name: Build
         working-directory: ${{github.workspace}}/vtslink
-        run: cmake --build ${{github.workspace}}/vtslink/out/build --target VTSLink -j17
+        run: cmake --build ${{github.workspace}}/vtslink/out/build --target VTSLink -j $NUMBER_OF_PROCESSORS
 
       - name: Install
         working-directory: ${{github.workspace}}/vtslink
-        run: cmake --build ${{github.workspace}}/vtslink/out/build --config ${{env.BUILD_TYPE}} --target install -j17
+        run: cmake --build ${{github.workspace}}/vtslink/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
 
       - name: Get Updator
         uses: actions/checkout@v3
