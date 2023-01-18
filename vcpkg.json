@@ -10,15 +10,15 @@
     "concurrentqueue",
     "crashpad",
     "libyuv",
+    "directxtk",
+    "libqrencode",
+    "ndi-sdk",
+    "qttools",
+    "qttranslations",
     {
       "name": "qtbase",
       "features": [ "widgets" ]
     },
-    "qttools",
-    "qttranslations",
-    "directxtk",
-    "libqrencode",
-    "ndi-sdk",
     {
       "name": "opencv2",
       "default-features": true,
@@ -45,7 +45,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "4848eb4d9c919b987ca20ddcefe0d732b7a6abcb",
+      "baseline": "a92b54acee01cbb6bbfbd75a794078869e0602e0",
       "reference": "reito"
     },
     "registries": [
