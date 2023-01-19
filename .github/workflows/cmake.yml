@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/checkout@v3
         with:
-          repository: 'cnSchwarzer/VTSLink-Client'
+          repository: 'reitovo/vtslink-client'
           path: '${{github.workspace}}/vtslink'
           ref: 'main'
 
@@ -52,7 +52,7 @@ jobs:
       - name: Get Updator config
         uses: actions/checkout@v3
         with:
-          repository: 'cnSchwarzer/VTSLink-Client-Action'
+          repository: 'reitovo/ci-private'
           path: '${{github.workspace}}/ci'
           token: ${{ secrets.VTSLINK_ACTION_TOKEN }}
           ref: 'ci'
@@ -65,6 +65,6 @@ jobs:
         shell: pwsh
         run: | 
           dotnet ${{github.workspace}}/uploader/Updator.Uploader.dll `
-          --config=${{github.workspace}}/ci/config.json `
+          --config=${{github.workspace}}/ci/vtslink/config.json `
           --distribution-root=${{github.workspace}}/vtslink/out/install `
           --update-log="Commit ${{github.event.head_commit.message}}"
