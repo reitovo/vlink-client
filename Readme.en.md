@@ -2,11 +2,11 @@
 
 ### Introduction
 
-`VTube Studio Link!` can help v-tubers who use `VTube Studio` to host collaborate event, featuring:
+`VTube Studio Link!` can help v-tubers who use `VTube Studio` to host a collaborative event, featuring:
 
-1. No need to share models, no copyright worries from softwares that based on model sharing like `PrprLive`.
+1. No need to share models, no copyright worries from software that is based on model sharing like `PrprLive`.
 2. Support native transparency.
-3. Low system resource comsumption, fully hardware accelerated.
+3. Low system resource consumption, fully hardware accelerated.
 4. Supports P2P and Relay transmission to cover all network situations.
 5. No need to deploy servers yourself, built-in one-key start (charged).
 
@@ -17,9 +17,9 @@
 It is a `CMake` project. GUI is based on `Qt`, use `vcpkg` to manage dependencies. 
 
 1. Install [vcpkg](https://github.com/microsoft/vcpkg)
-2. Open `CMakeLists.txt` with your favourite IDE.
+2. Open `CMakeLists.txt` with your favorite IDE.
 3. Set build root and install root as you wish.
-4. Set environment variables in IDE CMake project settings，take `CLion` as an example:
+4. Set environment variables in IDE CMake project settings, take `CLion` as an example:
 
   | Name                   | Where to get one     |
   |------------------------|----------------------|
