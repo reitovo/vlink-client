@@ -4,33 +4,29 @@
 
 `VTube Studio Link!` can help v-tubers who use `VTube Studio` to host collaborate event, featuring:
 
-1. 无需分享模型，无需顾虑如`PrprLive`基于模型分享联动带来的模型版权及分享的隐患
-2. 支持原生透明度，而非基于类似去除绿幕的伪透明度
-3. 充分使用了各种硬件加速能力，系统资源占用较低
-4. 考虑多种网络环境，自动切换P2P及中转两种传输模式
-5. 无需自行部署中转服务器，内置基于腾讯云的中转服务器一键创建部署（付费）
+1. No need to share models, no copyright worries from softwares that based on model sharing like `PrprLive`.
+2. Support native transparency.
+3. Low system resource comsumption, fully hardware accelerated.
+4. Supports P2P and Relay transmission to cover all network situations.
+5. No need to deploy servers yourself, built-in one-key start (charged).
 
-### 代码
+### [Code Walkthrough](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN) 
 
-[前往介绍页](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN)
+### Compiling
 
-### 编译
+It is a `CMake` project. GUI is based on `Qt`, use `vcpkg` to manage dependencies. 
 
-项目界面基于`Qt`，但使用`vcpkg`及`CMake`进行管理
+1. Install [vcpkg](https://github.com/microsoft/vcpkg)
+2. Open `CMakeLists.txt` with your favourite IDE.
+3. Set build root and install root as you wish.
+4. Set environment variables in IDE CMake project settings，take `CLion` as an example:
 
-1. 安装[vcpkg](https://github.com/microsoft/vcpkg)
-2. 使用你喜欢的IDE打开`CMakeLists.txt`
-3. 选择合适的CMake编译路径及安装路径
-4. 设置环境变量，如果IDE支持也可以在IDE对CMake的配置页设置，如`CLion`
-
-  | 名称                     | 值来源                  |
+  | Name                   | Where to get one     |
   |------------------------|----------------------|
   | BACKTRACE_SUBMIT_TOKEN | https://backtrace.io |
 
   ![image](https://user-images.githubusercontent.com/29846655/212706928-4a4a8271-103a-4adf-a580-d8045152d7dd.png)
 
-5. 编译
+5. Compile
 
-### 许可证
-
-[LICENSE](LICENSE)
+### [LICENSE](LICENSE)
