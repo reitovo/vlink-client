@@ -1,10 +1,8 @@
-## VTube Studio 联动!
+## VTube Studio Link!
 
-[English](Readme.en.md)
+### Introduction
 
-### 简介
-
-`VTube Studio 联动！`可以帮助使用`VTube Studio`的虚拟主播进行联动，并且：
+`VTube Studio Link!` can help v-tubers who use `VTube Studio` to host collaborate event, featuring:
 
 1. 无需分享模型，无需顾虑如`PrprLive`基于模型分享联动带来的模型版权及分享的隐患
 2. 支持原生透明度，而非基于类似去除绿幕的伪透明度
