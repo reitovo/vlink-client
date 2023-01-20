@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionLangEn, &QAction::triggered, this, [this] { actionSetLang("en_US"); });
     connect(ui->actionLangJa, &QAction::triggered, this, [this] {
         tray->showMessage(tr("Not Translated Yet"), tr("Not translated yet, sorry for that."), tray->icon());
-        actionSetLang("ja_JP");
+        //actionSetLang("ja_JP");
     });
 
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
@@ -111,6 +111,10 @@ void MainWindow::actionSetLang(QString code) {
         QSettings settings;
         settings.setValue("languageCode", code);
         settings.sync();
+
+        qDebug() << "set lang" << code;
+    } else {
+        qDebug() << "failed to load translator" << code;
     }
 }
 
