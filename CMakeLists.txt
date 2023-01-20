@@ -4,7 +4,7 @@ set(ENV{VCPKG_MAX_CONCURRENCY} 16)
 
 message(STATUS "VTSLink - Reito")
 
-project(VTSLink VERSION 0.9.0)
+project(VTSLink)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -119,8 +119,6 @@ set_target_properties(VTSLink
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
-target_compile_definitions(VTSLink PUBLIC VTSLINK_VERSION="${CMAKE_PROJECT_VERSION}")
 
 target_link_libraries(VTSLink PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 

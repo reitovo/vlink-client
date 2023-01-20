@@ -88,18 +88,6 @@ int main(int argc, char *argv[]) {
     QFontDatabase::addApplicationFont(":/fonts/MiSans-Regular.ttf");
     QFontDatabase::addApplicationFont(":/fonts/MiSans-Demibold.ttf");
 
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    qDebug() << "Languages" << uiLanguages.join(", ");
-    for (const QString &locale: uiLanguages) {
-        const QString baseName = "VTSLink_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
-            a.installTranslator(&translator);
-            qDebug() << "Using language" << locale;
-            break;
-        }
-    }
-
     MainWindow w;
     w.show();
 

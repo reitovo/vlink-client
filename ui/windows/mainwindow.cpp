@@ -15,10 +15,14 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
-    auto idleText = "v" VTSLINK_VERSION " @铃当Reito";
+    auto idleText = "by @铃当Reito";
     ui->actionVersion->setText(idleText);
 
     ui->iptRoomId->setStyleSheet("QLineEdit[echoMode=\"2\"]{ lineedit-password-character: 42 }");
+
+
+    const QStringList uiLanguages = QLocale::system().uiLanguages();
+    qDebug() << "Languages" << uiLanguages.join(", ");
 
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(actionExit()));
 
@@ -26,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionLangEn, &QAction::triggered, this, [this] { actionSetLang("en_US"); });
     connect(ui->actionLangJa, &QAction::triggered, this, [this] {
         tray->showMessage(tr("Not Translated Yet"), tr("Not translated yet, sorry for that."), tray->icon());
-        //actionSetLang("ja_JP");
+        //actionSetLang("ja-JP");
     });
 
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
@@ -47,8 +51,20 @@ MainWindow::MainWindow(QWidget *parent)
     iterateHwAccels();
 
     QSettings settings;
-    auto lang = settings.value("languageCode", "zh_CN").toString();
-    actionSetLang(lang);
+    auto lang = settings.value("languageCode", "").toString();
+    if (lang.isEmpty()) {
+        QStringList validLangCode{"zh_CN", "en_US"};
+        for (QString locale: uiLanguages) {
+            auto code = locale.replace("-", "_");
+            if (validLangCode.contains(code)) {
+                actionSetLang(code);
+                qDebug() << "Using language" << code;
+                break;
+            }
+        }
+    } else {
+        actionSetLang(lang);
+    }
 }
 
 MainWindow::~MainWindow() {
