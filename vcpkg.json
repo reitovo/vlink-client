@@ -59,7 +59,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "3e8b995dbc86f7c0ca61bf8c5e34c619f132148f",
+      "baseline": "3d6ae7e4f59930cba08ae807df85e62d627b459d",
       "reference": "reito"
     },
     "registries": [
