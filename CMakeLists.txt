@@ -20,7 +20,7 @@ if(${QT_VERSION_MAJOR} LESS 6)
     message(FATAL_ERROR "Needs Qt6")
 endif()
 
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools Network)
 qt_standard_project_setup()
 
 # Protobuf CMake generator
@@ -120,10 +120,7 @@ set_target_properties(VTSLink
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-target_link_libraries(VTSLink PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
-
-find_package(Qt6 REQUIRED COMPONENTS Network)
-target_link_libraries(VTSLink PRIVATE Qt6::Network)
+target_link_libraries(VTSLink PRIVATE Qt6::Widgets Qt6::Network)
 
 # NatProbe
 add_subdirectory(dependency/NatTypeProbe)
@@ -232,8 +229,7 @@ if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     install(FILES "C:/Windows/System32/ucrtbased.dll" DESTINATION bin)
 endif()
 
-install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION ${CMAKE_INSTALL_BINDIR}
-    FILES_MATCHING PATTERN "*.dll")
+install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION ${CMAKE_INSTALL_BINDIR} FILES_MATCHING PATTERN "*.dll")
 
 install(TARGETS VTSLink
     BUNDLE  DESTINATION .

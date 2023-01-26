@@ -1,4 +1,6 @@
 ## VTube Studio 联动!
+ 
+![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
 [English](Readme.en.md)
 

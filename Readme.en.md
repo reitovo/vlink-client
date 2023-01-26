@@ -1,5 +1,7 @@
 ## VTube Studio Link!
 
+![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
+
 ### Introduction
 
 `VTube Studio Link!` can help v-tubers who use `VTube Studio` to host a collaborative event, featuring:
