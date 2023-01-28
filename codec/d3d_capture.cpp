@@ -68,6 +68,9 @@ DxCapture::DxCapture(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d) {
 
 DxCapture::~DxCapture() {
     qDebug() << "end d3d capture";
+    if (CollabRoom::instance() != nullptr)
+        emit CollabRoom::instance()->onDxgiCaptureStatus("idle");
+
     if (d3d != nullptr) {
         d3d->unregisterSource(this);
     }
@@ -364,8 +367,10 @@ void DxCapture::initDxCapture() {
     dx_capture_setting_default(&cap->setting);
     cap->setting.window = "VTube Studio:UnityWndClass:VTube Studio.exe";
     cap->setting.force_shmem = _restartToSharedMemory;
+    _isShareMemory = cap->setting.force_shmem;
 
     dx_capture_init(cap.get());
+    emit CollabRoom::instance()->onDxgiCaptureStatus("init");
 }
 
 void DxCapture::captureLock() {
@@ -422,13 +427,21 @@ void DxCapture::capturedTexture(dx_texture_t *tex) {
                 _capturedView.Get()
         };
         this->_d3d11_deviceCtx->PSSetShaderResources(0, textureViews.size(), textureViews.data());
+
+        emit CollabRoom::instance()->onDxgiCaptureStatus(_isShareMemory ? "shmem" : "shtex");
     } else {
         _capturedHeigth = _capturedWidth = 0;
         qDebug() << "null captured texture";
 
         if (++failureCount == 3) {
-            cap->setting.force_shmem = true;
-            _restartToSharedMemory = true;
+            if (_isShareMemory) {
+                emit CollabRoom::instance()->onDxgiCaptureStatus("fail");
+                qDebug() << "shmem also failed";
+            } else {
+                failureCount = 0;
+                cap->setting.force_shmem = true;
+                _restartToSharedMemory = true;
+            }
         }
     }
 }

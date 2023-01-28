@@ -53,11 +53,57 @@
         <number>0</number>
        </property>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>恢复所有忽略的提示</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="restoreIgnored">
+           <property name="text">
+            <string>恢复</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>以下设置需要重新打开房间才能生效</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QCheckBox" name="shouldForceEncoder">
            <property name="text">
-            <string>使用指定的编码器（重新打开房间生效）</string>
+            <string>使用指定的编码器</string>
            </property>
           </widget>
          </item>
@@ -67,16 +113,23 @@
         </layout>
        </item>
        <item>
+        <widget class="QCheckBox" name="useNdiReceiver">
+         <property name="text">
+          <string>使用 NDI 输入（消耗更多资源，仅当分享 VTube Studio 始终黑屏时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="useNdiSender">
          <property name="text">
-          <string>使用 NDI 输出（重新打开房间生效，消耗更多资源，仅当游戏源捕获失败时使用）</string>
+          <string>使用 NDI 输出（消耗更多资源，仅当 OBS 游戏源捕获本软件失败时使用）</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QCheckBox" name="showDxgiWindow">
          <property name="text">
-          <string>显示联动画面窗口（重新打开房间生效，调试）</string>
+          <string>显示联动画面窗口（调试）</string>
          </property>
         </widget>
        </item>

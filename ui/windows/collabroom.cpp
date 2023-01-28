@@ -34,7 +34,7 @@ extern "C" {
 #include "d3d_capture.h"
 #include <QDesktopServices>
 
-static CollabRoom* _instance;
+static CollabRoom *_instance;
 
 CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         QDialog(parent),
@@ -65,11 +65,19 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     if (!useNdiSender) {
         auto output = new DxgiOutput();
         if (settings.value("showDxgiWindow").toBool()) {
+            output->move(0, 0);
             output->show();
         }
         d3d->init(true);
     } else {
         d3d->init(false);
+    }
+
+    if (useNdiReceiver) {
+        ui->shareMethods->setCurrentIndex(0);
+    } else {
+        dxgiCaptureStatus("idle");
+        ui->shareMethods->setCurrentIndex(1);
     }
 
     qDebug() << "sender is" << (useNdiSender ? "ndi" : "swap");
@@ -102,6 +110,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
     connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
     connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
+    connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -1206,9 +1215,11 @@ QString CollabRoom::errorToReadable(const QString &reason) {
 }
 
 void CollabRoom::usageStatUpdate() {
-    ui->usageStat->setText(QString("CPU: %1% FPS: %2")
+    ui->usageStat->setText(QString("CPU: %1% FPS: %2 输入: %3 输出: %4")
                                    .arg(QString::number(usage::getCpuUsage(), 'f', 1))
                                    .arg(QString::number(outputFps.fps(), 'f', 1))
+                                   .arg(useNdiReceiver ? tr("NDI") : tr("D3D11"))
+                                   .arg(useNdiSender ? tr("NDI") : tr("D3D11"))
     );
 }
 
@@ -1385,12 +1396,15 @@ void CollabRoom::downgradedToSharedMemory() {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setWindowTitle(tr("性能提示"));
-        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n点击「打开」以了解原因与解决方案。\n点击「忽略」不再出现本提示。"));
+        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n"
+                       "注意：一旦进入兼容模式，需要重新进入房间方可再次尝试以正常模式捕获。\n\n"
+                       "点击「打开」以了解原因与解决方案。\n"
+                       "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
         auto ign = box.addButton(tr("忽略"), QMessageBox::NoRole);
         box.exec();
-        auto ret = dynamic_cast<QPushButton*>(box.clickedButton());
+        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
         if (ret == ign) {
             s.setValue("ignoreDowngradedToSharedMemory", true);
             s.sync();
@@ -1398,6 +1412,21 @@ void CollabRoom::downgradedToSharedMemory() {
             QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
         }
     }
+}
+
+void CollabRoom::dxgiCaptureStatus(QString text) {
+    if (text == "idle") {
+        text = tr("未分享");
+    } else if (text == "init") {
+        text = tr("初始化中");
+    } else if (text == "shmem") {
+        text = tr("已捕获（兼容）");
+    } else if (text == "shtex") {
+        text = tr("已捕获");
+    } else if (text == "fail") {
+        text = tr("捕获失败");
+    }
+    ui->dxgiCaptureStatus->setText(text);
 }
 
 CollabRoom *CollabRoom::instance() {

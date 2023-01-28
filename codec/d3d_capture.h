@@ -41,6 +41,7 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
 
     std::unique_ptr<dx_capture_t> cap;
     std::atomic_bool _restartToSharedMemory = false;
+    std::atomic_bool _isShareMemory = false;
 
     QMutex lock;
 

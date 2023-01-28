@@ -4,7 +4,11 @@
   "license": "GPL-2.0-only",
   "dependencies": [
     "kcp",
-    "libdatachannel",
+    {
+      "name": "libdatachannel",
+      "default-features": true,
+      "features": [ "ws", "stdcall" ]
+    },
     "brotli",
     "protobuf",
     "concurrentqueue",

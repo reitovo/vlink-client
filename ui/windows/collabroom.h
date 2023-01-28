@@ -43,6 +43,8 @@ signals:
     void onShareError(QString);
     void onFatalError(QString);
     void onRtcFailed(Peer*);
+
+    void onDxgiCaptureStatus(QString text);
     void onDowngradedToSharedMemory();
 
 private slots:
@@ -61,7 +63,9 @@ private slots:
     void shareError(QString reason);
     void fatalError(QString reason);
     void rtcFailed(Peer* peer);
+
     void downgradedToSharedMemory();
+    void dxgiCaptureStatus(QString text);
 
     void openSetting();
     void openBuyRelay();

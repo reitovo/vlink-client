@@ -32,7 +32,7 @@ class Peer : public PeerUi {
 
     std::unique_ptr<AvToDx> dec;
 
-    QMutex dcLock;
+    QMutex pcLock;
 
     void printSelectedCandidate();
 

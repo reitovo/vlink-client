@@ -202,7 +202,7 @@ static inline float hook_rate_to_float(enum hook_rate rate) {
         case HOOK_RATE_FAST:
             return 0.5f;
         case HOOK_RATE_FASTEST:
-            return 0.2f;
+            return 0.1f;
         case HOOK_RATE_NORMAL:
             /* FALLTHROUGH */
         default:

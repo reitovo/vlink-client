@@ -51,9 +51,9 @@ Peer::~Peer() {
 }
 
 bool Peer::connected() {
-    dcLock.lock();
+    pcLock.lock();
     auto ret = dc != nullptr && dc->isOpen();
-    dcLock.unlock();
+    pcLock.unlock();
     return ret;
 }
 
@@ -115,9 +115,9 @@ void Peer::startServer() {
         }
     });
 
-    dcLock.lock();
+    pcLock.lock();
     dc = pc->createDataChannel("vts");
-    dcLock.unlock();
+    pcLock.unlock();
 
     dc->onOpen([this]() {
         qDebug() << "Server datachannel open";
@@ -188,14 +188,10 @@ void Peer::startClient(QJsonObject serverSdp) {
         }
     });
 
-    pc->onTrack([=](std::shared_ptr<rtc::Track> track) {
-
-    });
-
     pc->onDataChannel([=](std::shared_ptr<rtc::DataChannel> incoming) {
-        dcLock.lock();
+        pcLock.lock();
         dc = incoming;
-        dcLock.unlock();
+        pcLock.unlock();
 
         qDebug() << "Client incoming server data channel " << QString::fromStdString(pc->remoteAddress().value());
 
@@ -231,11 +227,11 @@ void Peer::startClient(QJsonObject serverSdp) {
 void Peer::close() {
     dcInited = false;
     if (dc != nullptr) {
-        dcLock.lock();
+        pcLock.lock();
         dc->resetCallbacks();
         dc->close();
         dc = nullptr;
-        dcLock.unlock();
+        pcLock.unlock();
     }
     if (pc != nullptr) {
         pc->resetCallbacks();
