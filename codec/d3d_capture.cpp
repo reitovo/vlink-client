@@ -47,7 +47,7 @@ static void dx_unlock(void *user) {
 
 static char *dx_get_file_path(const char *filename) {
     char *ret = (char *) _aligned_malloc(512, 32);
-    sprintf(ret, R"(E:\VTSLink\Client\VTSLink\out\build\x64-Debug\%s)", filename);
+    sprintf(ret, IsDebuggerPresent() ? R"(E:\VTSLink\Client\VTSLink\out\build\x64-Debug\%s)" : "./%s", filename);
     return ret;
 }
 
