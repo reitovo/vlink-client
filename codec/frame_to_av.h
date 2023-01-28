@@ -98,7 +98,7 @@ public:
     void initEncodingParameter(const CodecOption& option, AVCodecContext * ctx);
 
     std::optional<QString> process(NDIlib_video_frame_v2_t* ndi);
-    std::optional<QString> processFast(const std::shared_ptr<DxToFrame>& fast);
+    std::optional<QString> processFast(const std::shared_ptr<IDxCopyable>& fast);
     void stop();
 
     static const QList<CodecOption>& getEncoders();

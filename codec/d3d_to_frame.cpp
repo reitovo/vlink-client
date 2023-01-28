@@ -86,7 +86,7 @@ QString DxToFrame::debugInfo()
         .arg(renderFps.stat()).arg(count);
 }
 
-void DxToFrame::registerSource(IDxSrc *src)
+void DxToFrame::registerSource(IDxToFrameSrc *src)
 {
     qDebug() << "d3d2ndi register source";
     lock.lock();
@@ -94,7 +94,7 @@ void DxToFrame::registerSource(IDxSrc *src)
     lock.unlock();
 }
 
-void DxToFrame::unregisterSource(IDxSrc *src)
+void DxToFrame::unregisterSource(IDxToFrameSrc *src)
 {
     qDebug() << "d3d2ndi unregister source";
     lock.lock();

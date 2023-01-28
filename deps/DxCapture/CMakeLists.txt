@@ -3,7 +3,7 @@ project(DxCapture)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_library(DxCapture STATIC dx-capture-d3d11.cpp)
+add_library(DxCapture STATIC dx-capture.cpp)
 include_directories(.)
 
 target_sources(
@@ -11,6 +11,7 @@ target_sources(
     PRIVATE
     app-helpers.c
     app-helpers.h
+    dx-capture.cpp
     dx-capture.c
     dx-capture.h
     game-capture.c
@@ -55,7 +56,10 @@ add_subdirectory(get-graphics-offsets)
 target_link_libraries(DxCapture PRIVATE get-graphics-offsets)
 
 add_subdirectory(graphics-hook)
+add_dependencies(DxCapture graphics-hook)
+
 add_subdirectory(inject-helper)
+add_dependencies(DxCapture inject-helper)
 
 target_include_directories(DxCapture PUBLIC
     ${PROJECT_SOURCE_DIR}

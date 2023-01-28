@@ -115,21 +115,21 @@ void dx_capture_setting_default(struct dx_capture_setting_t *setting) {
     setting->limit_framerate = false;
     setting->capture_overlays = false;
     setting->anticheat_hook = false;
-    setting->target_fps.den = 60;
-    setting->target_fps.num = 1;
+    setting->target_fps.den = 1;
+    setting->target_fps.num = 60;
 }
 
 char *dx_module_file(struct dx_capture_t *ctx, const char *filename) {
-    if (ctx->get_file_path)
-        return ctx->get_file_path(filename);
+    if (ctx->on_get_hook_file_path)
+        return ctx->on_get_hook_file_path(filename);
     else
         return filename;
 }
 
 void dx_graphic_lock(struct dx_capture_t *ctx) {
-    ctx->lock();
+    ctx->lock(ctx->user);
 }
 
 void dx_graphic_unlock(struct dx_capture_t *ctx) {
-    ctx->unlock();
+    ctx->unlock(ctx->user);
 }

@@ -1,5 +1,5 @@
 
-#include "dependency/NatTypeProbe/include/NatTypeProbe/NatProb.h"
+#include "deps/NatTypeProbe/include/NatTypeProbe/NatProb.h"
 #include "peeritemwidget.h"
 #include "qtimer.h"
 #include "ui_peeritemwidget.h"

@@ -39,7 +39,7 @@ struct FrameReorderer {
 // And the instance is a IDxSrc which will be registered to room's merger DxToNdi, which
 // will combine all sources textures there.
 class DxToFrame;
-class AvToDx : public IDxSrc, public IDebugCollectable {
+class AvToDx : public IDxToFrameSrc, public IDebugCollectable {
 
 private:
     std::unique_ptr<Nv12ToBgra> bgra;
@@ -79,7 +79,7 @@ public:
 
     QString debugInfo();
 
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest) override;
 };
 
 #endif // AV_TO_D3D_H

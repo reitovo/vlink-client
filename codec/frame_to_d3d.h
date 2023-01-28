@@ -25,7 +25,7 @@ struct NDIlib_video_frame_v2_t;
 
 // This is used by server side to directly convert ndi frames to d3d11texture2d.
 // Then it can be directly used by DxToNdi merger, without need to encode/decode
-class FrameToDx : public IDxSrc, public IDebugCollectable {
+class FrameToDx : public IDxToFrameSrc, public IDebugCollectable {
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
     ComPtr<ID3D11Texture2D> _texture_rgba = nullptr;
@@ -52,7 +52,7 @@ public:
     void releaseSharedSurf();
 
     void update(NDIlib_video_frame_v2_t*);
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest);
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest) override;
 };
 
 #endif // NDI_TO_D3D_H

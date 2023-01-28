@@ -96,9 +96,8 @@ void MainWindow::joinRoom() {
     auto c = new CollabRoom(roomId, false);
     c->show();
     hide();
-    connect(c, &QDialog::finished, this, [=]() {
+    connect(c, &QDialog::destroyed, this, [=]() {
         show();
-        c->deleteLater();
     });
 
 //    auto* http = new BlockingHttpRequest(this);
@@ -117,9 +116,8 @@ void MainWindow::createRoom() {
     auto c = new CollabRoom(roomId, true);
     c->show();
     hide();
-    connect(c, &QDialog::finished, this, [=]() {
+    connect(c, &QDialog::destroyed, this, [=]() {
         show();
-        c->deleteLater();
     });
 }
 

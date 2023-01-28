@@ -445,7 +445,7 @@ std::optional<QString> FrameToAv::process(NDIlib_video_frame_v2_t* ndi)
     return r;
 }
 
-std::optional<QString> FrameToAv::processFast(const std::shared_ptr<DxToFrame>& fast) {
+std::optional<QString> FrameToAv::processFast(const std::shared_ptr<IDxCopyable>& fast) {
     int ret;
 
     QElapsedTimer t;

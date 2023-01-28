@@ -20,7 +20,8 @@ struct dx_capture_setting_t {
     bool limit_framerate;
     bool capture_overlays;
     bool anticheat_hook;
-    char *window;
+    bool force_shmem;
+    const char *window;
     struct dx_frac target_fps;
 };
 
@@ -29,10 +30,13 @@ struct dx_capture_t {
     struct ID3D11DeviceContext *context;
     struct dx_capture_setting_t setting;
     void *gc;
+    void *user;
 
-    void (*lock)();
-    void (*unlock)();
-    char* (*get_file_path)(const char * filename);
+    void (*lock)(void* user);
+    void (*unlock)(void* user);
+
+    char* (*on_get_hook_file_path)(const char * filename);
+    void (*on_captured_texture)(void* user, dx_texture_t* texture);
 };
 
 void dx_capture_setting_default(struct dx_capture_setting_t* setting);

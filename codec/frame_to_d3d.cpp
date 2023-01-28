@@ -8,7 +8,7 @@
 #include <dxgi1_2.h>
 #include <d3d_to_frame.h>
 
-FrameToDx::FrameToDx(std::shared_ptr<DxToFrame> d3d) : IDxSrc(d3d)
+FrameToDx::FrameToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin ndi2d3d";
     d3d->registerSource(this);

@@ -7,7 +7,6 @@
 #ifdef WIN32
 #include <winsock2.h>
 #else
-
 #define __linux
 #include <unistd.h>
 #endif

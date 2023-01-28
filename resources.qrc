@@ -8,6 +8,8 @@
         <file>shader/nv12bgra_vertex.hlsl</file>
         <file>shader/blend_pixel.hlsl</file>
         <file>shader/blend_vertex.hlsl</file>
+        <file>shader/scale_pixel.hlsl</file>
+        <file>shader/scale_vertex.hlsl</file>
         <file>images/hide.png</file>
         <file>images/show.png</file>
         <file>fonts/MiSans-Regular.ttf</file>

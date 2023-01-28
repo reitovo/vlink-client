@@ -125,11 +125,11 @@ set_target_properties(VTSLink
 target_link_libraries(VTSLink PRIVATE Qt6::Widgets Qt6::Network)
 
 # DxCapture
-add_subdirectory(dependency/DxCapture)
+add_subdirectory(deps/DxCapture)
 target_link_libraries(VTSLink PRIVATE DxCapture)
 
 # NatProbe
-add_subdirectory(dependency/NatTypeProbe)
+add_subdirectory(deps/NatTypeProbe)
 target_link_libraries(VTSLink PRIVATE NatTypeProb)
 
 # libdatachannel

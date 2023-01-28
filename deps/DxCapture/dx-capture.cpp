@@ -18,12 +18,12 @@ dx_texture_t *dx_texture_create(struct dx_capture_t *ctx, uint32_t width, uint32
     texDesc_rgba.Height = height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
-    texDesc_rgba.Usage = isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
     texDesc_rgba.SampleDesc.Count = 1;
     texDesc_rgba.SampleDesc.Quality = 0;
-    texDesc_rgba.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+    texDesc_rgba.MiscFlags = 0;
     texDesc_rgba.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     texDesc_rgba.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
+    texDesc_rgba.Usage = isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 
     if (isRenderTarget) {
         texDesc_rgba.BindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -45,10 +45,12 @@ dx_texture_t *dx_texture_create(struct dx_capture_t *ctx, uint32_t width, uint32
 dx_texture_t *dx_texture_open_shared(struct dx_capture_t *ctx, uint32_t handle) {
     HRESULT hr;
     ID3D11Texture2D *texture;
-    hr = ctx->device->OpenSharedResource((HANDLE) handle, __uuidof(ID3D11Texture2D), (void **) &texture);
+    auto hd = (HANDLE)(uintptr_t)handle;
+    hr = ctx->device->OpenSharedResource(hd, __uuidof(ID3D11Texture2D), (void **) &texture);
 
-    if (FAILED(hr))
+    if (FAILED(hr)) {
         return NULL;
+    }
 
     return texture;
 }
@@ -72,7 +74,8 @@ void dx_texture_unmap(struct dx_capture_t *ctx, dx_texture_t *tex) {
 }
 
 void dx_texture_destroy(struct dx_capture_t *ctx, dx_texture_t *tex) {
-    tex->Release();
+    if(tex != NULL)
+        tex->Release();
 }
 
 };

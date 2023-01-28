@@ -559,7 +559,7 @@ bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame)
 	return true;
 }
 
-bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<DxToFrame>& fast)
+bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast)
 {
     HRESULT hr{ 0 };
 

@@ -27,7 +27,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
     return AV_PIX_FMT_NONE;
 }
 
-AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxSrc(d3d)
+AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin d3d2ndi";
     d3d->registerSource(this);

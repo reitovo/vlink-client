@@ -3,17 +3,13 @@
 
 #include "core/peer.h"
 #include <QDialog>
-#include "av_to_d3d.h"
 #include "QMutex"
 #include "QThread"
-#include "rtc/rtc.hpp"
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <map>
 #include <QDateTime>
-
 #include <Processing.NDI.Lib.h>
-#include "vts.pb.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -32,6 +28,8 @@ class CollabRoom : public QDialog, public IDebugCollectable
     friend class PeerItemWidget;
 
 public:
+    static CollabRoom* instance();
+
     explicit CollabRoom(QString roomId, bool isServer, QWidget *parent = nullptr);
     ~CollabRoom();
 
@@ -42,9 +40,10 @@ signals:
     void onReconnectWebsocket();
     void onNdiSourcesUpdated(QStringList);
     void onRoomExit(QString);
-    void onNdiToFfmpegError(QString);
+    void onShareError(QString);
     void onFatalError(QString);
     void onRtcFailed(Peer*);
+    void onDowngradedToSharedMemory();
 
 private slots:
     void updatePeersUi(QList<PeerUi> peerUis);
@@ -56,17 +55,19 @@ private slots:
     void updateTurnServer();
     void toggleTurnVisible();
 
-    void toggleNdiToFfmpeg();
-    void startNdiToFfmpeg();
-    void stopNdiToFfmpeg();
-    void ndiToFfmpegError(QString reason);
+    void toggleShare();
+    void startShare();
+    void stopShare();
+    void shareError(QString reason);
     void fatalError(QString reason);
     void rtcFailed(Peer* peer);
+    void downgradedToSharedMemory();
 
     void openSetting();
     void openBuyRelay();
 
     void toggleKeepTop();
+
 
 private:
     QString errorToReadable(const QString& e);
@@ -74,9 +75,11 @@ private:
     void connectWebsocket();
     void updatePeers(QJsonArray peers);
 
-    void ndiToFfmpegWorkerClient();
-    void ndiToFfmpegWorkerServer();
-    void stopNdiToFfmpegWorker();
+    void ndiShareWorkerClient();
+    void ndiShareWorkerServer();
+    void dxgiShareWorkerClient();
+    void dxgiShareWorkerServer();
+    void stopShareWorker();
 
     void ndiFindWorker();
     void ndiSendWorker();
@@ -92,6 +95,7 @@ private:
 
     bool isServer;
     bool useNdiSender;
+    bool useNdiReceiver;
     QString roomId;
     QString peerId;
 
@@ -103,7 +107,7 @@ private:
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;
-    FpsCounter ndiRecvFps;
+    FpsCounter shareRecvFps;
 
     NatType localNatType;
 
@@ -118,8 +122,8 @@ private:
     std::unique_ptr<Peer> client;
 
     // ndi
-    std::atomic_bool ndiToFfmpegRunning = false;
-    std::unique_ptr<QThread> ndiToFfmpegThread;
+    std::atomic_bool shareRunning = false;
+    std::unique_ptr<QThread> shareThread;
     std::unique_ptr<QThread> ndiFindThread;
 
     // send
