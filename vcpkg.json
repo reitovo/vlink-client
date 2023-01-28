@@ -15,6 +15,8 @@
     "ndi-sdk",
     "qttools",
     "qttranslations",
+    "detours",
+    "pthreads",
     {
       "name": "qtbase",
       "default-features": false,
@@ -41,7 +43,7 @@
     {
       "name": "ffmpeg",
       "default-features": true,
-      "features": [ "nvcodec", "qsv", "x264", "amf", "use-cuda-llvm", "use-lld-link", "use-clang-cl" ]
+      "features": [ "nvcodec", "qsv", "x264", "amf" ]
     }
   ],
   "overrides": [
@@ -51,7 +53,7 @@
     },
     {
       "name": "ffmpeg",
-      "version-string": "5.1.2" 
+      "version-string": "5.1.2#1"
     }
   ],
   "supports": "windows",
@@ -59,7 +61,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "22757d0b7a216cbdebef75d9e01fc758c7b9aa93",
+      "baseline": "9fa55c05176cf346e5bb8305735a292eb368c29f",
       "reference": "reito"
     },
     "registries": [

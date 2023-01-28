@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 #include "collabroom.h"
 #include "settingwindow.h"
+#include "dx-capture.h"
 
 #include <QTranslator>
 #include <QPushButton>
@@ -65,15 +66,19 @@ MainWindow::MainWindow(QWidget *parent)
     } else {
         actionSetLang(lang);
     }
+
+    dx_capture_load();
 }
 
 MainWindow::~MainWindow() {
     _instance = nullptr;
+    tray->hide();
+
+    dx_capture_unload();
+
     qDebug() << "destroy main window";
     delete ui;
-    tray->hide();
     qDebug() << "bye";
-    exit(0);
 }
 
 MainWindow *MainWindow::instance() {

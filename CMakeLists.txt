@@ -42,6 +42,8 @@ set(TS_FILES
 
 # Codes
 set(CODEC_FILES
+        codec/d3d_capture.h
+        codec/d3d_capture.cpp
         codec/frame_to_av.h
         codec/frame_to_av.cpp
         codec/bgra_to_nv12.h
@@ -93,7 +95,7 @@ set(PROJECT_SOURCES
         ${PROTO_FILES}
         ${PROTO_SRCS} 
         ${PROTO_HDRS}
-        )
+    codec/d3d_capture.cpp codec/d3d_capture.h)
 
 qt_add_executable(VTSLink
     ui/vtslink.rc
@@ -122,6 +124,10 @@ set_target_properties(VTSLink
 
 target_link_libraries(VTSLink PRIVATE Qt6::Widgets Qt6::Network)
 
+# DxCapture
+add_subdirectory(dependency/DxCapture)
+target_link_libraries(VTSLink PRIVATE DxCapture)
+
 # NatProbe
 add_subdirectory(dependency/NatTypeProbe)
 target_link_libraries(VTSLink PRIVATE NatTypeProb)
@@ -145,14 +151,17 @@ if (USE_CRASHPAD AND NOT USE_ASAN)
 endif()
 
 # Copy CrashPad Handler
-add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"
-        $<TARGET_FILE_DIR:VTSLink>)
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll"
+            $<TARGET_FILE_DIR:VTSLink>)
+    install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll" DESTINATION bin)
+endif()
+
 add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/crashpad_handler.exe"
         $<TARGET_FILE_DIR:VTSLink>)
 install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/crashpad_handler.exe" DESTINATION bin)
-install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/zlib1.dll" DESTINATION bin)
 
 # kcp
 find_package(kcp CONFIG REQUIRED)

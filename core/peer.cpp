@@ -188,6 +188,10 @@ void Peer::startClient(QJsonObject serverSdp) {
         }
     });
 
+    pc->onTrack([=](std::shared_ptr<rtc::Track> track) {
+
+    });
+
     pc->onDataChannel([=](std::shared_ptr<rtc::DataChannel> incoming) {
         dcLock.lock();
         dc = incoming;
