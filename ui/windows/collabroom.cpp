@@ -1397,7 +1397,7 @@ void CollabRoom::downgradedToSharedMemory() {
         box.setIcon(QMessageBox::Information);
         box.setWindowTitle(tr("性能提示"));
         box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n"
-                       "注意：一旦进入兼容模式，需要重新进入房间方可再次尝试以正常模式捕获。\n\n"
+                       "注意：一旦进入兼容模式，需要重新开始分享，方可再次尝试以正常模式捕获。\n\n"
                        "点击「打开」以了解原因与解决方案。\n"
                        "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
