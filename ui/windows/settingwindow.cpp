@@ -44,6 +44,7 @@ void SettingWindow::init() {
     ui->shouldForceEncoder->setChecked(settings.value("forceEncoder").toBool());
     ui->encoders->setCurrentText(settings.value("forceEncoderName").toString());
     ui->useNdiSender->setChecked(settings.value("useNdiSender").toBool());
+    ui->useNdiReceiver->setChecked(settings.value("useNdiReceiver").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
 
     connect(ui->encoders, &QComboBox::currentTextChanged, this, [&](const QString &s) {

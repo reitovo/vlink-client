@@ -318,10 +318,10 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
     if (!_inited)
         return false;
 
-    lock.lock();
-
     QElapsedTimer t;
     t.start();
+
+    lock.lock();
 
     if (_texture_captured != nullptr) {
         FLOAT clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -341,9 +341,9 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
 
     src->Release();
 
-    fps.add(t.nsecsElapsed());
-
     lock.unlock();
+
+    fps.add(t.nsecsElapsed());
 
     return true;
 }
