@@ -1418,7 +1418,7 @@ void CollabRoom::dxgiCaptureStatus(QString text) {
     if (text == "idle") {
         text = tr("未分享");
     } else if (text == "init") {
-        text = tr("初始化中");
+        text = tr("尝试捕获中");
     } else if (text == "shmem") {
         text = tr("已捕获（兼容）");
     } else if (text == "shtex") {

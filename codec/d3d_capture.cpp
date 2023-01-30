@@ -69,7 +69,7 @@ DxCapture::DxCapture(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d) {
 DxCapture::~DxCapture() {
     qDebug() << "end d3d capture";
     if (CollabRoom::instance() != nullptr)
-        emit CollabRoom::instance()->onDxgiCaptureStatus("idle");
+            emit CollabRoom::instance()->onDxgiCaptureStatus("idle");
 
     if (d3d != nullptr) {
         d3d->unregisterSource(this);
