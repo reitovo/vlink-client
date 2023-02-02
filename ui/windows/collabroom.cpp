@@ -1080,7 +1080,6 @@ void CollabRoom::ndiSendWorker() {
         }
     }
 
-    // We are going to create a 1920x1080 interlaced frame at 60Hz.
     NDIlib_video_frame_v2_t NDI_video_frame;
     NDI_video_frame.xres = VTSLINK_FRAME_WIDTH;
     NDI_video_frame.yres = VTSLINK_FRAME_HEIGHT;
@@ -1201,7 +1200,7 @@ QString CollabRoom::errorToReadable(const QString &reason) {
     } else if (reason == "frame format error") {
         err = tr("NDI 帧格式错误(Frame)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
     } else if (reason == "frame size error") {
-        err = tr("NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「1920 X 1080」");
+        err = QString(tr("NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「%1 × %2」")).arg(VTSLINK_FRAME_WIDTH).arg(VTSLINK_FRAME_HEIGHT);
     } else if (reason == "frame change error") {
         err = tr("NDI 输出源格式发生变化，请不要在分享画面时更改 VTube Studio 中的 NDI 设置");
     } else if (reason == "line stride error") {

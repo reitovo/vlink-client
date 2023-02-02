@@ -343,7 +343,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         av_opt_set(ctx->priv_data, "tune", "ull", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
-		av_opt_set_int(ctx->priv_data, "qp", 32, 0);
+		av_opt_set_int(ctx->priv_data, "qp", 28, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
@@ -355,9 +355,9 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set_int(ctx->priv_data, "intra_refresh_mb", ctx->gop_size, 0);
 
 		av_opt_set(ctx->priv_data, "rc", "cqp", 0);
-		av_opt_set_int(ctx->priv_data, "qp_i", 32, 0);
-		av_opt_set_int(ctx->priv_data, "qp_p", 32, 0);
-		av_opt_set_int(ctx->priv_data, "qp_b", 32, 0);
+		av_opt_set_int(ctx->priv_data, "qp_i", 28, 0);
+		av_opt_set_int(ctx->priv_data, "qp_p", 28, 0);
+		av_opt_set_int(ctx->priv_data, "qp_b", 28, 0);
 
 		//av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
 		//ctx->rc_max_rate = ctx->bit_rate * 5;
@@ -375,13 +375,13 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//av_opt_set_int(ctx->priv_data, "idr_interval", 1, 0);
 
 		ctx->flags |= AV_CODEC_FLAG_QSCALE;
-		ctx->global_quality = 32 * FF_QP2LAMBDA;
+		ctx->global_quality = 28 * FF_QP2LAMBDA;
 	}
 	else if (encoder == "libx264") {
 		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
-		av_opt_set_int(ctx->priv_data, "crf", 32, 0);
-		av_opt_set_int(ctx->priv_data, "qp", 32, 0);
+		av_opt_set_int(ctx->priv_data, "crf", 28, 0);
+		av_opt_set_int(ctx->priv_data, "qp", 28, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
 }
