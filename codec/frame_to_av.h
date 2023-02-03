@@ -83,6 +83,8 @@ private:
 
     std::optional<QString> processInternal();
 
+    int cqp = 32;
+
 public:
     FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb);
     ~FrameToAv();
