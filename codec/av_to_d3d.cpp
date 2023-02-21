@@ -225,7 +225,6 @@ void AvToDx::processWorker() {
             }
         }
 
-
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
         int64_t nextTime = startTime + frameTime;
