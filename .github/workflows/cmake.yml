@@ -10,9 +10,13 @@ env:
   BUILD_TYPE: Debug
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: ['self-hosted', 'windows']
     if: ${{ !contains(github.event.head_commit.message, 'skip-ci') }}
 
     steps:

@@ -8,6 +8,7 @@
 #include <QSslSocket>
 
 #include "rtc/rtc.hpp"
+#include "util/base.h"
 #include <cstring>
 
 extern "C" {
@@ -30,11 +31,39 @@ void redirectDebugOutput();
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
+static void dxCaptureMessageHandler(int log_level, const char *format, va_list args,
+                            void *param)
+{
+    char out[4096];
+    vsnprintf(out, sizeof(out), format, args);
+
+    switch (log_level) {
+        case LOG_DEBUG:
+            qDebug("dxcap debug: %s", out);
+            break;
+
+        case LOG_INFO:
+            qInfo("dxcap info: %s", out);
+            break;
+
+        case LOG_WARNING:
+            qWarning("dxcap warn: %s", out);
+            break;
+
+        case LOG_ERROR:
+            qCritical("dxcap error: %s", out);
+            break;
+    }
+
+    UNUSED_PARAMETER(param);
+}
+
 int main(int argc, char *argv[]) {
     QFile log("../vtslink.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();
 
+    base_set_log_handler(dxCaptureMessageHandler, nullptr);
 #ifdef HAS_CRASHPAD
     initializeCrashpad();
 #endif
@@ -110,6 +139,7 @@ void initializeCrashpad() {
     std::string url("https://submit.backtrace.io/reito/" VTSLINK_BACKTRACE_SUBMIT_TOKEN "/minidump");
     annotations["token"] = VTSLINK_BACKTRACE_SUBMIT_TOKEN;
     annotations["format"] = "minidump";
+    annotations["build-date"] = "20230221";
 
     arguments.emplace_back("--no-rate-limit");
     arguments.emplace_back("--attachment=../vtslink.log");

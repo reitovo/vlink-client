@@ -37,6 +37,7 @@ struct dx_capture_t {
 
     char* (*on_get_hook_file_path)(const char * filename);
     void (*on_captured_texture)(void* user, dx_texture_t* texture);
+    void (*on_need_elevate)(void* user);
 };
 
 void dx_capture_setting_default(struct dx_capture_setting_t* setting);
@@ -50,6 +51,7 @@ uint32_t dx_capture_width(struct dx_capture_t *ctx);
 uint32_t dx_capture_height(struct dx_capture_t *ctx);
 void dx_capture_update_settings(struct dx_capture_t *ctx);
 void dx_capture_tick(struct dx_capture_t *ctx, float seconds);
+void dx_fix_window_ratio(struct dx_capture_t* ctx);
 
 char *dx_module_file(struct dx_capture_t *ctx, const char *filename);
 

@@ -46,7 +46,7 @@ void SettingWindow::init() {
     ui->useNdiSender->setChecked(settings.value("useNdiSender").toBool());
     ui->useNdiReceiver->setChecked(settings.value("useNdiReceiver").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
-    ui->avCQP->setValue(settings.value("avCQP", 32).toInt());
+    ui->avCQP->setValue(settings.value("avCQP", 27).toInt());
     ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
     connect(ui->encoders, &QComboBox::currentTextChanged, this, [=](const QString &s) {

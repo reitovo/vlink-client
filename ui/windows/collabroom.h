@@ -20,6 +20,8 @@ namespace Ui {
 class CollabRoom;
 }
 
+class DxCapture;
+
 // This is the collab main logic
 class CollabRoom : public QDialog, public IDebugCollectable
 {
@@ -44,6 +46,7 @@ signals:
     void onFatalError(QString);
     void onRtcFailed(Peer*);
 
+    void onNeedElevate();
     void onDxgiCaptureStatus(QString text);
     void onDowngradedToSharedMemory();
 
@@ -66,12 +69,12 @@ private slots:
 
     void downgradedToSharedMemory();
     void dxgiCaptureStatus(QString text);
+    void dxgiNeedElevate();
 
     void openSetting();
     void openBuyRelay();
 
     void toggleKeepTop();
-
 
 private:
     QString errorToReadable(const QString& e);
@@ -93,6 +96,9 @@ private:
 
     void heartbeatUpdate();
     void usageStatUpdate();
+
+    std::atomic_bool needFixVtsRatio = false;
+    void tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap);
 
 private:
     Ui::CollabRoom *ui;

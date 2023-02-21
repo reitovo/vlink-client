@@ -56,6 +56,11 @@ static void dx_captured_texture(void *user, dx_texture_t *tex) {
     dx->capturedTexture(tex);
 }
 
+static void dx_need_elevate(void *user) {
+    DxCapture *dx = static_cast<DxCapture *>(user);
+    dx->needElevate();
+}
+
 DxCapture::DxCapture(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d) {
     qDebug() << "begin d3d capture";
     if (d3d != nullptr) {
@@ -363,14 +368,18 @@ void DxCapture::initDxCapture() {
     cap->unlock = dx_unlock;
     cap->on_get_hook_file_path = dx_get_file_path;
     cap->on_captured_texture = dx_captured_texture;
+    cap->on_need_elevate = dx_need_elevate;
 
     dx_capture_setting_default(&cap->setting);
     cap->setting.window = "VTube Studio:UnityWndClass:VTube Studio.exe";
     cap->setting.force_shmem = _restartToSharedMemory;
+    cap->setting.anticheat_hook = true;
     _isShareMemory = cap->setting.force_shmem;
 
     dx_capture_init(cap.get());
     emit CollabRoom::instance()->onDxgiCaptureStatus("init");
+
+    qDebug() << "starting capture dx";
 }
 
 void DxCapture::captureLock() {
@@ -481,4 +490,15 @@ void DxCapture::resetDeviceContext() {
             1);
 
     qDebug() << "dx capture set context viewport";
+}
+
+void DxCapture::needElevate() {
+    if (_needElevateDisplayed)
+        return;
+    _needElevateDisplayed = true;
+    emit CollabRoom::instance()->onNeedElevate();
+}
+
+void DxCapture::fixWindowRatio() {
+    dx_fix_window_ratio(cap.get());
 }

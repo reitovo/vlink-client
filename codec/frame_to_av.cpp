@@ -36,7 +36,7 @@ FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
 	onPacketReceived = cb;
 
     QSettings settings;
-    cqp = settings.value("avCQP", 32).toInt();
+    cqp = settings.value("avCQP", 27).toInt();
 
     qDebug() << "use cqp" << cqp;
 }

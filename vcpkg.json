@@ -1,5 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "name": "vts-link-client",
   "license": "GPL-2.0-only",
   "dependencies": [
@@ -21,6 +20,7 @@
     "qttranslations",
     "detours",
     "pthreads",
+    "dpp",
     {
       "name": "qtbase",
       "default-features": false,
@@ -54,10 +54,6 @@
     {
       "name": "openssl",
       "version-string": "1.1.1m#2"
-    },
-    {
-      "name": "ffmpeg",
-      "version-string": "5.1.2#1"
     }
   ],
   "supports": "windows",
@@ -65,7 +61,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "9fa55c05176cf346e5bb8305735a292eb368c29f",
+      "baseline": "343624388d80d173db3384162c8d2439b30da089",
       "reference": "reito"
     },
     "registries": [

@@ -325,6 +325,17 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
     return false;
 }
 
+void game_fix_window_ratio(void* data) {
+    struct game_capture *gc = data;
+    if (gc->window != NULL) {
+        RECT rect;
+        GetWindowRect(gc->window, &rect);
+        int width = rect.right - rect.left;
+        int height = width * 9 / 16;
+        MoveWindow(gc->window, rect.left, rect.top, width, height, 1);
+    }
+}
+
 void game_capture_update(void *data, struct dx_capture_setting_t *settings) {
     struct game_capture *gc = data;
     struct game_capture_config cfg;
@@ -450,7 +461,7 @@ static inline bool open_target_process(struct game_capture *gc) {
     gc->target_process = open_process(
             PROCESS_QUERY_INFORMATION | SYNCHRONIZE, false, gc->process_id);
     if (!gc->target_process) {
-        warn("could not open process: %s", gc->config.executable);
+        warn("could not open process: %s %d", gc->config.executable, GetLastError());
         return false;
     }
 
@@ -777,6 +788,8 @@ static bool init_hook(struct game_capture *gc) {
         return false;
     }
     if (!open_target_process(gc)) {
+        if (gc->cap->on_need_elevate)
+            gc->cap->on_need_elevate(gc->cap->user);
         return false;
     }
     if (!init_keepalive(gc)) {

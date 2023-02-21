@@ -67,6 +67,7 @@ uint32_t game_capture_width(void *data);
 uint32_t game_capture_height(void *data);
 void game_capture_update(void *data, struct dx_capture_setting_t *settings);
 void game_capture_tick(void *data, float seconds);
+void game_fix_window_ratio(void* data);
 
 void dx_capture_init(struct dx_capture_t *ctx) {
     if (ctx == NULL)
@@ -132,4 +133,8 @@ void dx_graphic_lock(struct dx_capture_t *ctx) {
 
 void dx_graphic_unlock(struct dx_capture_t *ctx) {
     ctx->unlock(ctx->user);
+}
+
+void dx_fix_window_ratio(struct dx_capture_t *ctx) {
+    game_fix_window_ratio(ctx->gc);
 }

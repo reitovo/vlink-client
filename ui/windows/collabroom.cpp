@@ -111,6 +111,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
     connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
     connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
+    connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -120,6 +121,9 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->openSettings, &QPushButton::clicked, this, &CollabRoom::openSetting);
     connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
     connect(ui->keepTop, &QPushButton::clicked, this, &CollabRoom::toggleKeepTop);
+    connect(ui->btnFixRatio, &QPushButton::clicked, this, [=]() {
+        this->needFixVtsRatio = true;
+    });
 
     connect(ui->tutorialFaq, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
@@ -727,6 +731,8 @@ void CollabRoom::dxgiShareWorkerClient() {
         QElapsedTimer t;
         t.start();
 
+        tryFixVtsRatio(dxCap);
+
         dxCap->captureTick(frameSeconds);
 
         auto e = cvt.processFast(dxCap);
@@ -777,6 +783,8 @@ void CollabRoom::dxgiShareWorkerServer() {
 
         QElapsedTimer t;
         t.start();
+
+        tryFixVtsRatio(dxCap);
 
         dxCap->captureTick(frameSeconds);
 
@@ -1430,4 +1438,41 @@ void CollabRoom::dxgiCaptureStatus(QString text) {
 
 CollabRoom *CollabRoom::instance() {
     return _instance;
+}
+
+void CollabRoom::dxgiNeedElevate() {
+    QSettings s;
+    auto ig = s.value("ignoreNeedElevate", false).toBool();
+    if (!ig) {
+        stopShareWorker();
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Information);
+        box.setWindowTitle(tr("捕获失败"));
+        box.setText(tr("由于 VTube Studio 正在以管理员权限运行，捕获失败。\n"
+                       "可能是由于启动 VTube Studio 时，Steam 进行了自动更新\n"
+                       "导致其进入了管理员模式，本软件无权限访问画面\n"
+                       "解决方案（任选其一）\n"
+                       "1. 重启 Steam 与 VTube Studio 后，再次尝试开始分享\n"
+                       "2. 右键本软件，以管理员身份重新运行\n\n"
+                       "点击「打开」以了解原因。\n"
+                       "点击「忽略」不再出现本提示。"));
+        auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
+        auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
+        auto ign = box.addButton(tr("忽略"), QMessageBox::NoRole);
+        box.exec();
+        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+        if (ret == ign) {
+            s.setValue("ignoreNeedElevate", true);
+            s.sync();
+        } else if (ret == open) {
+            QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/okrsy7aW8QM6EfTp35hVxs"));
+        }
+    }
+}
+
+void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap) {
+    if (needFixVtsRatio) {
+        needFixVtsRatio = false;
+        cap->fixWindowRatio();
+    }
 }

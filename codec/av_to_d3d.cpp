@@ -217,6 +217,9 @@ void AvToDx::processWorker() {
             continue;
         }
 
+        if (frameQueueSize() != 0)
+            startTime -= 20000;
+
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
         int64_t nextTime = startTime + frameTime;
@@ -237,28 +240,38 @@ std::optional<QString> AvToDx::processFrame() {
         return "buffering";
     }
 
-    if (frameQueue.size() > 10) {
-        while (frameQueue.size() > 5) {
+    // Somehow we can't wait for an ordered frame in 1 seconds.
+    if (frameQueue.size() > 60) {
+        while(!frameQueue.empty()) {
+            delete frameQueue.top();
             frameQueue.pop();
         }
+        pts = 0;
+        frameQueueLock.unlock();
+        return "resetting";
     }
 
     auto dd = frameQueue.top();
+    auto newPts = dd->pts;
+    qDebug() << newPts;
+
+    if (pts == 0) {
+        pts = newPts;
+    } else if (pts + 1 != newPts) {
+        qDebug() << "misordered" << newPts << pts;
+        frameQueueLock.unlock();
+        return "misordered";
+    }
+
     frameQueue.pop();
     frameQueueLock.unlock();
 
     auto mem = std::move(dd->data);
-    auto newPts = dd->pts;
     delete dd;
 
-    if (newPts <= pts) {
-        qDebug() << "misordered" << newPts << pts;
-        return "misordered";
-    }
-
     auto meta = mem->avframe();
+    pts = newPts;
     //qDebug() << "av2d3d pts" << meta.pts();
-    pts = meta.pts();
 
     if (!inited) {
         qDebug() << "not inited";

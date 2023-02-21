@@ -17,8 +17,6 @@
 
 using Microsoft::WRL::ComPtr;
 
-
-
 class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
@@ -55,6 +53,8 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
 
     FpsCounter fps;
 
+    bool _needElevateDisplayed = false;
+
     bool createSharedSurf(int width, int height);
     void releaseSharedSurf();
 
@@ -74,6 +74,9 @@ public:
     void captureUnlock();
     void captureTick(float time);
     void capturedTexture(dx_texture_t* tex);
+    void needElevate();
+
+    void fixWindowRatio();
 
     bool copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) override;
 };

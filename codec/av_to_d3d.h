@@ -65,6 +65,13 @@ private:
     std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
     QMutex frameQueueLock;
 
+    inline int frameQueueSize() {
+        int ret = 0;
+        frameQueueLock.lock();
+        ret = frameQueue.size();
+        frameQueueLock.unlock();
+        return ret;
+    }
     void processWorker();
     std::optional<QString> processFrame();
 
