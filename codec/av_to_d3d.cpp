@@ -233,7 +233,8 @@ std::optional<QString> AvToDx::processFrame() {
 
     auto delay = frameDelay.delay();
     if (frameQueue.size() <= delay) {
-        frameDelay.failed();
+        if (delay == 0)
+            frameDelay.failed();
         frameQueueLock.unlock();
         return "buffering";
     }
