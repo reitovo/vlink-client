@@ -288,6 +288,7 @@ static inline void d3d11_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
 		data.context->ResolveSubresource(dst, 0, src, 0, data.format);
 	} else {
 		data.context->CopyResource(dst, src);
+        data.context->Flush();
 	}
 }
 
