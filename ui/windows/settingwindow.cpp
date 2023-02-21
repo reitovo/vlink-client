@@ -47,7 +47,7 @@ void SettingWindow::init() {
     ui->useNdiReceiver->setChecked(settings.value("useNdiReceiver").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
-    ui->noBuffering->setChecked(settings.value("noBuffering").toBool());
+    ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
     ui->avCQP->setValue(settings.value("avCQP", 27).toInt());
     ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
@@ -108,10 +108,10 @@ void SettingWindow::init() {
         ui->avCQPValue->setText(QString("%1").arg(v));
     });
 
-    connect(ui->noBuffering, &QCheckBox::clicked, this, [=](bool v) {
-        settings.setValue("noBuffering", v);
+    connect(ui->enableBuffering, &QCheckBox::clicked, this, [=](bool v) {
+        settings.setValue("enableBuffering", v);
         settings.sync();
-        qDebug() << "no buffering" << v;
+        qDebug() << "enable buffering" << v;
     });
 
     connect(ui->forceShmem, &QCheckBox::clicked, this, [=](bool v) {

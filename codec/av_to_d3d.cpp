@@ -34,7 +34,7 @@ AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
     d3d->registerSource(this);
 
     QSettings settings;
-    _noBuffering = settings.value("noBuffering", false).toBool();
+    enableBuffering = settings.value("enableBuffering", false).toBool();
 
     init();
 }
@@ -218,7 +218,7 @@ void AvToDx::processWorker() {
 
         auto err = processFrame();
         if (err.has_value()) {
-            qDebug() << err.value();
+            //qDebug() << err.value();
         }
 
         frameCount++;
@@ -237,7 +237,7 @@ std::optional<QString> AvToDx::processFrame() {
     frameQueueLock.lock();
 
     auto delay = frameDelay.delay();
-    if (_noBuffering)
+    if (!enableBuffering)
         delay = 0;
 
     if (frameQueue.size() <= delay) {

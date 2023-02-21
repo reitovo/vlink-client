@@ -289,9 +289,9 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="noBuffering">
+        <widget class="QCheckBox" name="enableBuffering">
          <property name="text">
-          <string>禁止缓冲（低延迟，需要稳定网络环境）</string>
+          <string>启用缓冲（网络环境差时使用，增加延迟）</string>
          </property>
         </widget>
        </item>
