@@ -46,6 +46,8 @@ void SettingWindow::init() {
     ui->useNdiSender->setChecked(settings.value("useNdiSender").toBool());
     ui->useNdiReceiver->setChecked(settings.value("useNdiReceiver").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
+    ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
+    ui->noBuffering->setChecked(settings.value("noBuffering").toBool());
     ui->avCQP->setValue(settings.value("avCQP", 27).toInt());
     ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
@@ -104,6 +106,18 @@ void SettingWindow::init() {
         settings.sync();
 
         ui->avCQPValue->setText(QString("%1").arg(v));
+    });
+
+    connect(ui->noBuffering, &QCheckBox::clicked, this, [=](bool v) {
+        settings.setValue("noBuffering", v);
+        settings.sync();
+        qDebug() << "no buffering" << v;
+    });
+
+    connect(ui->forceShmem, &QCheckBox::clicked, this, [=](bool v) {
+        settings.setValue("forceShmem", v);
+        settings.sync();
+        qDebug() << "force shmem" << v;
     });
 
     //TODO: 计算机\HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences

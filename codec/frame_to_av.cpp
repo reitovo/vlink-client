@@ -34,11 +34,6 @@ static QList<CodecOption> options = {
 FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
 	qDebug() << "begin ndi2av";
 	onPacketReceived = cb;
-
-    QSettings settings;
-    cqp = settings.value("avCQP", 27).toInt();
-
-    qDebug() << "use cqp" << cqp;
 }
 
 FrameToAv::~FrameToAv()
@@ -339,6 +334,11 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 
 void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext* ctx)
 {
+    QSettings settings;
+    auto cqp = settings.value("avCQP", 27).toInt();
+
+    qDebug() << "use cqp" << cqp;
+
 	ctx->max_b_frames = 0;
 	ctx->gop_size = 60;
 
@@ -395,8 +395,7 @@ std::optional<QString> FrameToAv::process(NDIlib_video_frame_v2_t* ndi)
 {
 	int ret;
 
-	if (ndi->xres != xres || ndi->yres != yres || 
-		ndi->frame_rate_D != frameD || ndi->frame_rate_N != frameN) {
+	if (ndi->xres != xres || ndi->yres != yres) {
 		qDebug() << "source format changed";
 		return "frame change error";
 	}

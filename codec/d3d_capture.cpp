@@ -5,6 +5,7 @@
 #include "d3d_capture.h"
 #include "d3d_to_frame.h"
 #include "QFile"
+#include "QSettings"
 #include <dxgi1_2.h>
 #include <dxcore.h>
 #include <DirectXMath.h>
@@ -329,8 +330,6 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
     lock.lock();
 
     if (_texture_captured != nullptr) {
-        FLOAT clearColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-        this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_target_bgra.Get(), clearColor);
         this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
         this->_d3d11_deviceCtx->Flush();
     }
@@ -370,9 +369,12 @@ void DxCapture::initDxCapture() {
     cap->on_captured_texture = dx_captured_texture;
     cap->on_need_elevate = dx_need_elevate;
 
+    QSettings settings;
+    auto forceShmem = settings.value("forceShmem", false).toBool();
+
     dx_capture_setting_default(&cap->setting);
     cap->setting.window = "VTube Studio:UnityWndClass:VTube Studio.exe";
-    cap->setting.force_shmem = _restartToSharedMemory;
+    cap->setting.force_shmem = forceShmem || _restartToSharedMemory;
     cap->setting.anticheat_hook = true;
     _isShareMemory = cap->setting.force_shmem;
 

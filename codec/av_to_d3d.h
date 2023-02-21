@@ -44,19 +44,22 @@ public:
     inline void failed() {
         uint64_t time = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-        if (time - _lastDelayIncrease > 300000) {
-            _delayAccumulate += 10;
-            _delay = _delayAccumulate;
+        if (time - _lastDelayIncrease > 200000) {
             _lastDelayIncrease = time;
+            _delay = _delayAccumulate;
+            _delayAccumulate += 5;
+            if (_delayAccumulate > 30)
+                _delayAccumulate = 30;
         }
     }
 
     inline void succeed() {
         _delay = 0;
-        if (_succeedCombo >= 300) {
-            _delayAccumulate -= 10;
+        if (_succeedCombo >= 60) {
+            _delayAccumulate -= 5;
             if (_delayAccumulate < 0)
-                _delayAccumulate = 0;
+                _delayAccumulate = 1;
+            _succeedCombo = 0;
         }
     }
 
@@ -98,6 +101,7 @@ private:
 
     std::optional<QString> initCodec(AVCodecID);
 
+    std::atomic_bool _noBuffering;
     std::atomic_bool processThreadRunning = false;
     std::unique_ptr<QThread> processThread;
     std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;

@@ -5,6 +5,7 @@
 #include "core/vtslink.h"
 #include <d3d11.h>
 #include <QThread>
+#include <QSettings>
 
 extern "C" {
 #include "libavutil/error.h"
@@ -31,6 +32,10 @@ AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin d3d2ndi";
     d3d->registerSource(this);
+
+    QSettings settings;
+    _noBuffering = settings.value("noBuffering", false).toBool();
+
     init();
 }
 
@@ -232,11 +237,16 @@ std::optional<QString> AvToDx::processFrame() {
     frameQueueLock.lock();
 
     auto delay = frameDelay.delay();
+    if (_noBuffering)
+        delay = 0;
+
     if (frameQueue.size() <= delay) {
-        if (delay == 0)
+        if (delay == 0) {
+            pts = 0;
             frameDelay.failed();
+        }
         frameQueueLock.unlock();
-        return "buffering";
+        return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
     }
 
     // Somehow we can't wait for an ordered frame in 1 seconds.
