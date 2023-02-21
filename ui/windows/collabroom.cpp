@@ -1450,12 +1450,11 @@ void CollabRoom::dxgiNeedElevate() {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setWindowTitle(tr("捕获失败"));
-        box.setText(tr("由于 VTube Studio 正在以管理员权限运行，捕获失败。\n"
-                       "可能是由于启动 VTube Studio 时，Steam 进行了自动更新\n"
-                       "导致其进入了管理员模式，本软件无权限访问画面\n"
-                       "解决方案（任选其一）\n"
-                       "1. 重启 Steam 与 VTube Studio 后，再次尝试开始分享\n"
-                       "2. 右键本软件，以管理员身份重新运行\n\n"
+        box.setText(tr("捕获 VTube Studio 画面失败\n"
+                       "可能的解决方案：\n"
+                       "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
+                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n"
+                       "3. 关闭本软件，并右键，以管理员身份重新运行\n\n"
                        "点击「打开」以了解原因。\n"
                        "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
