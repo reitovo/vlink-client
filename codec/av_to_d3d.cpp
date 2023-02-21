@@ -221,6 +221,12 @@ void AvToDx::processWorker() {
             //qDebug() << err.value();
         }
 
+        if (!enableBuffering) {
+            if (frameQueueSize() > 0) {
+                startTime -= 8000;
+            }
+        }
+
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
         int64_t nextTime = startTime + frameTime;
@@ -250,7 +256,7 @@ std::optional<QString> AvToDx::processFrame() {
     }
 
     // Somehow we can't wait for an ordered frame in 1 seconds.
-    if (frameQueue.size() > 120) {
+    if (frameQueue.size() > 60) {
         while(!frameQueue.empty()) {
             delete frameQueue.top();
             frameQueue.pop();

@@ -44,7 +44,7 @@ public:
     inline void failed() {
         uint64_t time = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-        if (time - _lastDelayIncrease > 200000) {
+        if (time - _lastDelayIncrease > 100000) {
             _lastDelayIncrease = time;
             _delay = _delayAccumulate;
             _delayAccumulate += 5;

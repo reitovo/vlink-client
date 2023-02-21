@@ -289,16 +289,19 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="enableBuffering">
+        <widget class="QCheckBox" name="forceShmem">
          <property name="text">
-          <string>启用缓冲（网络环境差时使用，增加延迟）</string>
+          <string>使用共享内存型 D3D11 捕获（缓解可能的画面闪烁）</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="forceShmem">
+        <widget class="QCheckBox" name="enableBuffering">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
          <property name="text">
-          <string>使用共享内存型 D3D11 捕获（缓解可能的画面闪烁）</string>
+          <string>启用缓冲（网络环境差时使用，增加延迟）</string>
          </property>
         </widget>
        </item>
