@@ -213,12 +213,8 @@ void AvToDx::processWorker() {
 
         auto err = processFrame();
         if (err.has_value()) {
-            QThread::msleep(1);
-            continue;
+            qDebug() << err.value();
         }
-
-        if (frameQueueSize() != 0)
-            startTime -= 20000;
 
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
@@ -235,34 +231,36 @@ void AvToDx::processWorker() {
 std::optional<QString> AvToDx::processFrame() {
     frameQueueLock.lock();
 
-    if (frameQueue.empty()) {
+    auto delay = frameDelay.delay();
+    if (frameQueue.size() <= delay) {
+        frameDelay.failed();
         frameQueueLock.unlock();
         return "buffering";
     }
 
     // Somehow we can't wait for an ordered frame in 1 seconds.
-    if (frameQueue.size() > 60) {
+    if (frameQueue.size() > 120) {
         while(!frameQueue.empty()) {
             delete frameQueue.top();
             frameQueue.pop();
         }
         pts = 0;
         frameQueueLock.unlock();
+        frameDelay.reset();
         return "resetting";
     }
 
     auto dd = frameQueue.top();
     auto newPts = dd->pts;
-    qDebug() << newPts;
 
-    if (pts == 0) {
-        pts = newPts;
-    } else if (pts + 1 != newPts) {
-        qDebug() << "misordered" << newPts << pts;
+    if (pts != 0 && pts + 1 != newPts) {
+        frameDelay.failed();
+        qDebug() << "misordered" << newPts << pts << frameQueue.size();
         frameQueueLock.unlock();
         return "misordered";
     }
 
+    frameDelay.succeed();
     frameQueue.pop();
     frameQueueLock.unlock();
 

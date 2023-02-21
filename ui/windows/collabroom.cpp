@@ -418,6 +418,7 @@ void CollabRoom::startShare() {
     ui->btnSharingStatus->setText(tr("停止") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(false);
     ui->ndiSourceSelect->setEnabled(false);
+    ui->btnFixRatio->setEnabled(true);
     QTimer::singleShot(500, this, [this]() {
         ui->btnSharingStatus->setEnabled(true);
     });
@@ -447,6 +448,7 @@ void CollabRoom::startShare() {
 void CollabRoom::stopShare() {
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(false);
+    ui->btnFixRatio->setEnabled(false);
 
     stopShareWorker();
 

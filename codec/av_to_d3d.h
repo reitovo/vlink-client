@@ -34,6 +34,44 @@ struct FrameReorderer {
     bool operator() (const UnorderedFrame* l, const UnorderedFrame* r) const { return l->pts > r->pts; }
 };
 
+class FrameDelay {
+    int _succeedCombo = 0;
+    int _delay = 0;
+    int _delayAccumulate = 0;
+    std::uint64_t _lastDelayIncrease = 0;
+
+public:
+    inline void failed() {
+        uint64_t time = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+        if (time - _lastDelayIncrease > 500000) {
+            _delayAccumulate += 10;
+            _delay = _delayAccumulate;
+            _lastDelayIncrease = time;
+        }
+    }
+
+    inline void succeed() {
+        _delay = 0;
+        if (_succeedCombo >= 300) {
+            _delayAccumulate -= 10;
+            if (_delayAccumulate < 0)
+                _delayAccumulate = 0;
+        }
+    }
+
+    inline int delay() {
+        return _delay;
+    }
+
+    inline void reset() {
+        _delay = 0;
+        _delayAccumulate = 0;
+        _succeedCombo = 0;
+        _lastDelayIncrease = 0;
+    }
+};
+
 // This class is used by server to decode received ffmpeg packets
 // Then use d3d11 accelerated nv12 to bgra converter to save the frame to a d3d11texture2d
 // And the instance is a IDxSrc which will be registered to room's merger DxToNdi, which
@@ -64,6 +102,7 @@ private:
     std::unique_ptr<QThread> processThread;
     std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
     QMutex frameQueueLock;
+    FrameDelay frameDelay;
 
     inline int frameQueueSize() {
         int ret = 0;

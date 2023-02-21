@@ -328,11 +328,15 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 void game_fix_window_ratio(void* data) {
     struct game_capture *gc = data;
     if (gc->window != NULL) {
-        RECT rect;
-        GetWindowRect(gc->window, &rect);
+        RECT rect, windowRect;
+        GetClientRect(gc->window, &rect);
+        GetWindowRect(gc->window, &windowRect);
         int width = rect.right - rect.left;
         int height = width * 9 / 16;
-        MoveWindow(gc->window, rect.left, rect.top, width, height, 1);
+        rect.bottom = rect.top + height;
+        long style = GetWindowLong(gc->window, GWL_STYLE);
+        AdjustWindowRect(&rect, style, 0);
+        MoveWindow(gc->window, windowRect.left, windowRect.top, rect.right - rect.left, rect.bottom - rect.top, 1);
     }
 }
 
