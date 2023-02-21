@@ -217,15 +217,14 @@ void AvToDx::processWorker() {
     while (processThreadRunning) {
 
         auto err = processFrame();
-        if (err.has_value()) {
-            //qDebug() << err.value();
-        }
-
-        if (!enableBuffering) {
-            if (frameQueueSize() > 0) {
-                startTime -= 8000;
+        if (!err.has_value()) {
+            if (!enableBuffering) {
+                if (frameQueueSize() > 0) {
+                    startTime -= 8000;
+                }
             }
         }
+
 
         frameCount++;
         int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
