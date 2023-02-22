@@ -220,7 +220,7 @@ void AvToDx::processWorker() {
         if (!err.has_value()) {
             if (!enableBuffering) {
                 if (frameQueueSize() > 0) {
-                    startTime -= 8000;
+                    startTime -= 12000;
                 }
             }
         }
@@ -268,7 +268,7 @@ std::optional<QString> AvToDx::processFrame() {
     auto dd = frameQueue.top();
     auto newPts = dd->pts;
 
-    if (pts != 0 && pts + 1 != newPts) {
+    if (pts != 0 && newPts > pts + 1) {
         frameDelay.failed();
         qDebug() << "misordered" << newPts << pts << frameQueue.size();
         frameQueueLock.unlock();
@@ -283,7 +283,8 @@ std::optional<QString> AvToDx::processFrame() {
     delete dd;
 
     auto meta = mem->avframe();
-    pts = newPts;
+    if (newPts > pts)
+        pts = newPts;
     //qDebug() << "av2d3d pts" << meta.pts();
 
     if (!inited) {

@@ -1453,8 +1453,8 @@ void CollabRoom::dxgiNeedElevate() {
         box.setText(tr("捕获 VTube Studio 画面失败\n"
                        "可能的解决方案：\n"
                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
-                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n"
-                       "3. 关闭本软件，并右键，以管理员身份重新运行\n\n"
+                       "2. 关闭本软件，并右键 VTSLink，以管理员身份重新运行\n"
+                       "3. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n\n"
                        "点击「打开」以了解原因。\n"
                        "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);

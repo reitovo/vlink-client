@@ -792,12 +792,16 @@ static bool init_hook(struct game_capture *gc) {
         return false;
     }
     if (!open_target_process(gc)) {
+        if (gc->cap->on_need_elevate)
+            gc->cap->on_need_elevate(gc->cap->user);
         return false;
     }
     if (!init_keepalive(gc)) {
         return false;
     }
     if (!init_pipe(gc)) {
+        if (gc->cap->on_need_elevate)
+            gc->cap->on_need_elevate(gc->cap->user);
         return false;
     }
     if (!attempt_existing_hook(gc)) {
@@ -950,8 +954,6 @@ static void try_hook(struct game_capture *gc) {
         }
 
         if (!init_hook(gc)) {
-            if (gc->cap->on_need_elevate)
-                gc->cap->on_need_elevate(gc->cap->user);
             stop_capture(gc);
         }
     } else {
