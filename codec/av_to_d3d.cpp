@@ -292,6 +292,8 @@ std::optional<QString> AvToDx::processFrame() {
         return "not inited";
     }
 
+    qDebug() << pts << frameQueueSize();
+
     int ret;
 
     QElapsedTimer t;
