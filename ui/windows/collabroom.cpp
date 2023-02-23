@@ -1405,9 +1405,8 @@ void CollabRoom::downgradedToSharedMemory() {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setWindowTitle(tr("性能提示"));
-        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n"
-                       "注意：重新开始分享，方可再次尝试以正常模式捕获。\n\n"
-                       "点击「打开」以了解原因与解决方案。\n"
+        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
+                       "点击「打开」以了解详情。\n"
                        "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
@@ -1453,9 +1452,9 @@ void CollabRoom::dxgiNeedElevate() {
         box.setText(tr("捕获 VTube Studio 画面失败\n"
                        "可能的解决方案：\n"
                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
-                       "2. 关闭本软件，并右键 VTSLink，以管理员身份重新运行\n"
-                       "3. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n\n"
-                       "点击「打开」以了解原因。\n"
+                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n"
+                       "3. 在设置中启用 NDI 输入\n\n"
+                       "点击「打开」以查看详细教程。\n"
                        "点击「忽略」不再出现本提示。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
