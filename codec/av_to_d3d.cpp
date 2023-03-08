@@ -283,8 +283,12 @@ std::optional<QString> AvToDx::processFrame() {
     delete dd;
 
     auto meta = mem->avframe();
-    if (newPts > pts)
+    if (newPts > pts) {
         pts = newPts;
+    }
+    else {
+        qDebug() << "repeated" << pts;
+    }
     //qDebug() << "av2d3d pts" << meta.pts();
 
     if (!inited) {

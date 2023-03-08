@@ -315,7 +315,7 @@ void CollabRoom::exitRoom(QString reason) {
     } else if (reason == "room id format error") {
         error = tr("房间号错误");
     } else if (reason == "room not found") {
-        error = tr("房间不存在");
+        error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
     }
 
     stopShare();

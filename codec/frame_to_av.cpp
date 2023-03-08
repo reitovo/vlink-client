@@ -397,7 +397,7 @@ std::optional<QString> FrameToAv::process(NDIlib_video_frame_v2_t* ndi)
 
 	if (ndi->xres != xres || ndi->yres != yres) {
 		qDebug() << "source format changed";
-		return "frame change error";
+		return "frame size error";
 	}
 
 	if ((useUYVA() && ndi->FourCC != NDIlib_FourCC_type_UYVA) ||
