@@ -20,7 +20,7 @@
     "qttranslations",
     "detours",
     "pthreads",
-    "dpp",
+    "spout2",
     {
       "name": "qtbase",
       "default-features": false,
@@ -61,7 +61,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "343624388d80d173db3384162c8d2439b30da089",
+      "baseline": "7914369e645be1ad45cf09ed1c6c134c3aaf6856",
       "reference": "reito"
     },
     "registries": [
