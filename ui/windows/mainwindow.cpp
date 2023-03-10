@@ -90,7 +90,7 @@ void MainWindow::actionExit() {
 }
 
 void MainWindow::joinRoom() {
-    auto roomId = ui->iptRoomId->text();
+    auto roomId = ui->iptRoomId->text().trimmed();
     qDebug("Join room id %s", qPrintable(roomId));
 
     auto c = new CollabRoom(roomId, false);

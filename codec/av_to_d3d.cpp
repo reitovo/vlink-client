@@ -220,7 +220,7 @@ void AvToDx::processWorker() {
         if (!err.has_value()) {
             if (!enableBuffering) {
                 if (frameQueueSize() > 0) {
-                    startTime -= 12000;
+                    startTime -= 2000;
                 }
             }
         }

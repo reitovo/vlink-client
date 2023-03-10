@@ -76,8 +76,10 @@ void Peer::startServer() {
     config.iceServers.emplace_back("stun:stun.syncthing.net:3478");
     config.iceServers.emplace_back("stun:stun.stunprotocol.org:3478");
 
-    if (!room->turnServer.isEmpty())
+    if (!room->turnServer.isEmpty()) {
+        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
+    }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
 
@@ -148,8 +150,10 @@ void Peer::startClient(QJsonObject serverSdp) {
     config.iceServers.emplace_back("stun:stun.stunprotocol.org:3478");
 
     auto turnServer = serverSdp["turn"].toString();
-    if (!turnServer.isEmpty())
+    if (!turnServer.isEmpty()) {
+        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         config.iceServers.emplace_back("turn:" + turnServer.toStdString());
+    }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
 
