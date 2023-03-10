@@ -23,6 +23,12 @@ public:
     ~BuyRelay() override;
 
     std::optional<QString> getTurnServer();
+    inline int getTurnHours() {
+        return purchasedHours;
+    }
+    inline int getTurnMembers() {
+        return purchasedMembers;
+    }
 
 private:
     Ui::BuyRelay *ui;
@@ -33,6 +39,9 @@ private:
     QString id;
     QTimer queryStatusTimer;
     std::optional<QString> turn;
+
+    int purchasedHours;
+    int purchasedMembers;
 
     void refreshPrice();
     void startWxPurchase();

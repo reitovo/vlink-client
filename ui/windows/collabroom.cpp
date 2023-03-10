@@ -97,6 +97,25 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         turnServer = settings.value("turnServer", QString()).toString();
         ui->relayInput->setText(turnServer);
         qDebug() << "Turn server" << turnServer;
+
+        auto expires = settings.value("turnServerExpiresAt").toDateTime();
+        auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
+        if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
+            qDebug() << "Turn server still alive";
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Information);
+            box.setWindowTitle(tr("中转服务器仍然可用！"));
+            box.setText(tr("您上次购买的的中转服务器仍然可用，无需重新购买哦！\n"
+                           "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
+            auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto ign = box.addButton(tr("下次购买前不再提示"), QMessageBox::NoRole);
+            box.exec();
+            auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+            if (ret == ign) {
+                settings.setValue("ignoreTurnServerNotExpire", true);
+                settings.sync();
+            }
+        }
     }
 
     this->setWindowTitle(tr("VTube Studio 联动"));
@@ -1330,8 +1349,15 @@ void CollabRoom::openBuyRelay() {
         ui->relayInput->setText(turnServer);
         qDebug() << "bought relay" << turnServer;
 
+        auto hours = buy->getTurnHours();
+        auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
+
         QSettings settings;
         settings.setValue("turnServer", turnServer);
+        settings.setValue("turnServerExpiresAt", expires);
+        settings.setValue("turnServerMembers", buy->getTurnMembers());
+        settings.setValue("ignoreTurnServerNotExpire", false);
+        settings.sync();
         qDebug() << "update turn server" << turnServer;
 
         peersLock.lock();

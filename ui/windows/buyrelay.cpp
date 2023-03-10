@@ -156,6 +156,8 @@ void BuyRelay::queryStatus() {
                     queryStatusTimer.stop();
                     turn = QString("%1:%2@%3").arg(obj["username"].toString())
                             .arg(obj["password"].toString()).arg(obj["ip"].toString());
+                    purchasedMembers = ui->personSpin->value();
+                    purchasedHours = ui->hoursSpin->value();
                     MainWindow::instance()->tray->showMessage(tr("创建成功"), tr("请等待自动重新连接"),
                                                               MainWindow::instance()->tray->icon());
                     close();
