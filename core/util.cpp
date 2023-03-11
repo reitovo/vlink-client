@@ -163,7 +163,7 @@ void printDxDebugInfo(ID3D11Device *dev)
     debug_info_queue->ClearStoredMessages();
 }
 
-void saveTextureToFile(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, QString name) {
+void showTexture(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, QString name) {
 #ifdef HAS_OPENCV
     D3D11_TEXTURE2D_DESC desc = {};
     ComPtr<ID3D11Texture2D> pStaging;

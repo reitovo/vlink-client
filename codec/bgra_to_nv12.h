@@ -108,9 +108,6 @@ public:
 
     bool bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast);
 
-    bool mapFrame(AVFrame* f);
-    void unmapFrame();
-
     void copyFrameD3D11(AVFrame* f);
     void copyFrameQSV(AVFrame* f);
 };

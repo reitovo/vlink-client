@@ -554,58 +554,6 @@ bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast)
     return true;
 }
 
-// Extremely slow on some devices
-bool BgraToNv12::mapFrame(AVFrame* f)
-{
-	if (!_inited)
-		return false;
-
-	if (_mapped)
-		return false;
-	//qDebug() << "copy from buffer";
-
-	lock.lock();
-
-	this->_d3d11_deviceCtx->CopyResource(_texture_nv12_copy_target.Get(),
-		_texture_nv12_target.Get());
-
-	D3D11_MAPPED_SUBRESOURCE ms;
-	//get texture output
-	//render target view only 1 sub resource https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-subresources
-	HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_nv12_copy_target.Get(),
-		/*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
-	if (FAILED(hr))
-		return false;
-
-	f->data[0] = (uint8_t*)ms.pData;
-	f->data[1] = (uint8_t*)ms.pData + ms.RowPitch * _height * 2;
-	f->linesize[0] = ms.RowPitch;
-	f->linesize[1] = ms.RowPitch;
-
-	lock.unlock();
-
-	_mapped = true;
-
-	return true;
-}
-
-void BgraToNv12::unmapFrame()
-{
-	if (!_inited)
-		return;
-
-	if (!_mapped)
-		return;
-
-	lock.lock();
-
-	this->_d3d11_deviceCtx->Unmap(this->_texture_nv12_copy_target.Get(), 0);
-
-	lock.unlock();
-
-	_mapped = false;
-}
-
 void BgraToNv12::copyFrameD3D11(AVFrame* f)
 {
 	if (!_inited)

@@ -96,7 +96,7 @@ void printDxDebugInfo(ID3D11Device* dev);
 
 struct ID3D11DeviceContext;
 struct ID3D11Resource;
-void saveTextureToFile(
+void showTexture(
         ID3D11DeviceContext* pContext,
         ID3D11Resource* pSource,
         QString fileName);

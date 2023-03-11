@@ -476,10 +476,6 @@ std::optional<QString> FrameToAv::processInternal() {
         av_packet_unref(packet);
     }
 
-    if (currentOption.mode == FRAME_TO_AV_MODE_DXMAP) {
-        nv12->unmapFrame();
-    }
-
     if (!err.empty()) {
         auto ee = err.join(", ");
         qDebug() << "one or more error occoured" << ee;

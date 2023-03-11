@@ -72,12 +72,11 @@ bool Peer::usingTurn() {
 void Peer::startServer() {
     rtc::Configuration config;
 
+    config.iceServers.emplace_back("stun:stun.qq.com:3478");
+    config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     if (!room->turnServer.isEmpty()) {
-        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+        //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
-    } else {
-        config.iceServers.emplace_back("stun:stun.qq.com:3478");
-        config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
@@ -144,13 +143,12 @@ void Peer::startServer() {
 void Peer::startClient(QJsonObject serverSdp) {
     rtc::Configuration config;
 
+    config.iceServers.emplace_back("stun:stun.qq.com:3478");
+    config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     auto turnServer = serverSdp["turn"].toString();
     if (!turnServer.isEmpty()) {
-        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+        //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         config.iceServers.emplace_back("turn:" + turnServer.toStdString());
-    } else {
-        config.iceServers.emplace_back("stun:stun.qq.com:3478");
-        config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
