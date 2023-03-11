@@ -1,0 +1,13 @@
+//
+// Created by reito on 2023/3/11.
+//
+
+#ifndef VTSLINK_GIT_H
+#define VTSLINK_GIT_H
+
+#include <string>
+
+const std::string GIT_BRANCH = "@GIT_BRANCH@";
+const std::string GIT_HASH = "@GIT_HASH@";
+
+#endif //VTSLINK_GIT_H

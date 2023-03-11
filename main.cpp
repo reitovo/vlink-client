@@ -19,6 +19,7 @@ extern "C" {
 
 #ifdef HAS_CRASHPAD
 
+#include "git.h"
 #include <client/crash_report_database.h>
 #include <client/settings.h>
 #include <client/crashpad_client.h>
@@ -139,7 +140,8 @@ void initializeCrashpad() {
     std::string url("https://submit.backtrace.io/reito/" VTSLINK_BACKTRACE_SUBMIT_TOKEN "/minidump");
     annotations["token"] = VTSLINK_BACKTRACE_SUBMIT_TOKEN;
     annotations["format"] = "minidump";
-    annotations["build-date"] = "20230221";
+    annotations["git-branch"] = GIT_BRANCH;
+    annotations["git-commit"] = GIT_HASH;
 
     arguments.emplace_back("--no-rate-limit");
     arguments.emplace_back("--attachment=../vtslink.log");
