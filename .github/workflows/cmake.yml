@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  BUILD_TYPE: Debug
+  BUILD_TYPE: RelWithDebInfo
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
 
 concurrency:
