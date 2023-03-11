@@ -32,15 +32,15 @@ static QList<CodecOption> options = {
 };
 
 FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
-	qDebug() << "begin ndi2av";
+	qDebug() << "begin dx2av";
 	onPacketReceived = cb;
 }
 
 FrameToAv::~FrameToAv()
 {
-	qDebug() << "end ndi2av";
+	qDebug() << "end dx2av";
 	stop();
-	qDebug() << "end ndi2av done";
+	qDebug() << "end dx2av done";
 }
 
 QString FrameToAv::debugInfo()
@@ -77,7 +77,7 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 	this->frameD = d;
 	this->frameN = n; 
 
-	qDebug() << "ndi2av init";
+	qDebug() << "dx2av init";
 
 	nv12 = std::make_unique<BgraToNv12>();
 	if (!nv12->init()) {
@@ -111,11 +111,11 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 		auto& e = o.name;
 		err = initCodec(o);
 		if (err.has_value()) {
-			qWarning() << "ndi2av init encoder" << o.readable << "failed" << err.value();
+			qWarning() << "dx2av init encoder" << o.readable << "failed" << err.value();
 			stop();
 			continue;
 		}
-		qDebug() << "ndi2av init encoder" << o.readable << "succeed";
+		qDebug() << "dx2av init encoder" << o.readable << "succeed";
 
 		int code;
 		if (o.mode & FRAME_TO_AV_TYPE_DXFULL) {
@@ -151,7 +151,7 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 	}
 
 	inited = true;
-	qDebug() << "ndi2av init done";
+	qDebug() << "dx2av init done";
 
 	return {};
 }
@@ -224,13 +224,13 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 			auto* d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(device_ctx->hwctx);
 			d3d11va_device_ctx->device = nv12->getDevice();
 			if (d3d11va_device_ctx->device == nullptr) {
-				qDebug("ndi2av d3d11 device null");
+				qDebug("dx2av d3d11 device null");
 				av_buffer_unref(&hw);
 				return "open d3d11 device";
 			}
 
 			if ((err = av_hwdevice_ctx_init(hw)) < 0) {
-				qDebug() << "ndi2av d3d11 hwdevice failed" << av_err2str(err);
+				qDebug() << "dx2av d3d11 hwdevice failed" << av_err2str(err);
 				av_buffer_unref(&hw);
 				return "init hwdevice ctx";
 			}
@@ -244,7 +244,7 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 			frame->height = ctx->height;
 
 			if ((err = av_hwframe_ctx_init(hwf)) < 0) {
-				qDebug() << "ndi2av child d3d11 hwframe failed" << av_err2str(err);
+				qDebug() << "dx2av child d3d11 hwframe failed" << av_err2str(err);
 				av_buffer_unref(&hw);
 				av_buffer_unref(&hwf);
 				return "init hwframe ctx";
@@ -268,20 +268,20 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 			auto* ch_d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(ch_device_ctx->hwctx);
 			ch_d3d11va_device_ctx->device = nv12->getDevice();
 			if (ch_d3d11va_device_ctx->device == nullptr) {
-				qDebug("ndi2av qsv d3d11 device null");
+				qDebug("dx2av qsv d3d11 device null");
 				av_buffer_unref(&ch);
 				return "open child d3d11 device";
 			}
 
 			if ((err = av_hwdevice_ctx_init(ch)) < 0) {
-				qDebug() << "ndi2av qsv hwdevice failed" << av_err2str(err);
+				qDebug() << "dx2av qsv hwdevice failed" << av_err2str(err);
 				av_buffer_unref(&ch);
 				return "init child hwdevice ctx";
 			}
 
 			AVBufferRef* hw;
 			if ((err = av_hwdevice_ctx_create_derived(&hw, AV_HWDEVICE_TYPE_QSV, av_buffer_ref(ch), 0)) < 0) {
-				qDebug() << "ndi2av qsv hwdevice failed" << av_err2str(err);
+				qDebug() << "dx2av qsv hwdevice failed" << av_err2str(err);
 				av_buffer_unref(&ch);
 				av_buffer_unref(&hw);
 				return "init qsv hwdevice ctx";
@@ -299,7 +299,7 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 			frame->initial_pool_size = 2;
 
 			if ((err = av_hwframe_ctx_init(chf)) < 0) {
-				qDebug() << "ndi2av child qsv hwframe failed" << av_err2str(err);
+				qDebug() << "dx2av child qsv hwframe failed" << av_err2str(err);
 				av_buffer_unref(&ch);
 				av_buffer_unref(&hw);
 				av_buffer_unref(&chf);
@@ -308,7 +308,7 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 
 			AVBufferRef* hwf;
 			if ((err = av_hwframe_ctx_create_derived(&hwf, AV_PIX_FMT_QSV, hw, chf, 0)) < 0) {
-				qDebug() << "ndi2av qsv hwframe failed" << av_err2str(err);
+				qDebug() << "dx2av qsv hwframe failed" << av_err2str(err);
 				av_buffer_unref(&ch);
 				av_buffer_unref(&hw);
 				av_buffer_unref(&chf);
@@ -389,64 +389,6 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
-}
-
-std::optional<QString> FrameToAv::process(NDIlib_video_frame_v2_t* ndi)
-{
-	int ret;
-
-	if (ndi->xres != xres || ndi->yres != yres) {
-		qDebug() << "source format changed";
-		return "frame size error";
-	}
-
-	if ((useUYVA() && ndi->FourCC != NDIlib_FourCC_type_UYVA) ||
-		(!useUYVA() && ndi->FourCC != NDIlib_FourCC_type_BGRA)) {
-		qDebug() << "pixel format error";
-		return "pixel format error";
-	}
-
-	QElapsedTimer t;
-	t.start();
-
-	//Elapsed e1("convert");
-	if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_D3D11) {
-		nv12->bgraToNv12(ndi);
-		nv12->copyFrameD3D11(frame);
-	}
-	else if (currentOption.mode == FRAME_TO_AV_MODE_DXFULL_QSV) {
-		nv12->bgraToNv12(ndi);
-		nv12->copyFrameQSV(frame);
-	}
-	else if (currentOption.mode == FRAME_TO_AV_MODE_DXMAP) {
-		nv12->bgraToNv12(ndi);
-		nv12->mapFrame(frame);
-	}
-	else if (currentOption.mode == FRAME_TO_AV_MODE_LIBYUV_BGRA) {
-		libyuv::ARGBToNV12(ndi->p_data, ndi->line_stride_in_bytes,
-                           frame->data[0], frame->linesize[0],
-                           frame->data[1], frame->linesize[1],
-                           ndi->xres, ndi->yres);
-		libyuv::ARGBExtractAlpha(ndi->p_data, ndi->line_stride_in_bytes,
-			frame->data[0] + ndi->xres * ndi->yres, frame->linesize[0],
-			ndi->xres, ndi->yres);
-	}
-	else if (currentOption.mode == FRAME_TO_AV_MODE_LIBYUV_UYVA) {
-		libyuv::UYVYToNV12(ndi->p_data, ndi->line_stride_in_bytes,
-                           frame->data[0], frame->linesize[0],
-                           frame->data[1], frame->linesize[1],
-                           ndi->xres, ndi->yres);
-		libyuv::CopyPlane(ndi->p_data + ndi->yres * ndi->line_stride_in_bytes, ndi->xres,
-            frame->data[0] + ndi->xres * ndi->yres, frame->linesize[0],
-			ndi->xres, ndi->yres);
-	}
-	//e1.end();
-
-    auto r = processInternal();
-
-    fps.add(t.nsecsElapsed());
-
-    return r;
 }
 
 std::optional<QString> FrameToAv::processFast(const std::shared_ptr<IDxCopyable>& fast) {

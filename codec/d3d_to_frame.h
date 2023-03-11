@@ -73,9 +73,6 @@ public:
     // If use swap chain, present it.
     bool present();
 
-    bool mapNdi(NDIlib_video_frame_v2_t* frame);
-    void unmapNdi();
-
     // cooperate with ndi to av, as we can copy from texture, not from cpu
     bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest) override;
 };

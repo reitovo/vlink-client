@@ -30,7 +30,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
 
 AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
-    qDebug() << "begin d3d2ndi";
+    qDebug() << "begin d3d2dx";
     d3d->registerSource(this);
 
     QSettings settings;
@@ -41,10 +41,10 @@ AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 
 AvToDx::~AvToDx()
 {
-    qDebug() << "end d3d2ndi";
+    qDebug() << "end d3d2dx";
     d3d->unregisterSource(this);
     stop();
-    qDebug() << "end d3d2ndi done";
+    qDebug() << "end d3d2dx done";
 }
 
 std::optional<QString> AvToDx::init()

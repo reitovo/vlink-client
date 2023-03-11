@@ -1,7 +1,6 @@
 #include "collabroom.h"
 #include "NatTypeProbe/NatProb.h"
 #include "frame_to_av.h"
-#include "frame_to_d3d.h"
 #include "ui/widgets/peeritemwidget.h"
 #include "qjsonarray.h"
 #include "qjsondocument.h"
@@ -26,13 +25,14 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
+#include <QDesktopServices>
 #include <QSystemTrayIcon>
 #include "d3d_to_frame.h"
 #include "core/usage.h"
 #include "dxgioutput.h"
 #include "buyrelay.h"
 #include "d3d_capture.h"
-#include <QDesktopServices>
+#include "spout_capture.h"
 
 static CollabRoom *_instance;
 
@@ -55,32 +55,27 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     QSettings settings;
-    useNdiSender = settings.value("useNdiSender", false).toBool();
-    useNdiReceiver = settings.value("useNdiReceiver", false).toBool();
+    useDxCapture = settings.value("useDxCapture", false).toBool();
+    qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
 
     this->roomId = roomId;
     this->isServer = isServer;
 
     d3d = std::make_shared<DxToFrame>();
-    if (!useNdiSender) {
-        auto output = new DxgiOutput();
-        if (settings.value("showDxgiWindow").toBool()) {
-            output->move(0, 0);
-            output->show();
-        }
-        d3d->init(true);
-    } else {
-        d3d->init(false);
+    auto output = new DxgiOutput();
+    if (settings.value("showDxgiWindow").toBool()) {
+        output->move(0, 0);
+        output->show();
     }
+    d3d->init(true);
 
-    if (useNdiReceiver) {
-        ui->shareMethods->setCurrentIndex(0);
-    } else {
+    if (useDxCapture) {
         dxgiCaptureStatus("idle");
         ui->shareMethods->setCurrentIndex(1);
+    } else {
+        ui->shareMethods->setCurrentIndex(0);
     }
 
-    qDebug() << "sender is" << (useNdiSender ? "ndi" : "swap");
 //    peerId = settings.value("peerId", QString()).toString();
 //    if (peerId.isEmpty()) {
 //        peerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -154,26 +149,9 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/osFxEHHuiZNF3JMrhS6zV2"));
     });
 
-    // Not required, but "correct" (see the SDK documentation).
-    if (!NDIlib_initialize()) {
-        fatalError(tr("初始化 NDI 组件失败"));
-        QApplication::quit();
-    }
-
-    // Start finding NDI
-    connect(this, &CollabRoom::onNdiSourcesUpdated, this, &CollabRoom::updateNdiSourcesUi);
-    ndiFindThread = std::unique_ptr<QThread>(QThread::create([this]() {
-        ndiFindWorker();
-    }));
-    ndiFindThread->start();
-
     // Start sending thread
-    frameSendThread = std::unique_ptr<QThread>(QThread::create([=]() {
-        if (useNdiSender) {
-            ndiSendWorker();
-        } else {
-            dxgiSendWorker();
-        }
+    frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
+        dxgiSendWorker();
     }));
     frameSendThread->start();
 
@@ -191,6 +169,52 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         usageStatUpdate();
     });
     usageStat->start(1000);
+
+    spoutDiscovery = std::make_unique<QTimer>(this);
+    auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
+    connect(spoutDiscovery.get(), &QTimer::timeout, this, [=, this]() {
+        std::set<std::string> senders;
+        spoutSender.GetSenderNames(&senders);
+
+        static int emptyCount = 0;
+        if (senders.empty()) {
+            emptyCount++;
+            if (emptyCount == 3 && !ignoreSpoutOpenHint) {
+                QMessageBox box(this);
+                box.setIcon(QMessageBox::Information);
+                box.setWindowTitle(tr("提示"));
+                box.setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
+                               "请点击「查看详情」了解如何开启"));
+                auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
+                auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+                auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
+                box.exec();
+                auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreSpoutOpenHint", true);
+                    s.sync();
+                } else if (ret == open) {
+                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
+                }
+            }
+            ui->spoutSourceSelect->clear();
+        } else {
+            emptyCount = 0;
+            QStringList strList;
+            for (const auto &i: senders) {
+                strList.push_back(QString::fromStdString(i));
+            }
+            setComboBoxIfChanged(strList, ui->spoutSourceSelect);
+        }
+    });
+    spoutDiscovery->start(1000);
+    connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
+        if (s.isEmpty())
+            return;
+        spoutName = s.toStdString();
+        qDebug() << "set spout" << s;
+    });
 
     if (!isServer) {
         resize(QSize(381, 360));
@@ -210,18 +234,11 @@ CollabRoom::~CollabRoom() {
         dxgi->deleteLater();
     }
 
+    spoutDiscovery.reset();
     usageStat.reset();
     heartbeat.reset();
 
     stopShareWorker();
-
-    // Stop ndi finder
-    if (ndiFindThread != nullptr && !ndiFindThread->isFinished() && !ndiFindThread->wait(500)) {
-        qWarning() << "uneasy to exit ndi find thread";
-        ndiFindThread->terminate();
-        ndiFindThread->wait(500);
-        ndiFindThread = nullptr;
-    }
 
     if (frameSendThread != nullptr && !frameSendThread->isFinished() && !frameSendThread->wait(500)) {
         qWarning() << "uneasy to exit frame send thread";
@@ -254,8 +271,6 @@ CollabRoom::~CollabRoom() {
     }
     peersLock.unlock();
 
-    NDIlib_destroy();
-
     delete ui;
     qWarning() << "room exit";
 }
@@ -264,15 +279,10 @@ QString CollabRoom::debugInfo() {
     auto ret = QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
             .arg(isServer ? "Server" : "Client").arg(roomId)
             .arg(peerId).arg(ui->nick->text())
-            .arg(useNdiSender ? "Dx->Frame (D3D11 Map) " : "Dx->Frame (D3D11 Present) ")
-            .arg(sendProcessFps.stat());
-    if (useNdiReceiver) {
-        ret = ret.arg(isServer ? "Frame->Dx (NDI Receive) " : "Frame->Av (NDI Receive) ")
-                .arg(shareRecvFps.stat());
-    } else {
-        ret = ret.arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
-                .arg(shareRecvFps.stat());
-    }
+            .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
+            .arg(sendProcessFps.stat())
+            .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
+            .arg(shareRecvFps.stat());
     return ret;
 }
 
@@ -300,20 +310,6 @@ void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
         auto item = ui->peerList->item(idx++);
         auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
         widget->setPeerUi(p);
-    }
-}
-
-void CollabRoom::updateNdiSourcesUi(QStringList list) {
-    while (ui->ndiSourceSelect->count() < list.count()) {
-        ui->ndiSourceSelect->addItem("");
-    }
-
-    while (ui->ndiSourceSelect->count() > list.count()) {
-        ui->ndiSourceSelect->removeItem(0);
-    }
-
-    for (int i = 0; i < list.count(); ++i) {
-        ui->ndiSourceSelect->setItemText(i, list[i]);
     }
 }
 
@@ -402,7 +398,6 @@ void CollabRoom::shareError(QString reason) {
 
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(true);
-    ui->ndiSourceSelect->setEnabled(true);
 }
 
 void CollabRoom::fatalError(QString reason) {
@@ -424,6 +419,10 @@ void CollabRoom::toggleShare() {
 }
 
 void CollabRoom::startShare() {
+    QSettings settings;
+    useDxCapture = settings.value("useDxCapture", false).toBool();
+    qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
+
     if (!isServer) {
         peersLock.lock();
         if (client == nullptr || !client->connected()) {
@@ -436,7 +435,6 @@ void CollabRoom::startShare() {
 
     ui->btnSharingStatus->setText(tr("停止") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(false);
-    ui->ndiSourceSelect->setEnabled(false);
     ui->btnFixRatio->setEnabled(true);
     QTimer::singleShot(500, this, [this]() {
         ui->btnSharingStatus->setEnabled(true);
@@ -445,19 +443,19 @@ void CollabRoom::startShare() {
     // Start worker
     shareRunning = true;
     if (isServer) {
-        shareThread = std::unique_ptr<QThread>(QThread::create([=]() {
-            if (useNdiReceiver) {
-                ndiShareWorkerServer();
-            } else {
+        shareThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
+            if (useDxCapture) {
                 dxgiShareWorkerServer();
+            } else {
+                spoutShareWorkerServer();
             }
         }));
     } else {
-        shareThread = std::unique_ptr<QThread>(QThread::create([=]() {
-            if (useNdiReceiver) {
-                ndiShareWorkerClient();
-            } else {
+        shareThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
+            if (useDxCapture) {
                 dxgiShareWorkerClient();
+            } else {
+                spoutShareWorkerClient();
             }
         }));
     }
@@ -473,28 +471,19 @@ void CollabRoom::stopShare() {
 
     QTimer::singleShot(500, this, [this]() {
         ui->btnSharingStatus->setEnabled(true);
-        ui->ndiSourceSelect->setEnabled(true);
     });
 }
 
-void CollabRoom::ndiShareWorkerClient() {
-    qInfo() << "ndi to ffmpeg client start";
+void CollabRoom::spoutShareWorkerClient() {
+    qInfo() << "spout capture client start";
 
-    const NDIlib_source_t *source = nullptr;
-    auto name = ui->ndiSourceSelect->currentText();
-    for (auto i = 0; i < ndiSourceCount; ++i) {
-        if (name == ndiSources[i].p_ndi_name) {
-            source = &ndiSources[i];
-            break;
-        }
-    }
-
-    if (source == nullptr) {
-        emit onShareError("source error");
+    // spout capture
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(nullptr, spoutName);
+    if (!spout->init()) {
+        emit onShareError("spout capture init failed");
         return;
     }
 
-    qDebug() << "ndi to ffmpeg ndi2av";
     // ffmpeg coverter
     FrameToAv cvt([=](auto av) {
         peersLock.lock();
@@ -507,213 +496,101 @@ void CollabRoom::ndiShareWorkerClient() {
     if (initErr.has_value()) {
         emit onShareError(initErr.value());
         shareRunning = false;
+        return;
     }
 
     auto useUYVA = cvt.useUYVA();
-    auto fmt = useUYVA ? NDIlib_recv_color_format_fastest : NDIlib_recv_color_format_BGRX_BGRA;
-
-    NDIlib_recv_create_v3_t create;
-    create.color_format = fmt;
-    create.bandwidth = NDIlib_recv_bandwidth_highest;
-    create.allow_video_fields = false;
-
-    // We now have at least one source, so we create a receiver to look at it.
-    NDIlib_recv_instance_t pNDI_recv = NDIlib_recv_create_v3(&create);
-    if (!pNDI_recv) {
-        emit onShareError("init error");
+    if (useUYVA) {
+        emit onShareError("cap no uyva");
         shareRunning = false;
         return;
     }
 
-    // Connect to our sources
-    NDIlib_recv_connect(pNDI_recv, source);
-
     int frameD = VTSLINK_FRAME_D;
     int frameN = VTSLINK_FRAME_N;
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
+    float frameSeconds = 1.0f * frameD / frameN;
 
     while (shareRunning) {
-        // The descriptors
-        NDIlib_video_frame_v2_t video_frame;
-        NDIlib_audio_frame_v2_t audio_frame;
-        char cc[5] = {0};
-
         QElapsedTimer t;
         t.start();
 
-        switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
-            // No data
-            //        case NDIlib_frame_type_none:
-            //            printf("No data received.\n");
-            //            break;
+        spout->captureTick(frameSeconds);
 
-            // Video data
-            case NDIlib_frame_type_video: {
-//            *(uint32_t*)cc = video_frame.FourCC;
-//            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
-
-                shareRecvFps.add(t.nsecsElapsed());
-
-                auto e = cvt.process(&video_frame);
-                if (e.has_value()) {
-                    emit onShareError(e.value());
-                    shareRunning = false;
-                    goto clean;
-                }
-
-                NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
-
-                frameCount++;
-                int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
-                int64_t nextTime = startTime + frameTime;
-                int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-                auto sleepTime = nextTime - currentTime;
-                if (sleepTime > 0) {
-                    QThread::usleep(sleepTime);
-                }
-
-                break;
-            }
-
-                // Audio data
-                //        case NDIlib_frame_type_audio:
-                //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
-                //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
-                //            break;
-
-            case NDIlib_frame_type_error:
-                emit onShareError("frame error");
-                shareRunning = false;
-                goto clean;
-            case NDIlib_frame_type_none:
-            case NDIlib_frame_type_audio:
-            case NDIlib_frame_type_metadata:
-            case NDIlib_frame_type_status_change:
-            case NDIlib_frame_type_max:
-                break;
+        auto e = cvt.processFast(spout);
+        if (e.has_value()) {
+            emit onShareError(e.value());
+            shareRunning = false;
+            goto clean;
         }
+
+        shareRecvFps.add(t.nsecsElapsed());
+
+        frameCount++;
+        int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+        int64_t nextTime = startTime + frameTime;
+        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+        auto sleepTime = nextTime - currentTime;
+        if (sleepTime > 0) {
+            QThread::usleep(sleepTime);
+        }
+
     }
 
     clean:
     cvt.stop();
-    // Destroy the receiver
-    NDIlib_recv_destroy(pNDI_recv);
 
-    qInfo() << "ndi to ffmpeg client exit";
+    qInfo() << "spout capture client exit";
 }
 
-void CollabRoom::ndiShareWorkerServer() {
-    qInfo() << "ndi to ffmpeg server start";
+void CollabRoom::spoutShareWorkerServer() {
+    qInfo() << "spout capture server start";
 
-    const NDIlib_source_t *source = nullptr;
-    auto name = ui->ndiSourceSelect->currentText();
-    for (auto i = 0; i < ndiSourceCount; ++i) {
-        if (name == ndiSources[i].p_ndi_name) {
-            source = &ndiSources[i];
-            break;
-        }
-    }
-
-    if (source == nullptr) {
-        emit onShareError("source error");
+    // dx capture
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(d3d, spoutName);
+    if (!spout->init()) {
+        emit onShareError("spout capture init failed");
         return;
     }
-
-    FrameToDx cvt(d3d);
-    if (!cvt.init()) {
-        emit onShareError("ndi to dx init failed");
-        return;
-    }
-
-    // We now have at least one source, so we create a receiver to look at it.
-    NDIlib_recv_instance_t pNDI_recv = NDIlib_recv_create_v3();
-    if (!pNDI_recv) {
-        emit onShareError("init error");
-        return;
-    }
-
-    // Connect to our sources
-    NDIlib_recv_connect(pNDI_recv, source);
 
     int frameD = VTSLINK_FRAME_D;
     int frameN = VTSLINK_FRAME_N;
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
+    float frameSeconds = 1.0f * frameD / frameN;
 
     while (shareRunning) {
-        // The descriptors
-        NDIlib_video_frame_v2_t video_frame;
-        NDIlib_audio_frame_v2_t audio_frame;
-        char cc[5] = {0};
 
         QElapsedTimer t;
         t.start();
 
-        switch (NDIlib_recv_capture_v2(pNDI_recv, &video_frame, nullptr, nullptr, 100)) {
-            // No data
-            //        case NDIlib_frame_type_none:
-            //            printf("No data received.\n");
-            //            break;
+        spout->captureTick(frameSeconds);
 
-            // Video data
-            case NDIlib_frame_type_video: {
-//            *(uint32_t*)cc = video_frame.FourCC;
-//            qDebug() << "video" << video_frame.xres <<  video_frame.yres << video_frame.frame_rate_D << video_frame.frame_rate_N << video_frame.frame_format_type << cc;
+        shareRecvFps.add(t.nsecsElapsed());
 
-                shareRecvFps.add(t.nsecsElapsed());
-
-                cvt.update(&video_frame);
-
-                NDIlib_recv_free_video_v2(pNDI_recv, &video_frame);
-
-                frameCount++;
-                int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
-                int64_t nextTime = startTime + frameTime;
-                int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-                auto sleepTime = nextTime - currentTime;
-                if (sleepTime > 0) {
-                    QThread::usleep(sleepTime);
-                }
-
-                break;
-            }
-
-                // Audio data
-                //        case NDIlib_frame_type_audio:
-                //            printf("Audio data received (%d samples).\n", audio_frame.no_samples);
-                //            NDIlib_recv_free_audio_v2(pNDI_recv, &audio_frame);
-                //            break;
-
-            case NDIlib_frame_type_error:
-                emit onShareError("frame error");
-                shareRunning = false;
-                goto clean;
-            case NDIlib_frame_type_none:
-            case NDIlib_frame_type_audio:
-            case NDIlib_frame_type_metadata:
-            case NDIlib_frame_type_status_change:
-            case NDIlib_frame_type_max:
-                break;
+        frameCount++;
+        int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+        int64_t nextTime = startTime + frameTime;
+        int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+        auto sleepTime = nextTime - currentTime;
+        if (sleepTime > 0) {
+            QThread::usleep(sleepTime);
         }
     }
 
-    clean:
-    // Destroy the receiver
-    NDIlib_recv_destroy(pNDI_recv);
-
-    qInfo() << "ndi to ffmpeg server exit";
+    qInfo() << "spout capture server exit";
 }
 
 void CollabRoom::dxgiShareWorkerClient() {
     qInfo() << "dx capture client start";
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>();
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(nullptr);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -822,7 +699,6 @@ void CollabRoom::dxgiShareWorkerServer() {
         }
     }
 
-    clean:
     qInfo() << "dx capture server exit";
 }
 
@@ -1033,152 +909,6 @@ void CollabRoom::updatePeers(QJsonArray peers) {
     emit onUpdatePeersUi(peerUis);
 }
 
-void CollabRoom::ndiFindWorker() {
-    qInfo() << "start ndi find";
-
-    // We are going to create an NDI finder that locates sources on the network.
-    NDIlib_find_instance_t pNDI_find = NDIlib_find_create_v2();
-    if (!pNDI_find) {
-        emit onFatalError(tr("启动 NDI 发现组件失败"));
-        return;
-    }
-
-    ndiSourceCount = 0;
-    auto time = QDateTime::currentDateTime();
-    while (!exiting) {
-        if (ndiSourceCount == 0 && (QDateTime::currentDateTime() - time).count() > 2000) {
-            time = QDateTime::currentDateTime();
-            NDIlib_find_destroy(pNDI_find);
-            pNDI_find = NDIlib_find_create_v2();
-            if (!pNDI_find) {
-                emit onFatalError(tr("启动 NDI 发现组件失败"));
-                return;
-            }
-        }
-
-        // Wait up till 250ms to check for new sources to be added or removed
-        if (!NDIlib_find_wait_for_sources(pNDI_find, 250 /* milliseconds */)) {
-            continue;
-        }
-
-        // Get the updated list of sources
-        uint32_t no_sources = 0;
-        ndiSources = NDIlib_find_get_current_sources(pNDI_find, &no_sources);
-        ndiSourceCount = no_sources;
-
-        // Display all the sources.
-        QStringList sources;
-        printf("Network sources (%u found).\n", no_sources);
-        for (uint32_t i = 0; i < no_sources; i++) {
-            qDebug() << QString("%1. %2 %3").arg(i + 1).arg(ndiSources[i].p_ndi_name).arg(ndiSources[i].p_url_address);
-            auto name = QString(ndiSources[i].p_ndi_name);
-            if (!name.contains("(VTS Link)")) {
-                sources.append(name);
-            }
-        }
-        emit onNdiSourcesUpdated(sources);
-    }
-
-    // Destroy the NDI finder
-    NDIlib_find_destroy(pNDI_find);
-
-    qInfo() << "end ndi find";
-}
-
-void CollabRoom::ndiSendWorker() {
-    qInfo() << "start ndi sender";
-
-    // Create an NDI source that is called "My Video and Audio" and is clocked to the video.
-    NDIlib_send_create_t NDI_send_create_desc;
-    auto name = (QString("%1").arg(tr("联动 (VTS Link)"))).toUtf8();
-    NDI_send_create_desc.p_ndi_name = name.data();
-
-    // We create the NDI sender
-    NDIlib_send_instance_t pNDI_send = NDIlib_send_create(&NDI_send_create_desc);
-    if (!pNDI_send) {
-        // try with suffix
-        auto role = isServer ? "Server" : "Client";
-        qDebug() << "Role is" << (role) << peerId;
-
-        name = QString("%1 (%3)").arg(tr("联动 (VTS Link)")).arg(role).arg(peerId.left(2)).toUtf8();
-        NDI_send_create_desc.p_ndi_name = name.data();
-        pNDI_send = NDIlib_send_create(&NDI_send_create_desc);
-        if (!pNDI_send) {
-            emit onFatalError(tr("启动 NDI 视频源失败"));
-            return;
-        }
-    }
-
-    NDIlib_video_frame_v2_t NDI_video_frame;
-    NDI_video_frame.xres = VTSLINK_FRAME_WIDTH;
-    NDI_video_frame.yres = VTSLINK_FRAME_HEIGHT;
-    NDI_video_frame.FourCC = NDIlib_FourCC_type_BGRA;
-    NDI_video_frame.frame_rate_D = VTSLINK_FRAME_D;
-    NDI_video_frame.frame_rate_N = VTSLINK_FRAME_N;
-    NDI_video_frame.line_stride_in_bytes = VTSLINK_FRAME_WIDTH * 4;
-
-    qDebug() << "ndi send ndi2av";
-    // ffmpeg coverter
-    std::unique_ptr<FrameToAv> cvt = nullptr;
-
-    if (isServer) {
-        cvt = std::make_unique<FrameToAv>([=](auto av) {
-            peersLock.lock();
-            // This approach is bandwidth consuming, should be replaced by relay approach
-            for (auto &s: servers) {
-                s.second->sendAsync(av);
-            }
-            peersLock.unlock();
-        });
-        auto initErr = cvt->init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, true);
-        if (initErr.has_value()) {
-            emit onFatalError(initErr.value());
-            NDIlib_send_destroy(pNDI_send);
-            return;
-        }
-    }
-
-    while (!exiting) {
-        // We now submit the frame. Note that this call will be clocked so that we end up submitting
-        // at exactly 60fps.
-
-        QElapsedTimer t;
-        t.start();
-
-        if (d3d->render()) {
-
-            // encode and send
-            if (isServer) {
-                cvt->processFast(d3d);
-            }
-
-            QElapsedTimer t1;
-            t1.start();
-            if (d3d->mapNdi(&NDI_video_frame)) {
-                sendProcessFps.add(t1.nsecsElapsed());
-
-                // blocking
-                NDIlib_send_send_video_v2(pNDI_send, &NDI_video_frame);
-            }
-
-            d3d->unmapNdi();
-
-            outputFps.add(t.nsecsElapsed());
-        } else {
-            QThread::msleep(1);
-        }
-    }
-
-    // Destroy the NDI sender
-    NDIlib_send_destroy(pNDI_send);
-
-    if (isServer) {
-        cvt->stop();
-    }
-
-    qInfo() << "end ndi sender";
-}
-
 void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer *peer) const {
     // receive av from remote peer
     switch (m->type()) {
@@ -1222,18 +952,6 @@ QString CollabRoom::errorToReadable(const QString &reason) {
     QString err = reason;
     if (reason == "init error") {
         err = tr("初始化错误");
-    } else if (reason == "source error") {
-        err = tr("NDI 来源错误");
-    } else if (reason == "frame error") {
-        err = tr("NDI 接收断开");
-    } else if (reason == "frame format error") {
-        err = tr("NDI 帧格式错误(Frame)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
-    } else if (reason == "frame size error") {
-        err = QString(tr("NDI 分辨率错误，请在 VTube Studio 设置中开启「NDI 输出分辨率」，并设置大小为「%1 × %2」")).arg(VTSLINK_FRAME_WIDTH).arg(VTSLINK_FRAME_HEIGHT);
-    } else if (reason == "frame change error") {
-        err = tr("NDI 输出源格式发生变化，请不要在分享画面时更改 VTube Studio 中的 NDI 设置");
-    } else if (reason == "line stride error") {
-        err = tr("NDI 帧格式错误(Stride)，请确认选择了 VTube Studio 生成的来源（包含Live2D Camera字样）");
     } else if (reason == "no valid encoder") {
         err = tr("无法启动任何编码器！\n如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
     } else if (reason == "cap no uyva") {
@@ -1246,8 +964,8 @@ void CollabRoom::usageStatUpdate() {
     ui->usageStat->setText(QString("CPU: %1% FPS: %2 输入: %3 输出: %4")
                                    .arg(QString::number(usage::getCpuUsage(), 'f', 1))
                                    .arg(QString::number(outputFps.fps(), 'f', 1))
-                                   .arg(useNdiReceiver ? tr("NDI") : tr("D3D11"))
-                                   .arg(useNdiSender ? tr("NDI") : tr("D3D11"))
+                                   .arg(useDxCapture ? "D3D11" : "Spout")
+                                   .arg("D3D11")
     );
 }
 
@@ -1431,12 +1149,10 @@ void CollabRoom::downgradedToSharedMemory() {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
         box.setWindowTitle(tr("性能提示"));
-        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
-                       "点击「打开」以了解详情。\n"
-                       "点击「忽略」不再出现本提示。"));
+        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-        auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("忽略"), QMessageBox::NoRole);
+        auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+        auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
         box.exec();
         auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
         if (ret == ign) {
@@ -1478,13 +1194,10 @@ void CollabRoom::dxgiNeedElevate() {
         box.setText(tr("捕获 VTube Studio 画面失败\n"
                        "可能的解决方案：\n"
                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
-                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享\n"
-                       "3. 在设置中启用 NDI 输入\n\n"
-                       "点击「打开」以查看详细教程。\n"
-                       "点击「忽略」不再出现本提示。"));
+                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享"));
         auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-        auto open = box.addButton(tr("打开"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("忽略"), QMessageBox::NoRole);
+        auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+        auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
         box.exec();
         auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
         if (ret == ign) {
@@ -1496,7 +1209,7 @@ void CollabRoom::dxgiNeedElevate() {
     }
 }
 
-void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap) {
+void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
     if (needFixVtsRatio) {
         needFixVtsRatio = false;
         cap->fixWindowRatio();

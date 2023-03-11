@@ -239,20 +239,6 @@
         </layout>
        </item>
        <item>
-        <widget class="QCheckBox" name="useNdiReceiver">
-         <property name="text">
-          <string>使用 NDI 输入（消耗更多资源，仅当分享 VTube Studio 始终黑屏时使用）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="useNdiSender">
-         <property name="text">
-          <string>使用 NDI 输出（消耗更多资源，仅当 OBS 游戏源捕获本软件失败时使用）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <widget class="QCheckBox" name="showDxgiWindow">
          <property name="text">
           <string>显示联动画面窗口（调试）</string>
@@ -299,9 +285,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="useDxCapture">
+         <property name="text">
+          <string>使用 D3D11 捕获（仅当 VTube Studio 无法被 Spout 捕获时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="forceShmem">
          <property name="text">
-          <string>使用共享内存型 D3D11 捕获（缓解可能的画面闪烁）</string>
+          <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
          </property>
         </widget>
        </item>

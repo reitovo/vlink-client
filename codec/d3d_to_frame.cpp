@@ -44,12 +44,12 @@ static VERTEX Vertices[NUMVERTICES] =
 static FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 
 DxToFrame::DxToFrame() {
-    qDebug() << "begin d3d2ndi";
+    qDebug() << "begin d3d2dx";
 }
 
 DxToFrame::~DxToFrame()
 {
-    qDebug() << "end d3d2ndi";
+    qDebug() << "end d3d2dx";
     lock.lock();
 
     _inited = false;
@@ -72,7 +72,7 @@ DxToFrame::~DxToFrame()
     COM_RESET(_d3d11_device);
 
     lock.unlock();
-    qDebug() << "end d3d2ndi done";
+    qDebug() << "end d3d2dx done";
 }
 
 QString DxToFrame::debugInfo()
@@ -88,7 +88,7 @@ QString DxToFrame::debugInfo()
 
 void DxToFrame::registerSource(IDxToFrameSrc *src)
 {
-    qDebug() << "d3d2ndi register source";
+    qDebug() << "d3d2dx register source";
     lock.lock();
     sources.append(src);
     lock.unlock();
@@ -96,7 +96,7 @@ void DxToFrame::registerSource(IDxToFrameSrc *src)
 
 void DxToFrame::unregisterSource(IDxToFrameSrc *src)
 {
-    qDebug() << "d3d2ndi unregister source";
+    qDebug() << "d3d2dx unregister source";
     lock.lock();
     sources.removeOne(src);
     lock.unlock();
@@ -124,7 +124,7 @@ bool DxToFrame::compileShader()
         return false;
     }
 
-    qDebug() << "d3d2ndi compiled shader";
+    qDebug() << "d3d2dx compiled shader";
     return true;
 }
 
@@ -137,7 +137,7 @@ bool DxToFrame::init(bool swap)
     _width = width;
     _height = height;
 
-    qDebug() << "d3d2ndi init";
+    qDebug() << "d3d2dx init";
 
     compileShader();
 
@@ -177,11 +177,11 @@ bool DxToFrame::init(bool swap)
     hr = CreateDXGIFactory2(dxgiCreateFlag, IID_IDXGIFactory3, (void **)&pDXGIFactory);
     if (FAILED(hr))
         return false;
-    qDebug() << "d3d2ndi create dxgi factory";
+    qDebug() << "d3d2dx create dxgi factory";
 
     hr = pDXGIFactory->EnumAdapters(0, &pAdapter);
     if (FAILED(hr)) {
-        qDebug() << "d3d2ndi failed enum adapter";
+        qDebug() << "d3d2dx failed enum adapter";
         return false;
     }
 
@@ -196,7 +196,7 @@ bool DxToFrame::init(bool swap)
                                this->_d3d11_deviceCtx.GetAddressOf());
         if (SUCCEEDED(hr))
         {
-            qDebug() << "d3d2ndi successfully created device";
+            qDebug() << "d3d2dx successfully created device";
             // Device creation succeeded, no need to loop anymore
             break;
         }
@@ -248,7 +248,7 @@ bool DxToFrame::init(bool swap)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create sampler state";
+    qDebug() << "d3d2dx create sampler state";
 
     //VertexShader
     hr = this->_d3d11_device->CreateVertexShader(_vertex_shader->GetBufferPointer(), _vertex_shader->GetBufferSize(), nullptr, this->_d3d11_vertexShader.GetAddressOf());
@@ -257,7 +257,7 @@ bool DxToFrame::init(bool swap)
         return false;
     }
 
-    qDebug() << "d3d2ndi create vertex shader";
+    qDebug() << "d3d2dx create vertex shader";
 
     constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> Layout =
     { {
@@ -273,14 +273,14 @@ bool DxToFrame::init(bool swap)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create input layout";
+    qDebug() << "d3d2dx create input layout";
 
     //PixelShader
     hr = this->_d3d11_device->CreatePixelShader(_pixel_shader->GetBufferPointer(), _pixel_shader->GetBufferSize(), nullptr, this->_d3d11_pixelShader.GetAddressOf());
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create pixel shader";
+    qDebug() << "d3d2dx create pixel shader";
 
     //VertexBuffer
     D3D11_BUFFER_DESC BufferDesc;
@@ -296,13 +296,13 @@ bool DxToFrame::init(bool swap)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create vertex buffer";
+    qDebug() << "d3d2dx create vertex buffer";
 
     auto ret = createSharedSurf(width, height);
     resetDeviceContext(width, height);
 
     _inited = true;
-    qDebug() << "d3d2ndi init done";
+    qDebug() << "d3d2dx init done";
 
     return ret;
 }
@@ -379,7 +379,7 @@ bool DxToFrame::createSharedSurf(int width, int height)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create texture src";
+    qDebug() << "d3d2dx create texture src";
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const srcDesc
@@ -388,14 +388,14 @@ bool DxToFrame::createSharedSurf(int width, int height)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create shader resource view src";
+    qDebug() << "d3d2dx create shader resource view src";
 
     texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;
     hr = this->_d3d11_device->CreateTexture2D(&texDesc_rgba, nullptr, this->_texture_rgba_target.GetAddressOf());
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create texture target";
+    qDebug() << "d3d2dx create texture target";
 
     // Copy by ndi to av
     texDesc_rgba.BindFlags = 0;
@@ -404,7 +404,7 @@ bool DxToFrame::createSharedSurf(int width, int height)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create texture target shared";
+    qDebug() << "d3d2dx create texture target shared";
 
     IDXGIResource* pDXGIResource = NULL;
     _texture_rgba_target_shared->QueryInterface(__uuidof(IDXGIResource), (LPVOID*) &pDXGIResource);
@@ -424,7 +424,7 @@ bool DxToFrame::createSharedSurf(int width, int height)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create texture copy cpu";
+    qDebug() << "d3d2dx create texture copy cpu";
 
     D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
     rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -434,7 +434,7 @@ bool DxToFrame::createSharedSurf(int width, int height)
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2ndi create render target view";
+    qDebug() << "d3d2dx create render target view";
 
     return true;
 }
@@ -490,43 +490,6 @@ bool DxToFrame::render()
     renderFps.add(t.nsecsElapsed());
 
     return renderCount > 0;
-}
-
-bool DxToFrame::mapNdi(NDIlib_video_frame_v2_t* frame)
-{
-    if (!_inited)
-        return false;
-
-    if (_mapped)
-        return false;
-
-    //Elapsed e3("copy");
-    this->_d3d11_deviceCtx->CopyResource(this->_texture_rgba_copy.Get(), this->_texture_rgba_target.Get());
-    //e3.end();
-
-    //Elapsed e4("map");
-    //get texture output
-    //render target view only 1 sub resource https://docs.microsoft.com/en-us/windows/win32/direct3d11/overviews-direct3d-11-resources-subresources
-    D3D11_MAPPED_SUBRESOURCE ms;
-    HRESULT hr = this->_d3d11_deviceCtx->Map(this->_texture_rgba_copy.Get(), /*SubResource*/ 0, D3D11_MAP_READ, 0, &ms);
-    if (FAILED(hr))
-        return false;
-    //e4.end();
-
-    frame->p_data = (uint8_t*)ms.pData;
-
-    _mapped = true;
-
-    return true; 
-}
-
-void DxToFrame::unmapNdi()
-{
-    if (!_mapped)
-        return;
-
-    this->_d3d11_deviceCtx->Unmap(this->_texture_rgba_copy.Get(), 0);
-    _mapped = false;
 }
 
 bool DxToFrame::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest)

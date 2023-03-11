@@ -42,6 +42,8 @@ set(TS_FILES
 
 # Codes
 set(CODEC_FILES
+        codec/spout_capture.h
+        codec/spout_capture.cpp
         codec/d3d_capture.h
         codec/d3d_capture.cpp
         codec/frame_to_av.h
@@ -54,9 +56,7 @@ set(CODEC_FILES
         codec/d3d_to_frame.cpp
         codec/nv12_to_bgra.h
         codec/nv12_to_bgra.cpp
-        codec/frame_to_d3d.h
-        codec/frame_to_d3d.cpp
-        codec/i_d3d_src.h
+    codec/i_d3d_src.h
         codec/i_d3d_src.cpp)
 
 # Shader
@@ -184,13 +184,6 @@ target_link_libraries(VTSLink PUBLIC PkgConfig::LIBAV)
 find_package(libyuv CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE yuv) 
 
-# ndi-sdk
-target_include_directories(VTSLink PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/ndi-sdk")
-target_link_libraries(VTSLink PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/Processing.NDI.Lib.x64.lib")
-add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/Processing.NDI.Lib.x64.dll"
-        $<TARGET_FILE_DIR:VTSLink>)
-
 # for debug purpose
 # directxtk
 if (USE_DIRECTXTK_OPENCV)
@@ -218,6 +211,10 @@ set(QRENCODE_LIBRARIES optimized ${QRENCODE_LIBRARY_RELEASE} debug ${QRENCODE_LI
 
 target_include_directories(VTSLink PRIVATE ${QRENCODE_INCLUDE_DIR})
 target_link_libraries(VTSLink PRIVATE ${QRENCODE_LIBRARIES})
+
+# spout
+find_package(Spout2 CONFIG REQUIRED)
+target_link_libraries(VTSLink PRIVATE Spout2::Spout Spout2::SpoutLibrary)
 
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)

@@ -143,7 +143,7 @@
     <item>
      <widget class="QStackedWidget" name="shareMethods">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page_3">
        <widget class="QWidget" name="horizontalLayoutWidget_5">
@@ -167,7 +167,7 @@
             </font>
            </property>
            <property name="text">
-            <string>NDI 来源</string>
+            <string>Spout</string>
            </property>
           </widget>
          </item>
@@ -188,10 +188,10 @@
           </spacer>
          </item>
          <item>
-          <widget class="QComboBox" name="ndiSourceSelect">
+          <widget class="QComboBox" name="spoutSourceSelect">
            <property name="minimumSize">
             <size>
-             <width>275</width>
+             <width>295</width>
              <height>0</height>
             </size>
            </property>
@@ -330,7 +330,7 @@
      <widget class="QLineEdit" name="nick">
       <property name="minimumSize">
        <size>
-        <width>220</width>
+        <width>240</width>
         <height>0</height>
        </size>
       </property>

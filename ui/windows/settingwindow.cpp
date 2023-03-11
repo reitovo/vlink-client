@@ -43,8 +43,7 @@ void SettingWindow::init() {
 
     ui->shouldForceEncoder->setChecked(settings.value("forceEncoder").toBool());
     ui->encoders->setCurrentText(settings.value("forceEncoderName").toString());
-    ui->useNdiSender->setChecked(settings.value("useNdiSender").toBool());
-    ui->useNdiReceiver->setChecked(settings.value("useNdiReceiver").toBool());
+    ui->useDxCapture->setChecked(settings.value("useDxCapture").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
@@ -66,16 +65,10 @@ void SettingWindow::init() {
         qDebug() << "force encoder" << v;
     });
 
-    connect(ui->useNdiSender, &QCheckBox::clicked, this, [=](bool v) {
-        settings.setValue("useNdiSender", v);
+    connect(ui->useDxCapture, &QCheckBox::clicked, this, [=](bool v) {
+        settings.setValue("useDxCapture", v);
         settings.sync();
-        qDebug() << "force use ndi sender" << v;
-    });
-
-    connect(ui->useNdiReceiver, &QCheckBox::clicked, this, [=](bool v) {
-        settings.setValue("useNdiReceiver", v);
-        settings.sync();
-        qDebug() << "force use ndi receiver" << v;
+        qDebug() << "force use dx capture" << v;
     });
 
     connect(ui->showDxgiWindow, &QCheckBox::clicked, this, [=](bool v) {

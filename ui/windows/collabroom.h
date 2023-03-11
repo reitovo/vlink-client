@@ -5,11 +5,11 @@
 #include <QDialog>
 #include "QMutex"
 #include "QThread"
+#include "SpoutGL/SpoutSenderNames.h"
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <map>
 #include <QDateTime>
-#include <Processing.NDI.Lib.h>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -40,7 +40,6 @@ public:
 signals:
     void onUpdatePeersUi(QList<PeerUi> peerUis);
     void onReconnectWebsocket();
-    void onNdiSourcesUpdated(QStringList);
     void onRoomExit(QString);
     void onShareError(QString);
     void onFatalError(QString);
@@ -52,7 +51,6 @@ signals:
 
 private slots:
     void updatePeersUi(QList<PeerUi> peerUis);
-    void updateNdiSourcesUi(QStringList list);
 
     void copyRoomId();
     void exitRoom(QString reason);
@@ -82,14 +80,12 @@ private:
     void connectWebsocket();
     void updatePeers(QJsonArray peers);
 
-    void ndiShareWorkerClient();
-    void ndiShareWorkerServer();
+    void spoutShareWorkerClient();
+    void spoutShareWorkerServer();
     void dxgiShareWorkerClient();
     void dxgiShareWorkerServer();
     void stopShareWorker();
 
-    void ndiFindWorker();
-    void ndiSendWorker();
     void dxgiSendWorker();
 
     void peerDataChannelMessage(std::unique_ptr<VtsMsg>, Peer* peer) const;
@@ -104,8 +100,7 @@ private:
     Ui::CollabRoom *ui;
 
     bool isServer;
-    bool useNdiSender;
-    bool useNdiReceiver;
+    bool useDxCapture;
     QString roomId;
     QString peerId;
 
@@ -122,27 +117,23 @@ private:
     NatType localNatType;
 
     QMutex peersLock;
+
     // As server
     QString turnServer;
     std::map<QString, std::unique_ptr<Peer>> servers;
-    std::unique_ptr<QTimer> heartbeat;
-    std::unique_ptr<QTimer> usageStat;
-
     // As client
     std::unique_ptr<Peer> client;
 
-    // ndi
+    std::unique_ptr<QTimer> heartbeat;
+    std::unique_ptr<QTimer> usageStat;
+    std::unique_ptr<QTimer> spoutDiscovery;
     std::atomic_bool shareRunning = false;
     std::unique_ptr<QThread> shareThread;
-    std::unique_ptr<QThread> ndiFindThread;
-
-    // send
-    std::atomic_int ndiSourceCount = 0;
-    std::atomic<const NDIlib_source_t*> ndiSources;
     std::unique_ptr<QThread> frameSendThread;
-
-    // d3d
     std::shared_ptr<DxToFrame> d3d;
+
+    std::string spoutName = "VTubeStudioSpout";
+    spoutSenderNames spoutSender;
 
     bool keepTop = false;
 };

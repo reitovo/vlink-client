@@ -15,7 +15,6 @@
     "libyuv",
     "directxtk",
     "libqrencode",
-    "ndi-sdk",
     "qttools",
     "qttranslations",
     "detours",
@@ -61,7 +60,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "7914369e645be1ad45cf09ed1c6c134c3aaf6856",
+      "baseline": "06ac56e5fecf95d0bb995a3826f8704a2dbc9003",
       "reference": "reito"
     },
     "registries": [

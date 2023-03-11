@@ -6,7 +6,6 @@
 #include "i_d3d_src.h"
 #include "nv12_to_bgra.h"
 #include <cstdint>
-#include <Processing.NDI.Lib.h>
 #include <QString>
 
 #include "avframe.pb.h"

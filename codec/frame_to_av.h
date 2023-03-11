@@ -6,7 +6,6 @@
 #include "core/util.h"
 #include "d3d_to_frame.h"
 #include <cstdint>
-#include <Processing.NDI.Lib.h>
 #include <QString>
 
 extern "C" {
@@ -97,7 +96,6 @@ public:
     std::optional<QString> initOptimalEncoder(const CodecOption& option, AVCodecContext * ctx);
     void initEncodingParameter(const CodecOption& option, AVCodecContext * ctx);
 
-    std::optional<QString> process(NDIlib_video_frame_v2_t* ndi);
     std::optional<QString> processFast(const std::shared_ptr<IDxCopyable>& fast);
     void stop();
 

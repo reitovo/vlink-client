@@ -5,6 +5,7 @@
 #include <QJsonObject>
 
 #include <QElapsedTimer>
+#include "QComboBox"
 
 #define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ " reset " #x " ret" << remain;} }
 #define qDebugStd(x) { std::ostringstream oss; oss << x; qDebug(oss.str().c_str()); }
@@ -99,5 +100,7 @@ void saveTextureToFile(
         ID3D11DeviceContext* pContext,
         ID3D11Resource* pSource,
         QString fileName);
+
+void setComboBoxIfChanged(const QStringList& strList, QComboBox* box);
 
 #endif // UTIL_H

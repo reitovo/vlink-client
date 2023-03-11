@@ -1,7 +1,6 @@
 #ifndef BGRANV12_H
 #define BGRANV12_H
 
-#include "Processing.NDI.Lib.h"
 extern "C" {
 #include "libavutil/frame.h"
 }
@@ -107,7 +106,6 @@ public:
 
     DeviceAdapterType getDeviceVendor();
 
-    bool bgraToNv12(NDIlib_video_frame_v2_t* frame);
     bool bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast);
 
     bool mapFrame(AVFrame* f);

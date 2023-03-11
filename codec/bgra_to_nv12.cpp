@@ -521,44 +521,6 @@ bool BgraToNv12::createSharedSurf()
 	return true;
 }
 
-bool BgraToNv12::bgraToNv12(NDIlib_video_frame_v2_t* frame)
-{
-	HRESULT hr{ 0 };
-	if (frame == nullptr)
-		return false;
-
-	if (!_inited) {
-		return false;
-	}
-	if (!frame->p_data) {
-		return false;
-	}
-
-    // raw bgra tex, 1x height
-	D3D11_BOX dstBox = { 0, 0, 0, _width, _height, 1 };
-
-	//Elapsed e1("update subresource"); //~300000 ns
-    this->_d3d11_deviceCtx->UpdateSubresource(this->_texture_bgra.Get(), 0, &dstBox,
-        frame->p_data, frame->line_stride_in_bytes, 0);
-	//e1.end();
-
-	//Elapsed e2("draw 1"); //~17500 ns
-	setBgraToNv24Context();
-	this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
-	//e2.end();
-
-    this->_d3d11_deviceCtx->CopyResource(_texture_uv_target_copy.Get(), _texture_uv_target.Get());
-
-	//Elapsed e4("draw 2"); //~11100 ns
-	setNv24ToNv12Context();
-	this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
-
-	this->_d3d11_deviceCtx->Flush();
-	//e4.end();
-
-	return true;
-}
-
 bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast)
 {
     HRESULT hr{ 0 };

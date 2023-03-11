@@ -194,6 +194,24 @@ void saveTextureToFile(ID3D11DeviceContext *pContext, ID3D11Resource *pSource, Q
 #endif
 }
 
+void setComboBoxIfChanged(const QStringList &strList, QComboBox *box) {
+    bool resetList = false;
+    if (box->count() != strList.size()) {
+        resetList = true;
+    } else {
+        for (auto i = 0; i < strList.size(); ++i) {
+            if (strList[i] != box->itemText(i)){
+                resetList = true;
+                break;
+            }
+        }
+    }
+    if (resetList) {
+        box->clear();
+        box->addItems(strList);
+    }
+}
+
 void FpsCounter::add(long nsConsumed)
 {
     auto sec = QDateTime::currentSecsSinceEpoch();

@@ -2,14 +2,16 @@
 // Created by reito on 2023/1/28.
 //
 #include "ui/windows/collabroom.h"
-#include "d3d_capture.h"
-#include "d3d_to_frame.h"
+#include "spout_capture.h"
 #include "QFile"
 #include "QSettings"
 #include <dxgi1_2.h>
 #include <dxcore.h>
 #include <DirectXMath.h>
 #include <d3d11.h>
+
+#include <utility>
+#include "d3d_to_frame.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -36,34 +38,11 @@ static VERTEX Vertices[NUMVERTICES] =
 
 static FLOAT blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
 
-static void dx_lock(void *user) {
-    DxCapture *dx = static_cast<DxCapture *>(user);
-    dx->captureLock();
-}
 
-static void dx_unlock(void *user) {
-    DxCapture *dx = static_cast<DxCapture *>(user);
-    dx->captureUnlock();
-}
+SpoutCapture::SpoutCapture(const std::shared_ptr<DxToFrame>& d3d, std::string spoutName) : IDxToFrameSrc(d3d) {
+    qDebug() << "begin spout capture";
+    this->spoutName = std::move(spoutName);
 
-static char *dx_get_file_path(const char *filename) {
-    char *ret = (char *) _aligned_malloc(512, 32);
-    sprintf(ret, IsDebuggerPresent() ? R"(E:\VTSLink\Client\VTSLink\out\build\x64-Debug\%s)" : "./%s", filename);
-    return ret;
-}
-
-static void dx_captured_texture(void *user, dx_texture_t *tex) {
-    DxCapture *dx = static_cast<DxCapture *>(user);
-    dx->capturedTexture(tex);
-}
-
-static void dx_need_elevate(void *user) {
-    DxCapture *dx = static_cast<DxCapture *>(user);
-    dx->needElevate();
-}
-
-DxCapture::DxCapture(const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d) {
-    qDebug() << "begin d3d capture";
     if (d3d != nullptr) {
         d3d->registerSource(this);
         qDebug() << "running at server mode";
@@ -72,18 +51,13 @@ DxCapture::DxCapture(const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d)
     init();
 }
 
-DxCapture::~DxCapture() {
-    qDebug() << "end d3d capture";
+SpoutCapture::~SpoutCapture() {
+    qDebug() << "end spout capture";
     if (CollabRoom::instance() != nullptr)
             emit CollabRoom::instance()->onDxgiCaptureStatus("idle");
 
     if (d3d != nullptr) {
         d3d->unregisterSource(this);
-    }
-
-    if (cap != nullptr) {
-        dx_capture_destroy(cap.get());
-        cap.reset();
     }
 
     lock.lock();
@@ -96,10 +70,10 @@ DxCapture::~DxCapture() {
     _inited = false;
 
     lock.unlock();
-    qDebug() << "end d3d capture done";
+    qDebug() << "end spout capture done";
 }
 
-bool DxCapture::compileShader() {
+bool SpoutCapture::compileShader() {
     QFile f1(":/shader/scale_vertex.hlsl");
     f1.open(QIODevice::ReadOnly);
     auto s = QString(f1.readAll()).toStdString();
@@ -120,11 +94,11 @@ bool DxCapture::compileShader() {
         return false;
     }
 
-    qDebug() << "d3d capture compile shader done";
+    qDebug() << "spout capture compile shader done";
     return true;
 }
 
-bool DxCapture::init() {
+bool SpoutCapture::init() {
     HRESULT hr;
 
     auto width = VTSLINK_FRAME_WIDTH;
@@ -132,7 +106,7 @@ bool DxCapture::init() {
     _width = width;
     _height = height;
 
-    qDebug() << "dx capture init";
+    qDebug() << "spout capture init";
 
     compileShader();
 
@@ -169,7 +143,7 @@ bool DxCapture::init() {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create dxgi factory";
+    qDebug() << "spout capture create dxgi factory";
 
     hr = pDXGIFactory->EnumAdapters(0, &pAdapter);
     if (FAILED(hr))
@@ -184,7 +158,7 @@ bool DxCapture::init() {
         hr = D3D11CreateDevice(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
                                D3D11_SDK_VERSION, this->_d3d11_device.GetAddressOf(), &FeatureLevel, this->_d3d11_deviceCtx.GetAddressOf());
         if (SUCCEEDED(hr)) {
-            qDebug() << "dx capture create device successfully";
+            qDebug() << "spout capture create device successfully";
             // Device creation succeeded, no need to loop anymore
             break;
         }
@@ -201,7 +175,7 @@ bool DxCapture::init() {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create sampler state";
+    qDebug() << "spout capture create sampler state";
 
     //VertexShader
     hr = this->_d3d11_device->CreateVertexShader(_scale_vertex_shader->GetBufferPointer(), _scale_vertex_shader->GetBufferSize(),
@@ -209,7 +183,7 @@ bool DxCapture::init() {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create vertex shader";
+    qDebug() << "spout capture create vertex shader";
 
     constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> Layout =
             {{
@@ -229,44 +203,30 @@ bool DxCapture::init() {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create input layout";
+    qDebug() << "spout capture create input layout";
 
     //PixelShader
     hr = this->_d3d11_device->CreatePixelShader(_scale_pixel_shader->GetBufferPointer(), _scale_pixel_shader->GetBufferSize(), nullptr, this->_d3d11_scale_ps.GetAddressOf());
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create pixel shader";
+    qDebug() << "spout capture create pixel shader";
 
     //VertexBuffer
-    D3D11_BUFFER_DESC BufferDesc;
-    RtlZeroMemory(&BufferDesc, sizeof(BufferDesc));
-    BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
-    BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    BufferDesc.CPUAccessFlags = 0;
-    D3D11_SUBRESOURCE_DATA InitData;
-    RtlZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = Vertices;
-    hr = this->_d3d11_device->CreateBuffer(&BufferDesc, &InitData, this->_d3d11_vertexBuffer.GetAddressOf());
-    if (FAILED(hr))
-        return false;
 
-    qDebug() << "dx capture create vertex buffer";
+    qDebug() << "spout capture create vertex buffer";
 
     auto ret = createSharedSurf(width, height);
     resetDeviceContext();
 
-    initDxCapture();
-
     _inited = true;
 
-    qDebug() << "dx capture init done";
+    qDebug() << "spout capture init done";
 
     return ret;
 }
 
-bool DxCapture::createSharedSurf(int width, int height) {
+bool SpoutCapture::createSharedSurf(int width, int height) {
     HRESULT hr{0};
 
     D3D11_TEXTURE2D_DESC texDesc_rgba;
@@ -287,7 +247,7 @@ bool DxCapture::createSharedSurf(int width, int height) {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "dx capture create texture bgra";
+    qDebug() << "spout capture create texture bgra";
 
     // shared texture
     IDXGIResource *pDXGIResource = NULL;
@@ -298,7 +258,7 @@ bool DxCapture::createSharedSurf(int width, int height) {
         return false;
     }
 
-    qDebug() << "dx capture create texture shared handle";
+    qDebug() << "spout capture create texture shared handle";
 
     D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
     rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -308,19 +268,19 @@ bool DxCapture::createSharedSurf(int width, int height) {
     if (FAILED(hr))
         return false;
 
-    qDebug() << "d3d2dx create render target view";
+    qDebug() << "spout create render target view";
 
     return true;
 }
 
-void DxCapture::releaseSharedSurf() {
+void SpoutCapture::releaseSharedSurf() {
     if (this->_d3d11_deviceCtx.Get() != nullptr)
         this->_d3d11_deviceCtx->ClearState();
 
     COM_RESET(_texture_bgra);
 }
 
-bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) {
+bool SpoutCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) {
     if (!_inited)
         return false;
 
@@ -328,11 +288,6 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
     t.start();
 
     lock.lock();
-
-    if (_texture_captured != nullptr) {
-        this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
-        this->_d3d11_deviceCtx->Flush();
-    }
 
     ID3D11Texture2D *src;
     dev->OpenSharedResource(_texture_bgra_shared, __uuidof(ID3D11Texture2D), (LPVOID *) &src);
@@ -352,112 +307,12 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
     return true;
 }
 
-QString DxCapture::debugInfo() {
-    return QString("Dx->Dx (D3D11 Capture) %1").arg(fps.stat());
+QString SpoutCapture::debugInfo() {
+    return QString("Dx->Dx (Spout Capture) %1")
+            .arg(fps.stat());
 }
 
-void DxCapture::initDxCapture() {
-    cap = std::make_unique<dx_capture_t>();
-    memset(cap.get(), 0, sizeof(dx_capture_t));
-
-    cap->device = _d3d11_device.Get();
-    cap->context = _d3d11_deviceCtx.Get();
-    cap->user = this;
-    cap->lock = dx_lock;
-    cap->unlock = dx_unlock;
-    cap->on_get_hook_file_path = dx_get_file_path;
-    cap->on_captured_texture = dx_captured_texture;
-    cap->on_need_elevate = dx_need_elevate;
-
-    QSettings settings;
-    auto forceShmem = settings.value("forceShmem", false).toBool();
-
-    dx_capture_setting_default(&cap->setting);
-    cap->setting.window = "VTube Studio:UnityWndClass:VTube Studio.exe";
-    cap->setting.force_shmem = forceShmem || _restartToSharedMemory;
-    cap->setting.anticheat_hook = true;
-    _isShareMemory = cap->setting.force_shmem;
-
-    dx_capture_init(cap.get());
-    emit CollabRoom::instance()->onDxgiCaptureStatus("init");
-
-    qDebug() << "starting capture dx";
-}
-
-void DxCapture::captureLock() {
-    lock.lock();
-}
-
-void DxCapture::captureUnlock() {
-    lock.unlock();
-}
-
-void DxCapture::captureTick(float time) {
-    if (_restartToSharedMemory) {
-        qDebug() << "restart to shmem";
-        dx_capture_destroy(cap.get());
-        cap.reset();
-        initDxCapture();
-        _restartToSharedMemory = false;
-
-        emit CollabRoom::instance()->onDowngradedToSharedMemory();
-        return;
-    }
-    dx_capture_tick(cap.get(), time);
-}
-
-void DxCapture::capturedTexture(dx_texture_t *tex) {
-    _texture_captured = tex;
-
-    static int failureCount = 0;
-
-    if (tex != nullptr) {
-        failureCount = 0;
-        D3D11_TEXTURE2D_DESC td = {};
-        tex->GetDesc(&td);
-        qDebug() << "captured texture" << td.Width << td.Height;
-
-        auto type = td.Format;
-        if (type == DXGI_FORMAT_R8G8B8A8_TYPELESS) {
-            type = DXGI_FORMAT_R8G8B8A8_UNORM;
-            qDebug() << "format rgba";
-        } else if (type == DXGI_FORMAT_B8G8R8A8_TYPELESS) {
-            type = DXGI_FORMAT_B8G8R8A8_UNORM;
-            qDebug() << "format bgra";
-        }
-
-        ComPtr<ID3D11ShaderResourceView> _capturedView = nullptr;
-        D3D11_SHADER_RESOURCE_VIEW_DESC const srcDesc
-                = CD3D11_SHADER_RESOURCE_VIEW_DESC(_texture_captured, D3D11_SRV_DIMENSION_TEXTURE2D, type);
-        HRESULT hr = this->_d3d11_device->CreateShaderResourceView(_texture_captured, &srcDesc, _capturedView.GetAddressOf());
-        if (FAILED(hr)) {
-            qDebug() << "captured texture failed create shader resource view";
-        }
-
-        std::array<ID3D11ShaderResourceView *, 1> const textureViews = {
-                _capturedView.Get()
-        };
-        this->_d3d11_deviceCtx->PSSetShaderResources(0, textureViews.size(), textureViews.data());
-
-        emit CollabRoom::instance()->onDxgiCaptureStatus(_isShareMemory ? "shmem" : "shtex");
-    } else {
-        _capturedHeigth = _capturedWidth = 0;
-        qDebug() << "null captured texture";
-
-        if (++failureCount == 3) {
-            if (_isShareMemory) {
-                emit CollabRoom::instance()->onDxgiCaptureStatus("fail");
-                qDebug() << "shmem also failed";
-            } else {
-                failureCount = 0;
-                cap->setting.force_shmem = true;
-                _restartToSharedMemory = true;
-            }
-        }
-    }
-}
-
-void DxCapture::resetDeviceContext() {
+void SpoutCapture::resetDeviceContext() {
     //init set
     this->_d3d11_deviceCtx->IASetInputLayout(this->_d3d11_inputLayout.Get());
     this->_d3d11_deviceCtx->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
@@ -466,16 +321,13 @@ void DxCapture::resetDeviceContext() {
     this->_d3d11_deviceCtx->PSSetShader(this->_d3d11_scale_ps.Get(), nullptr, 0);
     this->_d3d11_deviceCtx->PSSetSamplers(0, 1, this->_d3d11_samplerState.GetAddressOf());
     this->_d3d11_deviceCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    UINT Stride = sizeof(VERTEX);
-    UINT Offset = 0;
-    this->_d3d11_deviceCtx->IASetVertexBuffers(0, 1, this->_d3d11_vertexBuffer.GetAddressOf(), &Stride, &Offset);
 
-    qDebug() << "dx capture set context params";
+    qDebug() << "spout capture set context params";
 
     //SharedSurf
     this->_d3d11_deviceCtx->OMSetRenderTargets(1, this->_rtv_target_bgra.GetAddressOf(), nullptr);
 
-    qDebug() << "dx capture set context textures";
+    qDebug() << "spout capture set context textures";
 
     D3D11_VIEWPORT VP;
     VP.Width = static_cast<FLOAT>(_width);
@@ -491,16 +343,109 @@ void DxCapture::resetDeviceContext() {
             (UINT) ceil(_height * 2 * 1.0 / 8),
             1);
 
-    qDebug() << "dx capture set context viewport";
+    qDebug() << "spout capture set context viewport";
 }
 
-void DxCapture::needElevate() {
-    if (_needElevateDisplayed)
-        return;
-    _needElevateDisplayed = true;
-    emit CollabRoom::instance()->onNeedElevate();
-}
+void SpoutCapture::captureTick(float time) {
 
-void DxCapture::fixWindowRatio() {
-    dx_fix_window_ratio(cap.get());
+    char name[256] = {};
+    strcpy_s(name, "VTubeStudioSpout");
+
+    DWORD texFormat = 0;
+    uint32_t width = _capturedWidth;
+    uint32_t height = _capturedHeigth;
+    HANDLE handle = _texture_captured_shared;
+
+    if (spoutSender.FindSender(name, width, height, handle, texFormat)) {
+        if (!_spoutInited) {
+            spoutFrame.CreateAccessMutex(name);
+            spoutFrame.EnableFrameCount(name);
+            _spoutInited = true;
+        }
+
+        // Check for changes
+        if (_capturedWidth != width || _capturedHeigth != height || _texture_captured_shared != handle) {
+            _capturedWidth = width;
+            _capturedHeigth = height;
+            _texture_captured_shared = handle;
+
+            // Unlike tutorial, we always render to 1920 x 1080 B8G8R8A8 texture with a scaling shader.
+            if (_texture_captured != nullptr) {
+                _texture_captured->Release();
+            }
+
+            if (spoutDx.OpenDX11shareHandle(_d3d11_device.Get(), &_texture_captured, _texture_captured_shared)) {
+                auto format = (DXGI_FORMAT) texFormat;
+
+                if (_captured_view != nullptr) {
+                    _captured_view.Reset();
+                }
+
+                D3D11_SHADER_RESOURCE_VIEW_DESC const srcDesc
+                        = CD3D11_SHADER_RESOURCE_VIEW_DESC(_texture_captured, D3D11_SRV_DIMENSION_TEXTURE2D, format);
+                HRESULT hr = this->_d3d11_device->CreateShaderResourceView(_texture_captured, &srcDesc, _captured_view.GetAddressOf());
+                if (FAILED(hr)) {
+                    qDebug() << "captured texture failed create shader resource view";
+                }
+
+                std::array<ID3D11ShaderResourceView *, 1> const textureViews = {
+                        _captured_view.Get()
+                };
+                this->_d3d11_deviceCtx->PSSetShaderResources(0, textureViews.size(), textureViews.data());
+
+                // Update vertex to match size
+                auto heightScale = (float)(1 - 1.0 / (1920.0 / _capturedWidth * _capturedHeigth / 1080.0));
+                Vertices[1].TexCoord.y = heightScale;
+                Vertices[4].TexCoord.y = heightScale;
+                Vertices[5].TexCoord.y = heightScale;
+
+                if (_d3d11_vertexBuffer != nullptr) {
+                    _d3d11_vertexBuffer.Reset();
+                }
+
+                D3D11_BUFFER_DESC BufferDesc;
+                RtlZeroMemory(&BufferDesc, sizeof(BufferDesc));
+                BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+                BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
+                BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+                BufferDesc.CPUAccessFlags = 0;
+                D3D11_SUBRESOURCE_DATA InitData;
+                RtlZeroMemory(&InitData, sizeof(InitData));
+                InitData.pSysMem = Vertices;
+                this->_d3d11_device->CreateBuffer(&BufferDesc, &InitData, this->_d3d11_vertexBuffer.GetAddressOf());
+
+                UINT Stride = sizeof(VERTEX);
+                UINT Offset = 0;
+                this->_d3d11_deviceCtx->IASetVertexBuffers(0, 1, this->_d3d11_vertexBuffer.GetAddressOf(), &Stride, &Offset);
+            }
+        }
+
+        if (_texture_captured && _texture_bgra.Get()) {
+            if (spoutFrame.CheckTextureAccess(_texture_captured)) {
+                if (spoutFrame.GetNewFrame()) {
+                    // Render to this texture
+                    lock.lock();
+                    this->_d3d11_deviceCtx->Draw(NUMVERTICES, 0);
+                    this->_d3d11_deviceCtx->Flush();
+                    lock.unlock();
+                    spoutFrame.AllowTextureAccess(_texture_captured);
+                }
+            }
+        }
+
+    } else {
+        if (_spoutInited) {
+            _capturedWidth = 0;
+            _capturedHeigth = 0;
+            _texture_captured_shared = nullptr;
+
+            spoutFrame.CloseAccessMutex();
+            spoutFrame.CleanupFrameCount();
+
+            if (_captured_view != nullptr) {
+                _captured_view.Reset();
+            }
+            _spoutInited = false;
+        }
+    }
 }
