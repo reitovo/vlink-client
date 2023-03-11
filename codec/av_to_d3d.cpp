@@ -180,13 +180,7 @@ void AvToDx::stop()
         return;
 
     qDebug() << "av2d3d stop";
-    pts = 0;
     inited = false;
-    bgra = nullptr;
-
-    av_packet_free(&packet);
-    av_frame_free(&frame);
-    avcodec_free_context(&ctx);
 
     processThreadRunning = false;
     if (processThread != nullptr && !processThread->isFinished() && !processThread->wait(500)) {
@@ -195,6 +189,14 @@ void AvToDx::stop()
         processThread->wait(500);
         processThread = nullptr;
     }
+
+    pts = 0;
+
+    av_packet_free(&packet);
+    av_frame_free(&frame);
+    avcodec_free_context(&ctx);
+
+    bgra = nullptr;
 }
 
 QString AvToDx::debugInfo()
