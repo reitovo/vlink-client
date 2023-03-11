@@ -58,6 +58,8 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     useDxCapture = settings.value("useDxCapture", false).toBool();
     qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
 
+    ui->nick->setText(settings.value("nick").toString());
+
     this->roomId = roomId;
     this->isServer = isServer;
 
@@ -345,6 +347,10 @@ void CollabRoom::setNick() {
         ui->nick->setText(n);
     }
     qDebug() << "new nick" << n;
+
+    QSettings s;
+    s.setValue("nick", n);
+    s.sync();
 
     QJsonObject dto;
     dto["msg"] = n;
@@ -730,6 +736,19 @@ void CollabRoom::connectWebsocket() {
 
             qDebug("Send join frame");
             wsSendAsync(doc.toJson().toStdString());
+        }
+
+        // Set nick name
+        {
+            QJsonObject dto;
+            dto["msg"] = ui->nick->text();
+            dto["type"] = "nick";
+            QJsonDocument doc(dto);
+
+            auto content = QString::fromUtf8(doc.toJson());
+            qDebug() << content;
+
+            wsSendAsync(content.toStdString());
         }
 
         auto t = QThread::create([=]() {
