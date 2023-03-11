@@ -498,7 +498,7 @@ void CollabRoom::spoutShareWorkerClient() {
         peersLock.unlock();
     });
 
-    auto initErr = cvt.init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, false);
+    auto initErr = cvt.init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, true);
     if (initErr.has_value()) {
         emit onShareError(initErr.value());
         shareRunning = false;
@@ -610,7 +610,7 @@ void CollabRoom::dxgiShareWorkerClient() {
         peersLock.unlock();
     });
 
-    auto initErr = cvt.init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, false);
+    auto initErr = cvt.init(VTSLINK_FRAME_WIDTH, VTSLINK_FRAME_HEIGHT, VTSLINK_FRAME_D, VTSLINK_FRAME_N, true);
     if (initErr.has_value()) {
         emit onShareError(initErr.value());
         shareRunning = false;
