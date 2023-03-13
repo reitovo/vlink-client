@@ -71,7 +71,7 @@ jobs:
           dotnet ${{github.workspace}}/uploader/Updator.Uploader.dll `
           --config=${{github.workspace}}/ci/vtslink/config.json `
           --distribution-root=${{github.workspace}}/vtslink/out/install `
-          --update-log="Commit ${{github.event.head_commit.message}}"
+          --update-log="💡 ${{github.event.head_commit.message}}"
 
       - name: Upload debug symbol
         shell: pwsh
