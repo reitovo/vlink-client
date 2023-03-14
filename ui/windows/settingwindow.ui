@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>SettingWindow</class>
  <widget class="QMainWindow" name="SettingWindow">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -25,7 +28,7 @@
     </property>
     <property name="font">
      <font>
-      <family>MiSans</family>
+      <family>Microsoft YaHei UI</family>
      </font>
     </property>
     <property name="tabPosition">
@@ -35,7 +38,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -61,6 +64,12 @@
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
           <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>恢复所有忽略的提示</string>
            </property>
@@ -93,6 +102,12 @@
              <height>0</height>
             </size>
            </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>恢复</string>
            </property>
@@ -120,8 +135,8 @@
         <widget class="QLabel" name="label">
          <property name="font">
           <font>
-           <family>MiSans</family>
-           <bold>true</bold>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
           </font>
          </property>
          <property name="text">
@@ -133,6 +148,12 @@
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QLabel" name="label_3">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>编码质量 CQP（越小越好）</string>
            </property>
@@ -156,6 +177,12 @@
          </item>
          <item>
           <widget class="QLabel" name="avCQPValue">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>32</string>
            </property>
@@ -202,6 +229,12 @@
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QCheckBox" name="shouldForceEncoder">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
            <property name="text">
             <string>使用指定的编码器</string>
            </property>
@@ -240,6 +273,12 @@
        </item>
        <item>
         <widget class="QCheckBox" name="showDxgiWindow">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
          <property name="text">
           <string>显示联动画面窗口（调试）</string>
          </property>
@@ -249,6 +288,12 @@
         <widget class="QCheckBox" name="enableBuffering">
          <property name="enabled">
           <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
          </property>
          <property name="text">
           <string>启用缓冲（网络环境差时使用，增加延迟）</string>
@@ -275,8 +320,8 @@
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
-           <family>MiSans</family>
-           <bold>true</bold>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
           </font>
          </property>
          <property name="text">
@@ -286,6 +331,12 @@
        </item>
        <item>
         <widget class="QCheckBox" name="useDxCapture">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
          <property name="text">
           <string>使用 D3D11 捕获（仅当 VTube Studio 无法被 Spout 捕获时使用）</string>
          </property>
@@ -293,6 +344,12 @@
        </item>
        <item>
         <widget class="QCheckBox" name="forceShmem">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
          <property name="text">
           <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
          </property>
@@ -351,13 +408,13 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
    <widget class="QMenu" name="menu">
     <property name="font">
      <font>
-      <family>MiSans</family>
+      <family>Microsoft YaHei UI</family>
       <pointsize>9</pointsize>
      </font>
     </property>
@@ -375,7 +432,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>
@@ -385,7 +442,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
   </action>

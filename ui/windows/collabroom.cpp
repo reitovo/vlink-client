@@ -91,18 +91,16 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     qDebug() << "Role is" << (role) << peerId;
 
     if (isServer) {
-        turnServer = settings.value("turnServer", QString()).toString();
-        ui->relayInput->setText(turnServer);
         qDebug() << "Turn server" << turnServer;
 
-        auto expires = settings.value("turnServerExpiresAt").toDateTime();
+        auto expires = settings.value("turnServerExpiresAt", QDateTime()).toDateTime();
         auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
         if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
             qDebug() << "Turn server still alive";
             QMessageBox box(this);
             box.setIcon(QMessageBox::Information);
             box.setWindowTitle(tr("中转服务器仍然可用！"));
-            box.setText(tr("您上次购买的的中转服务器仍然可用，无需重新购买哦！\n"
+            box.setText(tr("您上次购买的的中转服务器仍然可用，已为您自动恢复，无需重新购买哦！\n"
                            "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
             auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
             auto ign = box.addButton(tr("下次购买前不再提示"), QMessageBox::NoRole);
@@ -112,7 +110,21 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
                 settings.setValue("ignoreTurnServerNotExpire", true);
                 settings.sync();
             }
+        } else if (expires < QDateTime::currentDateTime() && expires != QDateTime()) {
+            qDebug() << "Turn server dead, cleaning";
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Information);
+            box.setWindowTitle(tr("中转服务器已过期"));
+            box.setText(tr("您上次购买的的中转服务器已过期，已为您自动清除中转服务器"));
+            box.addButton(tr("我知道了"), QMessageBox::NoRole);
+            box.exec();
+            settings.setValue("turnServer", QString());
+            settings.setValue("turnServerExpiresAt", QDateTime());
+            settings.sync();
         }
+
+        turnServer = settings.value("turnServer", QString()).toString();
+        ui->relayInput->setText(turnServer);
     }
 
     this->setWindowTitle(tr("VTube Studio 联动"));
@@ -414,6 +426,17 @@ void CollabRoom::fatalError(QString reason) {
 void CollabRoom::openSetting() {
     auto w = new SettingWindow(this);
     w->show();
+    connect(w, &QObject::destroyed, this, [=, this]() {
+        QSettings settings;
+        useDxCapture = settings.value("useDxCapture", false).toBool();
+        qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
+        if (useDxCapture) {
+            dxgiCaptureStatus("idle");
+            ui->shareMethods->setCurrentIndex(1);
+        } else {
+            ui->shareMethods->setCurrentIndex(0);
+        }
+    });
 }
 
 void CollabRoom::toggleShare() {
@@ -425,10 +448,6 @@ void CollabRoom::toggleShare() {
 }
 
 void CollabRoom::startShare() {
-    QSettings settings;
-    useDxCapture = settings.value("useDxCapture", false).toBool();
-    qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
-
     if (!isServer) {
         peersLock.lock();
         if (client == nullptr || !client->connected()) {
@@ -975,6 +994,8 @@ QString CollabRoom::errorToReadable(const QString &reason) {
         err = tr("无法启动任何编码器！\n如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
     } else if (reason == "cap no uyva") {
         err = tr("捕获分享模式无法使用 UYVA 编码器");
+    } else if (reason == "nv driver old") {
+        err = tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。");
     }
     return err;
 }

@@ -54,7 +54,7 @@
      </property>
      <property name="font">
       <font>
-       <family>MiSans</family>
+       <family>Microsoft YaHei UI</family>
        <pointsize>12</pointsize>
       </font>
      </property>
@@ -67,7 +67,7 @@
     <spacer name="horizontalSpacer">
      <property name="font">
       <font>
-       <family>MiSans</family>
+       <family>Microsoft YaHei UI</family>
       </font>
      </property>
      <property name="orientation">
@@ -95,7 +95,7 @@
         <spacer name="horizontalSpacer_3">
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
           </font>
          </property>
          <property name="orientation">
@@ -125,7 +125,7 @@
          </property>
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
            <pointsize>8</pointsize>
           </font>
          </property>
@@ -156,7 +156,7 @@
          </property>
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
            <pointsize>8</pointsize>
           </font>
          </property>
@@ -182,7 +182,7 @@
         <spacer name="horizontalSpacer_2">
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
           </font>
          </property>
          <property name="orientation">
@@ -212,7 +212,7 @@
          </property>
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
            <pointsize>8</pointsize>
           </font>
          </property>
@@ -237,7 +237,7 @@
          </property>
          <property name="font">
           <font>
-           <family>MiSans</family>
+           <family>Microsoft YaHei UI</family>
            <pointsize>8</pointsize>
           </font>
          </property>

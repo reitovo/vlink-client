@@ -31,7 +31,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans Demibold</family>
+     <family>Microsoft YaHei UI</family>
      <pointsize>12</pointsize>
      <italic>false</italic>
      <bold>false</bold>
@@ -80,6 +80,7 @@
    </property>
    <property name="font">
     <font>
+     <family>Microsoft YaHei UI</family>
      <stylestrategy>PreferAntialias</stylestrategy>
     </font>
    </property>
@@ -102,6 +103,11 @@
      <height>111</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
    <property name="verticalScrollMode">
     <enum>QAbstractItemView::ScrollPerPixel</enum>
    </property>
@@ -120,7 +126,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans Demibold</family>
+     <family>Microsoft YaHei UI</family>
      <pointsize>10</pointsize>
      <bold>false</bold>
      <stylestrategy>PreferAntialias</stylestrategy>
@@ -139,9 +145,19 @@
      <height>32</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QStackedWidget" name="shareMethods">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+       </font>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -155,12 +171,17 @@
           <height>31</height>
          </rect>
         </property>
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+         </font>
+        </property>
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
           <widget class="QLabel" name="label_7">
            <property name="font">
             <font>
-             <family>MiSans Demibold</family>
+             <family>Microsoft YaHei UI</family>
              <pointsize>10</pointsize>
              <bold>false</bold>
              <stylestrategy>PreferAntialias</stylestrategy>
@@ -173,6 +194,11 @@
          </item>
          <item>
           <spacer name="horizontalSpacer">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+            </font>
+           </property>
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -194,6 +220,11 @@
              <width>295</width>
              <height>0</height>
             </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+            </font>
            </property>
           </widget>
          </item>
@@ -294,6 +325,11 @@
      <height>31</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout_2">
     <property name="spacing">
      <number>5</number>
@@ -302,7 +338,7 @@
      <widget class="QLabel" name="label_2">
       <property name="font">
        <font>
-        <family>MiSans Demibold</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <bold>false</bold>
         <stylestrategy>PreferAntialias</stylestrategy>
@@ -315,6 +351,11 @@
     </item>
     <item>
      <spacer name="horizontalSpacer_2">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+       </font>
+      </property>
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -333,6 +374,11 @@
         <width>240</width>
         <height>0</height>
        </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+       </font>
       </property>
      </widget>
     </item>
@@ -358,7 +404,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>9</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -381,36 +427,45 @@
      <height>131</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <property name="spacing">
      <number>2</number>
     </property>
     <item>
-     <widget class="QLabel" name="label_5">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>20</height>
-       </size>
-      </property>
-      <property name="font">
-       <font>
-        <family>MiSans Demibold</family>
-        <pointsize>10</pointsize>
-        <bold>false</bold>
-        <stylestrategy>PreferAntialias</stylestrategy>
-       </font>
-      </property>
-      <property name="text">
-       <string>中转服务器</string>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+          <pointsize>10</pointsize>
+          <bold>false</bold>
+          <stylestrategy>PreferAntialias</stylestrategy>
+         </font>
+        </property>
+        <property name="text">
+         <string>中转服务器</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -424,7 +479,7 @@
        <widget class="QLabel" name="label_3">
         <property name="font">
          <font>
-          <family>MiSans</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>10</pointsize>
           <italic>false</italic>
           <bold>false</bold>
@@ -438,6 +493,11 @@
       </item>
       <item>
        <spacer name="horizontalSpacer_4">
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+         </font>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -466,6 +526,11 @@
           <height>23</height>
          </size>
         </property>
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+         </font>
+        </property>
         <property name="echoMode">
          <enum>QLineEdit::Password</enum>
         </property>
@@ -493,7 +558,7 @@
         </property>
         <property name="font">
          <font>
-          <family>阿里巴巴普惠体 2.0 55 Regular</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>10</pointsize>
           <italic>false</italic>
          </font>
@@ -508,6 +573,11 @@
     </item>
     <item>
      <spacer name="verticalSpacer_4">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+       </font>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -538,7 +608,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans Demibold</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -552,6 +622,11 @@
     </item>
     <item>
      <spacer name="verticalSpacer">
+      <property name="font">
+       <font>
+        <family>Microsoft YaHei UI</family>
+       </font>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -584,7 +659,7 @@
         </property>
         <property name="font">
          <font>
-          <family>MiSans</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>10</pointsize>
           <bold>false</bold>
           <stylestrategy>PreferAntialias</stylestrategy>
@@ -611,7 +686,7 @@
         </property>
         <property name="font">
          <font>
-          <family>MiSans</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>9</pointsize>
           <italic>false</italic>
           <bold>false</bold>
@@ -639,7 +714,7 @@
         </property>
         <property name="font">
          <font>
-          <family>MiSans</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>9</pointsize>
           <italic>false</italic>
           <bold>false</bold>
@@ -715,7 +790,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans Demibold</family>
+     <family>Microsoft YaHei UI</family>
      <pointsize>11</pointsize>
      <italic>false</italic>
      <bold>false</bold>
@@ -749,7 +824,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei UI</family>
      <italic>false</italic>
      <bold>false</bold>
      <stylestrategy>PreferDefault</stylestrategy>
@@ -773,6 +848,11 @@
      <width>361</width>
      <height>32</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_3">
     <property name="spacing">
@@ -800,7 +880,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -834,7 +914,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -868,7 +948,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -893,7 +973,7 @@
    </property>
    <property name="font">
     <font>
-     <family>MiSans</family>
+     <family>Microsoft YaHei UI</family>
     </font>
    </property>
    <property name="text">
@@ -908,6 +988,11 @@
      <width>331</width>
      <height>32</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout_7">
     <item>
@@ -926,7 +1011,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans</family>
+        <family>Microsoft YaHei UI</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>
@@ -949,6 +1034,11 @@
      <height>32</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
    <layout class="QHBoxLayout" name="horizontalLayout_4">
     <item>
      <widget class="QPushButton" name="btnSharingStatus">
@@ -966,7 +1056,7 @@
       </property>
       <property name="font">
        <font>
-        <family>MiSans Demibold</family>
+        <family>微软雅黑</family>
         <pointsize>10</pointsize>
         <italic>false</italic>
         <bold>false</bold>

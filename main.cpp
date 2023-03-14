@@ -11,6 +11,8 @@
 #include "util/base.h"
 #include <cstring>
 
+#include "ui/windows/collabroom.h"
+
 extern "C" {
 #include <libavutil\avutil.h>
 }
@@ -73,12 +75,18 @@ int main(int argc, char *argv[]) {
         QThread::create(redirectDebugOutput)->start();
     }
 
+    av_log_set_flags(AV_LOG_PRINT_LEVEL);
     av_log_set_callback([](void *avcl, int level, const char *fmt, va_list vl) {
+        int prefix = 1;
+        char buf[1024];
+        av_log_format_line2(avcl, level, fmt, vl, buf, 1024, &prefix);
+        auto err = QString(buf).trimmed();
         if (level <= AV_LOG_ERROR) {
-            int prefix = 1;
-            char buf[1024];
-            av_log_format_line2(avcl, level, fmt, vl, buf, 1024, &prefix);
-            qDebug() << QString(buf).trimmed();
+            qDebug() << err;
+        }
+
+        if (err.contains("The minimum required Nvidia driver for nvenc is")) {
+            emit CollabRoom::instance()->onShareError("nv driver old");
         }
     });
 
@@ -114,9 +122,9 @@ int main(int argc, char *argv[]) {
 
     QApplication a(argc, argv);
 
-    QFontDatabase::addApplicationFont(":/fonts/SmileySans-Oblique.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/MiSans-Regular.ttf");
-    QFontDatabase::addApplicationFont(":/fonts/MiSans-Demibold.ttf");
+    std::vector<int> fonts;
+    fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/SmileySans-Oblique.ttf"));
+    fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/MiSans-Demibold.ttf"));
 
     MainWindow w;
     w.show();

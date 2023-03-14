@@ -62,7 +62,7 @@
           </property>
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
             <pointsize>10</pointsize>
            </font>
           </property>
@@ -75,7 +75,7 @@
          <widget class="QSpinBox" name="hoursSpin">
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
            </font>
           </property>
           <property name="minimum">
@@ -100,7 +100,7 @@
           </property>
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
             <pointsize>10</pointsize>
            </font>
           </property>
@@ -113,7 +113,7 @@
          <widget class="QSpinBox" name="personSpin">
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
            </font>
           </property>
           <property name="minimum">
@@ -150,7 +150,7 @@
           </property>
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
             <pointsize>10</pointsize>
            </font>
           </property>
@@ -181,7 +181,7 @@
           </property>
           <property name="font">
            <font>
-            <family>MiSans</family>
+            <family>Microsoft YaHei UI</family>
            </font>
           </property>
           <property name="text">
@@ -217,7 +217,7 @@
         </property>
         <property name="font">
          <font>
-          <family>MiSans</family>
+          <family>Microsoft YaHei UI</family>
           <pointsize>11</pointsize>
          </font>
         </property>

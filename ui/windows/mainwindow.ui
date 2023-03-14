@@ -120,7 +120,7 @@
        </property>
        <property name="font">
         <font>
-         <family>MiSans</family>
+         <family>Microsoft YaHei UI</family>
          <pointsize>11</pointsize>
          <bold>false</bold>
         </font>
@@ -743,7 +743,7 @@
    <widget class="QMenu" name="menu">
     <property name="font">
      <font>
-      <family>MiSans</family>
+      <family>Microsoft YaHei UI</family>
       <pointsize>9</pointsize>
      </font>
     </property>
@@ -757,7 +757,7 @@
    <widget class="QMenu" name="menu_2">
     <property name="font">
      <font>
-      <family>MiSans</family>
+      <family>Microsoft YaHei UI</family>
       <pointsize>9</pointsize>
      </font>
     </property>
@@ -771,7 +771,7 @@
    <widget class="QMenu" name="menu_3">
     <property name="font">
      <font>
-      <family>MiSans</family>
+      <family>Microsoft YaHei UI</family>
       <pointsize>9</pointsize>
      </font>
     </property>
