@@ -77,5 +77,5 @@ jobs:
         shell: pwsh
         run: |
           curl --data-binary "${{github.workspace}}/vtslink/out/install/pdb/VTSLink.pdb" `
-          -X POST -H "Expect: gzip" `
+          -X POST `
           "https://submit.backtrace.io/reito/${{secrets.BACKTRACE_SYMBOL_TOKEN}}/symbols"
