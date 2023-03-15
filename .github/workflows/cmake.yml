@@ -76,6 +76,6 @@ jobs:
       - name: Upload debug symbol
         shell: pwsh
         run: |
-          curl --data-binary "${{github.workspace}}/vtslink/out/install/pdb/VTSLink.pdb" `
+          curl --upload-file "${{github.workspace}}/vtslink/out/install/pdb/VTSLink.pdb" `
           -X POST `
           "https://submit.backtrace.io/reito/${{secrets.BACKTRACE_SYMBOL_TOKEN}}/symbols"
