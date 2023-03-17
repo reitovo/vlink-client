@@ -162,6 +162,12 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->knowDeployRelay, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/osFxEHHuiZNF3JMrhS6zV2"));
     });
+    connect(ui->feedQQGroup, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://jq.qq.com/?_wv=1027&k=0Gtymtze"));
+    });
+    connect(ui->feedQQGuild, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://pd.qq.com/s/3y2gr1nmy"));
+    });
 
     // Start sending thread
     frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {

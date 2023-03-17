@@ -38,7 +38,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -140,7 +140,7 @@
           </font>
          </property>
          <property name="text">
-          <string>以下设置需要重新打开房间才能生效</string>
+          <string>★ 以下设置需要重新打开房间才能生效</string>
          </property>
         </widget>
        </item>
@@ -325,7 +325,7 @@
           </font>
          </property>
          <property name="text">
-          <string>以下设置需要重新分享画面才能生效</string>
+          <string>★ 以下设置需要重新分享画面才能生效</string>
          </property>
         </widget>
        </item>
@@ -431,9 +431,7 @@
     <string>上传日志</string>
    </property>
    <property name="font">
-    <font>
-     <family>Microsoft YaHei UI</family>
-    </font>
+    <font/>
    </property>
   </action>
   <action name="actionCrash">
@@ -441,9 +439,7 @@
     <string>崩溃</string>
    </property>
    <property name="font">
-    <font>
-     <family>Microsoft YaHei UI</family>
-    </font>
+    <font/>
    </property>
   </action>
  </widget>
