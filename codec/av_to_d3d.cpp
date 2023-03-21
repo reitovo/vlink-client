@@ -256,7 +256,7 @@ std::optional<QString> AvToDx::processFrame() {
     }
 
     // Somehow we can't wait for an ordered frame in 1 seconds.
-    if (frameQueue.size() > 60) {
+    if (frameQueue.size() > 30) {
         while(!frameQueue.empty()) {
             delete frameQueue.top();
             frameQueue.pop();

@@ -69,7 +69,8 @@ public:
     void sendHeartbeat();
     long rtt();
 
-    void bytesProcessed(size_t& sent, size_t& received);
+    size_t txBytes();
+    size_t rxBytes();
 };
 
 #endif // PEER_H

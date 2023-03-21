@@ -188,7 +188,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(usageStat.get(), &QTimer::timeout, this, [this]() {
         usageStatUpdate();
     });
-    usageStat->start(1000);
+    usageStat->start(500);
 
     spoutDiscovery = std::make_unique<QTimer>(this);
     auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
@@ -1013,6 +1013,25 @@ void CollabRoom::usageStatUpdate() {
                                    .arg(useDxCapture ? "D3D11" : "Spout")
                                    .arg("D3D11")
     );
+
+    // Speed Stat
+    size_t tx = 0, rx = 0;
+    peersLock.lock();
+    if (isServer) {
+        for (auto &s: servers) {
+            tx += s.second->txBytes();
+            rx += s.second->rxBytes();
+        }
+    } else {
+        tx += client->txBytes();
+        rx += client->rxBytes();
+    }
+    peersLock.unlock();
+    txSpeed.update(tx);
+    rxSpeed.update(rx);
+    ui->speedStat->setText(QString("%1 ↑↓ %2")
+            .arg(txSpeed.speed())
+            .arg(rxSpeed.speed()));
 }
 
 void CollabRoom::heartbeatUpdate() {

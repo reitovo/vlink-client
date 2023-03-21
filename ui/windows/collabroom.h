@@ -6,6 +6,7 @@
 #include "QMutex"
 #include "QThread"
 #include "SpoutGL/SpoutSenderNames.h"
+#include "core/speed.h"
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <map>
@@ -131,6 +132,8 @@ private:
     std::unique_ptr<QThread> shareThread;
     std::unique_ptr<QThread> frameSendThread;
     std::shared_ptr<DxToFrame> d3d;
+
+    Speed txSpeed, rxSpeed;
 
     std::string spoutName = "VTubeStudioSpout";
     spoutSenderNames spoutSender;

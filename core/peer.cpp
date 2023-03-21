@@ -357,10 +357,16 @@ rtc::Description Peer::processLocalDescription(rtc::Description desc) {
     return ret;
 }
 
-void Peer::bytesProcessed(size_t& sent, size_t& received) {
+size_t Peer::txBytes() {
     if (pc == nullptr)
-        return;
+        return 0;
 
-    sent = pc->bytesSent();
-    received = pc->bytesReceived();
+    return pc->bytesSent();
+}
+
+size_t Peer::rxBytes() {
+    if (pc == nullptr)
+        return 0;
+
+    return pc->bytesReceived();
 }

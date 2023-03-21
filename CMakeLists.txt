@@ -80,6 +80,7 @@ set(PROJECT_SOURCES
         core/peer.h core/peer.cpp
         core/smart_buf.h core/smart_buf.cpp
         core/debug_center.h core/debug_center.cpp
+        core/speed.h core/speed.cpp
         core/usage.h core/usage.cpp
         ui/windows/mainwindow.cpp
         ui/windows/mainwindow.h
