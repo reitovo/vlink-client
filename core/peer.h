@@ -68,6 +68,8 @@ public:
 
     void sendHeartbeat();
     long rtt();
+
+    void bytesProcessed(size_t& sent, size_t& received);
 };
 
 #endif // PEER_H

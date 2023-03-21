@@ -27,8 +27,8 @@ static QList<CodecOption> options = {
 	{"h264_qsv", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
 
 	// You don't have a GPU? 
-	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
-	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
+	//{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
+	//{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
 FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
@@ -336,9 +336,15 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 {
     QSettings settings;
     auto cqp = settings.value("avCQP", 24).toInt();
+    if (cqp < 16) cqp = 16;
+    else if (cqp > 36) cqp = 36;
+    settings.setValue("avCQP", cqp);
+    settings.sync();
 
     qDebug() << "use cqp" << cqp;
 
+    ctx->rc_max_rate = 4000000;
+    ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
 	ctx->gop_size = 60;
 
@@ -369,7 +375,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//ctx->rc_buffer_size = ctx->bit_rate * 3;
 
 		//av_opt_set(ctx->priv_data, "rc", "cbr", 0);
-		//av_opt_set_int(ctx->priv_data, "filler_data", 1, 0); 
+		//av_opt_set_int(ctx->priv_data, "filler_data", 1, 0);
 
 		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}

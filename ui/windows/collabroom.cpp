@@ -997,7 +997,7 @@ QString CollabRoom::errorToReadable(const QString &reason) {
     if (reason == "init error") {
         err = tr("初始化错误");
     } else if (reason == "no valid encoder") {
-        err = tr("无法启动任何编码器！\n如果您曾在设置中强制使用某编码器，请尝试在顶部菜单「选项 - 设置」中取消再试。");
+        err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
     } else if (reason == "cap no uyva") {
         err = tr("捕获分享模式无法使用 UYVA 编码器");
     } else if (reason == "nv driver old") {

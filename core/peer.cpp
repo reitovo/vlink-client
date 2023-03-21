@@ -356,3 +356,11 @@ rtc::Description Peer::processLocalDescription(rtc::Description desc) {
     ret.addCandidates(candidates);
     return ret;
 }
+
+void Peer::bytesProcessed(size_t& sent, size_t& received) {
+    if (pc == nullptr)
+        return;
+
+    sent = pc->bytesSent();
+    received = pc->bytesReceived();
+}
