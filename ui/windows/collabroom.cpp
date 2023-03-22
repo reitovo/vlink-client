@@ -306,33 +306,6 @@ QString CollabRoom::debugInfo() {
     return ret;
 }
 
-void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
-    qDebug() << "update peer ui";
-
-    while (ui->peerList->count() < peerUis.count()) {
-        auto item = new QListWidgetItem(ui->peerList);
-        auto peer = new PeerItemWidget(this, this);
-        item->setSizeHint(QSize(0, 32));
-        ui->peerList->addItem(item);
-        ui->peerList->setItemWidget(item, peer);
-    }
-
-    while (ui->peerList->count() > peerUis.count()) {
-        auto item = ui->peerList->item(0);
-        auto widget = ui->peerList->itemWidget(item);
-        ui->peerList->removeItemWidget(item);
-        delete item;
-        delete widget;
-    }
-
-    auto idx = 0;
-    for (auto &p: peerUis) {
-        auto item = ui->peerList->item(idx++);
-        auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
-        widget->setPeerUi(p);
-    }
-}
-
 void CollabRoom::copyRoomId() {
     auto cb = QApplication::clipboard();
     cb->setText(roomId);
@@ -953,6 +926,33 @@ void CollabRoom::updatePeers(QJsonArray peers) {
     emit onUpdatePeersUi(peerUis);
 }
 
+void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
+    qDebug() << "update peer ui";
+
+    while (ui->peerList->count() < peerUis.count()) {
+        auto item = new QListWidgetItem(ui->peerList);
+        auto peer = new PeerItemWidget(this, this);
+        item->setSizeHint(QSize(0, 32));
+        ui->peerList->addItem(item);
+        ui->peerList->setItemWidget(item, peer);
+    }
+
+    while (ui->peerList->count() > peerUis.count()) {
+        auto item = ui->peerList->item(0);
+        auto widget = ui->peerList->itemWidget(item);
+        ui->peerList->removeItemWidget(item);
+        delete item;
+        delete widget;
+    }
+
+    auto idx = 0;
+    for (auto &p: peerUis) {
+        auto item = ui->peerList->item(idx++);
+        auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
+        widget->setPeerUi(p);
+    }
+}
+
 void CollabRoom::peerDataChannelMessage(std::unique_ptr<VtsMsg> m, Peer *peer) const {
     // receive av from remote peer
     switch (m->type()) {
@@ -1019,12 +1019,16 @@ void CollabRoom::usageStatUpdate() {
     peersLock.lock();
     if (isServer) {
         for (auto &s: servers) {
+            if (s.second == nullptr)
+                continue;
             tx += s.second->txBytes();
             rx += s.second->rxBytes();
         }
     } else {
-        tx += client->txBytes();
-        rx += client->rxBytes();
+        if (client != nullptr) {
+            tx += client->txBytes();
+            rx += client->rxBytes();
+        }
     }
     peersLock.unlock();
     txSpeed.update(tx);
