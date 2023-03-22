@@ -242,7 +242,7 @@ void Peer::close() {
 }
 
 void Peer::sendAsync(std::shared_ptr<VtsMsg> payload) {
-    if (sendQueue.size_approx() > 10) {
+    if (sendQueue.size_approx() > 30) {
         //qDebug() << "throw away payload because queue is full";
         return;
     }
