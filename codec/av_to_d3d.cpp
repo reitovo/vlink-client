@@ -255,7 +255,7 @@ std::optional<QString> AvToDx::processFrame() {
         return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
     }
 
-    // Somehow we can't wait for an ordered frame in 1 seconds.
+    // We can't wait for an ordered frame in 1 seconds.
     if (frameQueue.size() > 30) {
         while(!frameQueue.empty()) {
             delete frameQueue.top();

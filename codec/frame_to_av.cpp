@@ -346,7 +346,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->rc_max_rate = 4000000;
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
-	ctx->gop_size = 120;
+	ctx->gop_size = 45;
 
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
