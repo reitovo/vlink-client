@@ -4,6 +4,11 @@
 
 [English](Readme.en.md)
 
+### TODO
+
+- [ ] 重构联动房间`collabroom`，分离网络模块
+- [ ] 强制中转服务器模式，4人情况下都只需要上传一路带宽，交给中转服务器转发
+
 ### 简介
 
 `VTube Studio 联动！`可以帮助使用`VTube Studio`的虚拟主播进行联动，并且：
