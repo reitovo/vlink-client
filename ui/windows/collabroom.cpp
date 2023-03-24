@@ -398,7 +398,22 @@ void CollabRoom::shareError(QString reason) {
 }
 
 void CollabRoom::fatalError(QString reason) {
-    QMessageBox::critical(this, tr("致命错误"), errorToReadable(reason));
+    if (reason == "nv driver old") {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Critical);
+        box.setWindowTitle(tr("错误"));
+        box.setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
+                       "点击「更新」前往官网驱动下载页面"));
+        auto open = box.addButton(tr("更新"), QMessageBox::NoRole);
+        auto ok = box.addButton(tr("关闭"), QMessageBox::NoRole);
+        box.exec();
+        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+        if (ret == open) {
+            QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
+        }
+    } else {
+        QMessageBox::critical(this, tr("致命错误"), errorToReadable(reason));
+    }
     close();
 }
 
@@ -1000,8 +1015,6 @@ QString CollabRoom::errorToReadable(const QString &reason) {
         err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
     } else if (reason == "cap no uyva") {
         err = tr("捕获分享模式无法使用 UYVA 编码器");
-    } else if (reason == "nv driver old") {
-        err = tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。");
     }
     return err;
 }
