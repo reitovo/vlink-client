@@ -335,7 +335,7 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext* ctx)
 {
     QSettings settings;
-    auto cqp = settings.value("avCQP", 24).toInt();
+    auto cqp = settings.value("avCQP", 32).toInt();
     if (cqp < 16) cqp = 16;
     else if (cqp > 36) cqp = 36;
     settings.setValue("avCQP", cqp);

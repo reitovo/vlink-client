@@ -47,7 +47,7 @@ void SettingWindow::init() {
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
-    ui->avCQP->setValue(settings.value("avCQP", 27).toInt());
+    ui->avCQP->setValue(settings.value("avCQP", 32).toInt());
     ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
     connect(ui->encoders, &QComboBox::currentTextChanged, this, [=](const QString &s) {
