@@ -346,7 +346,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->rc_max_rate = 4000000;
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
-	ctx->gop_size = 45;
+	ctx->gop_size = 60;
 
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
@@ -361,9 +361,9 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set(ctx->priv_data, "quality", "speed", 0);
+        av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
 		av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
-		av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
-		av_opt_set_int(ctx->priv_data, "intra_refresh_mb", ctx->gop_size, 0);
+		//av_opt_set_int(ctx->priv_data, "intra_refresh_mb", ctx->gop_size, 0);
 
 		av_opt_set(ctx->priv_data, "rc", "cqp", 0);
 		av_opt_set_int(ctx->priv_data, "qp_i", cqp, 0);
@@ -380,10 +380,11 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}
 	else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
-		av_opt_set(ctx->priv_data, "preset", "fast", 0);
+		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
 		av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
 		av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
-		//av_opt_set_int(ctx->priv_data, "idr_interval", 1, 0);
+		av_opt_set_int(ctx->priv_data, "idr_interval", 0, 0);
+        av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
 
 		ctx->flags |= AV_CODEC_FLAG_QSCALE;
 		ctx->global_quality = cqp * FF_QP2LAMBDA;
