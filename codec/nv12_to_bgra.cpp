@@ -33,8 +33,11 @@ static VERTEX Vertices[NUMVERTICES] =
 
 static FLOAT blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
 
-Nv12ToBgra::Nv12ToBgra() {
+Nv12ToBgra::Nv12ToBgra(int width, int height) {
     qDebug() << "begin nv12bgra";
+
+    _width = width;
+    _height = height;
 }
 
 Nv12ToBgra::~Nv12ToBgra() {
@@ -336,7 +339,6 @@ bool Nv12ToBgra::createSharedSurf() {
         return false;
 
     qDebug() << "nv12bgra create shader resview nv12 rgb c";
-
 
     D3D11_TEXTURE2D_DESC texDesc_rgba;
     ZeroMemory(&texDesc_rgba, sizeof(texDesc_rgba));

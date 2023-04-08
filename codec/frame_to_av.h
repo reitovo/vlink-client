@@ -17,7 +17,6 @@ extern "C" {
 #include "libavutil/hwcontext.h"
 #include "libavutil/pixdesc.h"
 }
-#include "avframe.pb.h"
 #include "vts.pb.h"
 
 enum FrameToAvMode {
@@ -65,7 +64,8 @@ private:
 
 private:
     bool inited = false;
-    int xres, yres, frameD, frameN;
+    int _width, _height;
+    float frameRate;
 
     AVPacket *packet = nullptr;
 
@@ -76,21 +76,21 @@ private:
     CodecOption currentOption;
 
     int64_t pts = 0;
-    std::function<void(std::shared_ptr<VtsMsg>)> onPacketReceived = nullptr;
+    std::function<void(std::shared_ptr<vts::VtsMsg>)> onPacketReceived = nullptr;
 
     FpsCounter fps;
 
     std::optional<QString> processInternal();
 
 public:
-    FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb);
+    FrameToAv(int width, int height, float fps, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb);
     ~FrameToAv();
 
     QString debugInfo();
     bool useUYVA();
 
     bool isInited();
-    std::optional<QString> init(int xres, int yres, int d, int n, bool forceBgra);
+    std::optional<QString> init(bool forceBgra);
     std::optional<QString> initCodec(const CodecOption& option);
 
     std::optional<QString> initOptimalEncoder(const CodecOption& option, AVCodecContext * ctx);

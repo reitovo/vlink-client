@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "avframe.proto";
+package vts;
 
 enum VtsMsgType {
     VTS_MSG_INVALID = 0;
@@ -9,7 +9,25 @@ enum VtsMsgType {
     VTS_MSG_HEARTBEAT = 3;
 }
 
+message AvPacket {
+  bytes data = 1;
+  int64 pts = 2;
+  int64 dts = 3;
+}
+
+message VtsAvFrame {
+  repeated AvPacket packets = 3;
+  int64 pts = 4;
+}
+
 message VtsMsg { 
   VtsMsgType type = 2;
   VtsAvFrame avFrame = 3;
+}
+
+message SmartBuf {
+  uint32 seq = 1;
+  uint32 part = 2;
+  uint32 total = 3;
+  bytes data = 4;
 }

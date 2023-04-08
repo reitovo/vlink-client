@@ -39,9 +39,12 @@ static VERTEX Vertices[NUMVERTICES] =
 static FLOAT blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
 
 
-SpoutCapture::SpoutCapture(const std::shared_ptr<DxToFrame>& d3d, std::string spoutName) : IDxToFrameSrc(d3d) {
+SpoutCapture::SpoutCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d, std::string spoutName) : IDxToFrameSrc(d3d) {
     qDebug() << "begin spout capture";
     this->spoutName = std::move(spoutName);
+
+    this->_width = width;
+    this->_height = height;
 
     if (d3d != nullptr) {
         d3d->registerSource(this);
@@ -100,11 +103,6 @@ bool SpoutCapture::compileShader() {
 
 bool SpoutCapture::init() {
     HRESULT hr;
-
-    auto width = VTSLINK_FRAME_WIDTH;
-    auto height = VTSLINK_FRAME_HEIGHT;
-    _width = width;
-    _height = height;
 
     qDebug() << "spout capture init";
 
@@ -216,7 +214,7 @@ bool SpoutCapture::init() {
 
     qDebug() << "spout capture create vertex buffer";
 
-    auto ret = createSharedSurf(width, height);
+    auto ret = createSharedSurf();
     resetDeviceContext();
 
     _inited = true;
@@ -226,14 +224,14 @@ bool SpoutCapture::init() {
     return ret;
 }
 
-bool SpoutCapture::createSharedSurf(int width, int height) {
+bool SpoutCapture::createSharedSurf() {
     HRESULT hr{0};
 
     D3D11_TEXTURE2D_DESC texDesc_rgba;
     ZeroMemory(&texDesc_rgba, sizeof(texDesc_rgba));
     texDesc_rgba.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    texDesc_rgba.Width = width;
-    texDesc_rgba.Height = height;
+    texDesc_rgba.Width = _width;
+    texDesc_rgba.Height = _height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
     texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;

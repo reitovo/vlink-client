@@ -28,9 +28,8 @@ find_package(Protobuf CONFIG REQUIRED)
 include_directories(${Protobuf_INCLUDE_DIRS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 set(PROTO_FILES
-    proto/avframe.proto
     proto/vts.proto
-    proto/smartbuf.proto
+    proto/vts_server.proto
 )
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
 
@@ -56,7 +55,7 @@ set(CODEC_FILES
         codec/d3d_to_frame.cpp
         codec/nv12_to_bgra.h
         codec/nv12_to_bgra.cpp
-    codec/i_d3d_src.h
+        codec/i_d3d_src.h
         codec/i_d3d_src.cpp)
 
 # Shader
@@ -82,6 +81,7 @@ set(PROJECT_SOURCES
         core/debug_center.h core/debug_center.cpp
         core/speed.h core/speed.cpp
         core/usage.h core/usage.cpp
+        core/room_server.h core/room_server.cpp
         ui/windows/mainwindow.cpp
         ui/windows/mainwindow.h
         ui/windows/mainwindow.ui

@@ -28,13 +28,17 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
     return AV_PIX_FMT_NONE;
 }
 
-AvToDx::AvToDx(std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
+AvToDx::AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin d3d2dx";
     d3d->registerSource(this);
 
     QSettings settings;
     enableBuffering = settings.value("enableBuffering", false).toBool();
+
+    _width = width;
+    _height = height;
+    this->frameRate = frameRate;
 
     init();
 }
@@ -53,16 +57,11 @@ std::optional<QString> AvToDx::init()
         stop();
 
     qDebug() << "av2d3d init";
-
-    xres = VTSLINK_FRAME_WIDTH;
-    yres = VTSLINK_FRAME_HEIGHT;
-    frameD = VTSLINK_FRAME_D;
-    frameN = VTSLINK_FRAME_N;
     codecId = AV_CODEC_ID_H264;
 
     qDebug() << "av2d3d using codec" << avcodec_get_name(codecId);
 
-    bgra = std::make_unique<Nv12ToBgra>();
+    bgra = std::make_unique<Nv12ToBgra>(_width, _height);
     if (!bgra->init()) {
         qDebug() << "failed to init nv12bgra";
         return "init nv12 to bgra";
@@ -110,10 +109,10 @@ std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
         return "codec alloc ctx";
     }
 
-    ctx->width = xres;
-    ctx->height = yres * 2;
-    ctx->time_base.den = ctx->framerate.num = frameD;
-    ctx->time_base.num = ctx->framerate.den = frameN;
+    ctx->width = _width;
+    ctx->height = _height * 2;
+    ctx->time_base.den = ctx->framerate.num = 1;
+    ctx->time_base.num = ctx->framerate.den = frameRate;
     ctx->pkt_timebase = ctx->time_base;
     ctx->pix_fmt = AV_PIX_FMT_D3D11;
     ctx->get_format = get_hw_format;
@@ -156,15 +155,20 @@ std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
     return std::optional<QString>();
 }
 
-void AvToDx::process(std::unique_ptr<VtsMsg> m)
+void AvToDx::process(std::unique_ptr<vts::VtsMsg> m)
 {
-    // enqueue for reordering
-    auto f = new UnorderedFrame;
-    f->pts = m->avframe().pts();
-    f->data = std::move(m);
+    auto packet_pts = m->avframe().pts();
 
     frameQueueLock.lock();
-    frameQueue.push(f);
+    if (packet_pts < pts + 1) {
+        qDebug() << "discard rendered packet = " << packet_pts << " expect = " << (pts + 1);
+    } else {
+        // enqueue for reordering
+        auto f = new UnorderedFrame;
+        f->pts = packet_pts;
+        f->data = std::move(m);
+        frameQueue.push(f);
+    }
     frameQueueLock.unlock();
 }
 
@@ -228,7 +232,7 @@ void AvToDx::processWorker() {
         }
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 * frameD / frameN;
+        int64_t frameTime = frameCount * 1000000.0 / frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -272,7 +276,7 @@ std::optional<QString> AvToDx::processFrame() {
 
     if (pts != 0 && newPts > pts + 1) {
         frameDelay.failed();
-        qDebug() << "misordered" << newPts << pts << frameQueue.size();
+        qDebug() << "misordered latest = " << newPts << " expect = " << (pts + 1) << frameQueue.size();
         frameQueueLock.unlock();
         return "misordered";
     }
@@ -285,11 +289,12 @@ std::optional<QString> AvToDx::processFrame() {
     delete dd;
 
     auto meta = mem->avframe();
-    if (newPts > pts) {
+    if (newPts == pts + 1 || pts == 0) {
         pts = newPts;
     }
     else {
-        qDebug() << "repeated" << pts;
+        qDebug() << "discontinued" << pts;
+        return "discontinued";
     }
     //qDebug() << "av2d3d pts" << meta.pts();
 

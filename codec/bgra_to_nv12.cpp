@@ -38,9 +38,11 @@ static VERTEX Vertices[NUMVERTICES] =
 
 static FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 
-BgraToNv12::BgraToNv12()
+BgraToNv12::BgraToNv12(int width, int height)
 {
 	qDebug() << "begin bgranv12";
+    _width = width;
+    _height = height;
 }
 
 BgraToNv12::~BgraToNv12() {

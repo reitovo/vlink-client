@@ -1,6 +1,6 @@
 ## VTube Studio Link!
 
-![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
+![build](https://github.com/reitovo/vtslink-serverPeer/actions/workflows/cmake.yml/badge.svg)
 
 ### Introduction
 
@@ -10,7 +10,7 @@
 2. Support native transparency.
 3. Low system resource consumption, fully hardware accelerated.
 4. Supports P2P and Relay transmission to cover all network situations.
-5. No need to deploy servers yourself, built-in one-key start (charged).
+5. No need to deploy clientPeers yourself, built-in one-key start (charged).
 
 ### [Code Walkthrough](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN) 
 

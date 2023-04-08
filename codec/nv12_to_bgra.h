@@ -77,13 +77,13 @@ class Nv12ToBgra
 
     HANDLE _texture_rgba_copy_shared = nullptr;
 
-    uint32_t _width{ VTSLINK_FRAME_WIDTH };
-    uint32_t _height{ VTSLINK_FRAME_HEIGHT };
+    uint32_t _width;
+    uint32_t _height;
 
     std::atomic_bool _inited = false;
 
 public:
-    Nv12ToBgra();
+    Nv12ToBgra(int width, int height);
     ~Nv12ToBgra();
 
     QMutex lock;

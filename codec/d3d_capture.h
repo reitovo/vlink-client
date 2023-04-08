@@ -55,7 +55,7 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
 
     bool _needElevateDisplayed = false;
 
-    bool createSharedSurf(int width, int height);
+    bool createSharedSurf();
     void releaseSharedSurf();
 
     void initDxCapture();
@@ -63,7 +63,7 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
     void resetDeviceContext();
 
 public:
-    explicit DxCapture(const std::shared_ptr<DxToFrame>& d3d);
+    explicit DxCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d);
     ~DxCapture();
 
     QString debugInfo() override;

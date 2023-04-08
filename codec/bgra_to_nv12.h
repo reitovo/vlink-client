@@ -78,8 +78,8 @@ class BgraToNv12
     std::array<ID3D11RenderTargetView*, 1> _nv24_nv12_rt;
     std::array<ID3D11ShaderResourceView*, 1> _nv24_nv12_sr;
 
-    uint32_t _width { VTSLINK_FRAME_WIDTH };
-    uint32_t _height { VTSLINK_FRAME_HEIGHT };
+    uint32_t _width;
+    uint32_t _height;
 
     DeviceAdapterType _vendor;
     std::atomic_bool _inited = false;
@@ -87,7 +87,7 @@ class BgraToNv12
     bool _mapped = false;
 
 public:
-    BgraToNv12();
+    BgraToNv12(int width, int height);
     ~BgraToNv12();
 
     QMutex lock;

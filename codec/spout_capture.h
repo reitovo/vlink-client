@@ -66,14 +66,14 @@ class SpoutCapture : public IDxToFrameSrc, public IDebugCollectable {
 
     std::atomic_bool _spoutInited = false;
 
-    bool createSharedSurf(int width, int height);
+    bool createSharedSurf();
     void releaseSharedSurf();
 
     bool compileShader();
     void resetDeviceContext();
 
 public:
-    explicit SpoutCapture(const std::shared_ptr<DxToFrame>& d3d, std::string spoutName);
+    explicit SpoutCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d, std::string spoutName);
     ~SpoutCapture();
 
     QString debugInfo() override;

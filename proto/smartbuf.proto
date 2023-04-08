@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-message SmartBuf {
-    uint32 seq = 1;
-    uint32 part = 2;
-    uint32 total = 3;
-    bytes data = 4;
-}

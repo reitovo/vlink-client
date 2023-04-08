@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <QString>
 
-#include "avframe.pb.h"
 #include "qthread.h"
 #include "vts.pb.h"
 
@@ -26,11 +25,11 @@ extern "C" {
 
 struct UnorderedFrame {
     int64_t pts;
-    std::unique_ptr<VtsMsg> data;
+    std::unique_ptr<vts::VtsMsg> data;
 };
 
 struct FrameReorderer {
-    bool operator() (const UnorderedFrame* l, const UnorderedFrame* r) const { return l->pts > r->pts; }
+    bool operator()(const UnorderedFrame *l, const UnorderedFrame *r) const { return l->pts > r->pts; }
 };
 
 class FrameDelay {
@@ -79,20 +78,23 @@ public:
 // And the instance is a IDxSrc which will be registered to room's merger DxToNdi, which
 // will combine all sources textures there.
 class DxToFrame;
+
 class AvToDx : public IDxToFrameSrc, public IDebugCollectable {
 
 private:
     std::unique_ptr<Nv12ToBgra> bgra;
 
     std::atomic_bool inited = false;
-    int xres, yres, frameD, frameN;
+    int _width, _height;
+    float frameRate;
+
     AVCodecID codecId;
 
     AVPacket *packet = nullptr;
     //rgb
     AVCodecContext *ctx = nullptr;
-    const AVCodec* codec = nullptr;
-    AVFrame* frame = nullptr;
+    const AVCodec *codec = nullptr;
+    AVFrame *frame = nullptr;
 
     int64_t pts = 0;
 
@@ -103,7 +105,7 @@ private:
     std::atomic_bool enableBuffering;
     std::atomic_bool processThreadRunning = false;
     std::unique_ptr<QThread> processThread;
-    std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
+    std::priority_queue<UnorderedFrame *, std::vector<UnorderedFrame *>, FrameReorderer> frameQueue;
     QMutex frameQueueLock;
     FrameDelay frameDelay;
 
@@ -114,21 +116,22 @@ private:
         frameQueueLock.unlock();
         return ret;
     }
+
     void processWorker();
     std::optional<QString> processFrame();
 
 public:
-    AvToDx(std::shared_ptr<DxToFrame> d3d);
+    AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame> d3d);
     ~AvToDx();
-     
+
     std::optional<QString> init();
-    void process(std::unique_ptr<VtsMsg> m);
+    void process(std::unique_ptr<vts::VtsMsg> m);
     void reset();
     void stop();
 
     QString debugInfo();
 
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest) override;
+    bool copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) override;
 };
 
 #endif // AV_TO_D3D_H

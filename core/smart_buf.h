@@ -5,7 +5,7 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <smartbuf.pb.h>
+#include <vts.pb.h>
 
 class smart_buf
 {
@@ -14,7 +14,7 @@ class smart_buf
     std::function<void (const std::string &)> sender;
     std::function<void (const std::string &)> receiver;
 
-    std::map<int, std::map<int, std::unique_ptr<SmartBuf>>> queue;
+    std::map<int, std::map<int, std::unique_ptr<vts::SmartBuf>>> queue;
 
 public:
     smart_buf(int maxSize,

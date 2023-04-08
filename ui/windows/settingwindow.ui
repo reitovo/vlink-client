@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>539</width>
+    <width>481</width>
     <height>363</height>
    </rect>
   </property>
@@ -22,7 +22,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>541</width>
+      <width>481</width>
       <height>341</height>
      </rect>
     </property>
@@ -52,7 +52,7 @@
        <rect>
         <x>2</x>
         <y>0</y>
-        <width>531</width>
+        <width>471</width>
         <height>311</height>
        </rect>
       </property>
@@ -145,9 +145,38 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="showDxgiWindow">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>显示联动画面窗口（调试）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="enableBuffering">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>启用缓冲（网络环境差时使用，增加稳定性，增加延迟）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
-          <widget class="QLabel" name="label_3">
+          <widget class="QCheckBox" name="shouldForceCQP">
            <property name="font">
             <font>
              <family>Microsoft YaHei UI</family>
@@ -155,7 +184,7 @@
             </font>
            </property>
            <property name="text">
-            <string>编码质量 CQP（越小越好）</string>
+            <string>强制画质CQP</string>
            </property>
           </widget>
          </item>
@@ -236,7 +265,7 @@
             </font>
            </property>
            <property name="text">
-            <string>使用指定的编码器</string>
+            <string>强制使用编码器</string>
            </property>
           </widget>
          </item>
@@ -270,35 +299,6 @@
           </widget>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="showDxgiWindow">
-         <property name="font">
-          <font>
-           <family>Microsoft YaHei UI</family>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>显示联动画面窗口（调试）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="enableBuffering">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <family>Microsoft YaHei UI</family>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>启用缓冲（网络环境差时使用，增加延迟）</string>
-         </property>
-        </widget>
        </item>
        <item>
         <spacer name="verticalSpacer_3">
@@ -402,7 +402,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>539</width>
+     <width>481</width>
      <height>22</height>
     </rect>
    </property>

@@ -49,8 +49,8 @@ MainWindow::MainWindow(QWidget *parent)
     tray->setIcon(icon);
     tray->show();
 
-    iterateCodec();
-    iterateHwAccels();
+    // iterateCodec();
+    // iterateHwAccels();
 
     QSettings settings;
     auto lang = settings.value("languageCode", "").toString();

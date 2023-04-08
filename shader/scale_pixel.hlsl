@@ -22,6 +22,8 @@ SamplerState      defaultSampler     : s0;
 [numthreads (8,8,1)]
 float4 PS(PixelShaderInput input) : SV_TARGET
 {
+    if (input.texCoord.y < 0)
+        return float4(0, 0, 0, 0);
 	float4 value = textureChannel.Sample(defaultSampler, input.texCoord);  
 	return value;
 }

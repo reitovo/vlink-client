@@ -11,6 +11,7 @@
 #include <QDateTime>
 #include <QJsonObject>
 #include "concurrentqueue/concurrentqueue.h"
+#include "vts_server.pb.h"
 
 class PeerUi {
 public:
@@ -45,16 +46,16 @@ public:
     bool failed();
 
     void startServer();
-    void startClient(QJsonObject serverSdp);
+    void startClient(const vts::server::NotifyRtcSdp& serverSdp);
     void close();
      
     std::atomic_bool dcInited = false;
     std::atomic_bool dcThreadAlive;
     std::unique_ptr<QThread> dcThread;
-    moodycamel::ConcurrentQueue<std::shared_ptr<VtsMsg>> sendQueue;
-    moodycamel::ConcurrentQueue<std::unique_ptr<VtsMsg>> recvQueue;
+    moodycamel::ConcurrentQueue<std::shared_ptr<vts::VtsMsg>> sendQueue;
+    moodycamel::ConcurrentQueue<std::unique_ptr<vts::VtsMsg>> recvQueue;
     std::unique_ptr<smart_buf> smartBuf;
-    void sendAsync(std::shared_ptr<VtsMsg> payload);
+    void sendAsync(std::shared_ptr<vts::VtsMsg> payload);
 
     rtc::Description processLocalDescription(rtc::Description desc);
 
@@ -63,7 +64,7 @@ public:
     void setClientRemoteSdp(QJsonObject sdp);
     void initSmartBuf();
 
-    void decode(std::unique_ptr<VtsMsg> m);
+    void decode(std::unique_ptr<vts::VtsMsg> m);
     void resetDecoder();
 
     void sendHeartbeat();

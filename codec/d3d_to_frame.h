@@ -51,7 +51,7 @@ class DxToFrame : public IDxCopyable, public IDebugCollectable {
     FpsCounter renderFps;
 
 public:
-    DxToFrame();
+    DxToFrame(int width, int height);
     ~DxToFrame();
 
     QString debugInfo();
@@ -61,8 +61,8 @@ public:
 
     bool init(bool swap);
     bool compileShader();
-    void resetDeviceContext(int width, int height);
-    bool createSharedSurf(int width, int height);
+    void resetDeviceContext();
+    bool createSharedSurf();
     void releaseSharedSurf();
 
     // Will be called from ndi thread,

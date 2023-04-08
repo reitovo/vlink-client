@@ -1,0 +1,84 @@
+syntax = "proto3"; 
+
+package vts.server;
+
+// Common Types
+message FrameFormatSetting {
+    int32 frameWidth = 1;
+    int32 frameHeight = 2;
+    int32 frameRate = 3;
+}
+
+message TurnServerSetting {
+    string turn = 1;
+}
+
+message Peer {
+    string peerId = 1;
+    bool isServer = 2;
+    string nick = 3;
+    int64 rtt = 4;
+    bool needTurn = 5;
+}
+
+// RtcSdp
+message MessageRtcSdp {
+    string sdp = 1;
+    string type = 2;
+    string targetPeerId = 3;
+    uint64 timestamp = 4;
+}
+
+message NotifyRtcSdp {
+    string sdp = 1;
+    string type = 2;
+    string fromPeerId = 3;
+    uint64 timestamp = 4;
+}
+
+// Create/Join Room, RoomInfo
+message MessageCreateRoom {
+    string peerId = 1;
+    FrameFormatSetting format = 2;
+    TurnServerSetting turn = 3;
+}
+
+message MessageJoinRoom {
+    string roomId = 1;
+    string peerId = 2;
+}
+
+message NotifyRoomInfo {
+    string roomId = 1;
+    FrameFormatSetting format = 2;
+    TurnServerSetting turn = 3;
+    repeated Peer peers = 4;
+}
+
+message VtsMessage {
+    enum MessageType {
+        ReqInvalid = 0;
+        ReqCreateRoom = 1;
+        ReqJoinRoom = 2;
+        ReqRtcSdp = 3;
+    }
+    MessageType type = 1;
+    oneof message {
+        MessageCreateRoom createRoom = 2;
+        MessageJoinRoom joinRoom = 3;
+        MessageRtcSdp rtcSdp = 4;
+    }
+}
+
+message VtsNotify {
+    enum NotifyType {
+        NotifyInvalid = 0;
+        NotifyRoomInfo = 1;
+        NotifyRtcSdp = 2;
+    }
+    NotifyType type = 1;
+    oneof notify {
+        NotifyRoomInfo roomInfo = 2;
+        NotifyRtcSdp rtcSdp = 3;
+    }
+}

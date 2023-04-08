@@ -1,16 +1,17 @@
 #include "peer.h"
 #include "ui/windows/collabroom.h"
 #include <QTimer>
+#include <utility>
 #include "util.h"
 
 
 Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
     this->room = room;
-    this->peerId = id;
-    this->sdpTime = timeVersion;
+    this->peerId = std::move(id);
+    this->sdpTime = std::move(timeVersion);
 
     dcThreadAlive = true;
-    dcThread = std::unique_ptr<QThread>(QThread::create([=]() {
+    dcThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
         while (dcThreadAlive) {
             QThread::usleep(500);
 
@@ -18,21 +19,42 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
                 continue;
             }
 
-            std::shared_ptr<VtsMsg> msg;
+            std::shared_ptr<vts::VtsMsg> msg;
             if (sendQueue.try_dequeue(msg)) {
                 auto data = msg->SerializeAsString();
                 smartBuf->send(data);
             }
 
-            std::unique_ptr<VtsMsg> msg2;
-            if (recvQueue.try_dequeue(msg2)) {
-                room->peerDataChannelMessage(std::move(msg2), this);
+            std::unique_ptr<vts::VtsMsg> m;
+            if (recvQueue.try_dequeue(m)) {
+                // receive av from remote peer
+                switch (m->type()) {
+                    case vts::VTS_MSG_AVFRAME: {
+                        decode(std::move(m));
+                        break;
+                    }
+                    case vts::VTS_MSG_AVSTOP: {
+                        resetDecoder();
+                        break;
+                    }
+                    case vts::VTS_MSG_HEARTBEAT: {
+                        // server first, then client reply
+                        qDebug() << "receive dc heartbeat from" << peerId;
+                        if (!isServer) {
+                            sendHeartbeat();
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
             }
         }
     }));
     dcThread->start();
 
-    dec = std::make_unique<AvToDx>(room->d3d);
+    dec = std::make_unique<AvToDx>(room->frameWidth, room->frameHeight, room->frameRate, room->d3d);
 }
 
 Peer::~Peer() {
@@ -72,6 +94,8 @@ bool Peer::usingTurn() {
 void Peer::startServer() {
     rtc::Configuration config;
 
+    config.mtu = 1400;
+    config.maxMessageSize = 512 * 1024;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     if (!room->turnServer.isEmpty()) {
@@ -81,7 +105,7 @@ void Peer::startServer() {
 
     pc = std::make_unique<rtc::PeerConnection>(config);
 
-    pc->onStateChange([=](rtc::PeerConnection::State state) {
+    pc->onStateChange([=, this](rtc::PeerConnection::State state) {
         qDebugStd("Server RtcState: " << state);
         if (state == rtc::PeerConnection::State::Failed) {
             emit room->onRtcFailed(this);
@@ -95,22 +119,14 @@ void Peer::startServer() {
             if (description.has_value()) {
                 auto desc = processLocalDescription(description.value());
 
-                QJsonObject json;
-                json["type"] = QString::fromStdString(desc.typeString());
-                json["sdp"] = QString::fromStdString(std::string(desc));
-                json["target"] = peerId;
-                json["turn"] = room->turnServer;
-                json["time"] = sdpTime.toMSecsSinceEpoch();
-                QJsonObject dto;
-                dto["sdp"] = json;
-                dto["type"] = "sdp";
-                QJsonDocument doc(dto);
-
-                auto content = QString::fromUtf8(doc.toJson()).toStdString();
-                qDebugStd(content.c_str());
+                vts::server::MessageRtcSdp sdp;
+                sdp.set_type(desc.typeString());
+                sdp.set_sdp(std::string(desc));
+                sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
+                sdp.set_targetpeerid(peerId.toStdString());
 
                 qDebug() << "Send server sdp to client";
-                room->wsSendAsync(content);
+                room->roomServer.sendRtcSdp(sdp);
             }
         }
     });
@@ -126,7 +142,7 @@ void Peer::startServer() {
         printSelectedCandidate();
     });
 
-    dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
+    dc->onMessage([=, this](std::variant<rtc::binary, rtc::string> message) {
         if (std::holds_alternative<rtc::string>(message)) {
             auto &raw = get<rtc::string>(message);
             smartBuf->onReceive(raw);
@@ -140,12 +156,14 @@ void Peer::startServer() {
     });
 }
 
-void Peer::startClient(QJsonObject serverSdp) {
+void Peer::startClient(const vts::server::NotifyRtcSdp& serverSdp) {
     rtc::Configuration config;
 
+    config.mtu = 1400;
+    config.maxMessageSize = 512 * 1024;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
-    auto turnServer = serverSdp["turn"].toString();
+    auto turnServer = room->turnServer;
     if (!turnServer.isEmpty()) {
         //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         config.iceServers.emplace_back("turn:" + turnServer.toStdString());
@@ -161,36 +179,28 @@ void Peer::startClient(QJsonObject serverSdp) {
                 }
             });
 
-    pc->onGatheringStateChange([=](rtc::PeerConnection::GatheringState state) {
+    pc->onGatheringStateChange([=, this](rtc::PeerConnection::GatheringState state) {
         qDebugStd("Client Gathering state: " << state);
         if (state == rtc::PeerConnection::GatheringState::Complete) {
             auto description = pc->localDescription();
             if (description.has_value()) {
                 auto desc = processLocalDescription(description.value());
 
-                QJsonObject json;
-                json["type"] = QString::fromStdString(desc.typeString());
-                json["sdp"] = QString::fromStdString(std::string(desc));
-                json["time"] = sdpTime.toMSecsSinceEpoch();
-                json["turn"] = turnServer;
-                json["target"] = "server";
-                QJsonObject dto;
-                dto["sdp"] = json;
-                dto["type"] = "sdp";
-                QJsonDocument doc(dto);
-
-                auto content = QString::fromUtf8(doc.toJson()).toStdString();
-                qDebugStd(content.c_str());
+                vts::server::MessageRtcSdp sdp;
+                sdp.set_type(desc.typeString());
+                sdp.set_sdp(std::string(desc));
+                sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
+                sdp.set_targetpeerid(serverSdp.frompeerid());
 
                 qDebug() << "Send client sdp to server";
-                room->wsSendAsync(content);
+                room->roomServer.sendRtcSdp(sdp);
             }
         }
     });
 
-    pc->onDataChannel([=](std::shared_ptr<rtc::DataChannel> incoming) {
+    pc->onDataChannel([=, this](std::shared_ptr<rtc::DataChannel> incoming) {
         pcLock.lock();
-        dc = incoming;
+        dc = std::move(incoming);
         pcLock.unlock();
 
         qDebug() << "Client incoming server data channel " << QString::fromStdString(pc->remoteAddress().value());
@@ -202,7 +212,7 @@ void Peer::startClient(QJsonObject serverSdp) {
             printSelectedCandidate();
         });
 
-        dc->onMessage([=](std::variant<rtc::binary, rtc::string> message) {
+        dc->onMessage([=, this](std::variant<rtc::binary, rtc::string> message) {
             if (std::holds_alternative<rtc::string>(message)) {
                 auto &raw = get<rtc::string>(message);
                 smartBuf->onReceive(raw);
@@ -218,8 +228,7 @@ void Peer::startClient(QJsonObject serverSdp) {
 
     qDebug() << "set server remote sdp";
     qDebugStd(pc->signalingState() << pc->state() << pc->gatheringState());
-    auto description = rtc::Description(serverSdp["sdp"].toString().toStdString(),
-                                        serverSdp["type"].toString().toStdString());
+    auto description = rtc::Description(serverSdp.sdp(), serverSdp.type());
     pc->setRemoteDescription(description);
     qDebugStd(description);
 }
@@ -241,7 +250,7 @@ void Peer::close() {
     smartBuf.reset();
 }
 
-void Peer::sendAsync(std::shared_ptr<VtsMsg> payload) {
+void Peer::sendAsync(std::shared_ptr<vts::VtsMsg> payload) {
     if (sendQueue.size_approx() > 30) {
         //qDebug() << "throw away payload because queue is full";
         return;
@@ -281,7 +290,7 @@ void Peer::initSmartBuf() {
     smartBuf = std::make_unique<smart_buf>(dc->maxMessageSize(), [this](auto data) {
         dc->send(std::variant<rtc::binary, rtc::string>(data));
     }, [this](auto data) {
-        auto msg = std::make_unique<VtsMsg>();
+        auto msg = std::make_unique<vts::VtsMsg>();
         if (msg->ParseFromArray(data.data(), data.size())) {
             recvQueue.enqueue(std::move(msg));
         } else {
@@ -290,7 +299,7 @@ void Peer::initSmartBuf() {
     });
 }
 
-void Peer::decode(std::unique_ptr<VtsMsg> m) {
+void Peer::decode(std::unique_ptr<vts::VtsMsg> m) {
     dec->process(std::move(m));
 }
 
@@ -300,8 +309,8 @@ void Peer::resetDecoder() {
 
 void Peer::sendHeartbeat() {
     qDebug() << "send dc heartbeat";
-    std::unique_ptr<VtsMsg> hb = std::make_unique<VtsMsg>();
-    hb->set_type(VTS_MSG_HEARTBEAT);
+    std::unique_ptr<vts::VtsMsg> hb = std::make_unique<vts::VtsMsg>();
+    hb->set_type(vts::VTS_MSG_HEARTBEAT);
     sendQueue.enqueue(std::move(hb));
 }
 

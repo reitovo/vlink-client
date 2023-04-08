@@ -43,8 +43,10 @@ static VERTEX Vertices[NUMVERTICES] =
 
 static FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 
-DxToFrame::DxToFrame() {
+DxToFrame::DxToFrame(int width, int height) {
     qDebug() << "begin d3d2dx";
+    _width = width;
+    _height = height;
 }
 
 DxToFrame::~DxToFrame()
@@ -131,11 +133,6 @@ bool DxToFrame::compileShader()
 bool DxToFrame::init(bool swap)
 {
     HRESULT hr;
-
-    auto width = VTSLINK_FRAME_WIDTH;
-    auto height = VTSLINK_FRAME_HEIGHT;
-    _width = width;
-    _height = height;
 
     qDebug() << "d3d2dx init";
 
@@ -298,8 +295,8 @@ bool DxToFrame::init(bool swap)
 
     qDebug() << "d3d2dx create vertex buffer";
 
-    auto ret = createSharedSurf(width, height);
-    resetDeviceContext(width, height);
+    auto ret = createSharedSurf();
+    resetDeviceContext();
 
     _inited = true;
     qDebug() << "d3d2dx init done";
@@ -307,7 +304,7 @@ bool DxToFrame::init(bool swap)
     return ret;
 }
 
-void DxToFrame::resetDeviceContext(int width, int height)
+void DxToFrame::resetDeviceContext()
 {
     // alpha blend
     D3D11_BLEND_DESC blendDesc = {};
@@ -342,8 +339,8 @@ void DxToFrame::resetDeviceContext(int width, int height)
     this->_d3d11_deviceCtx->OMSetRenderTargets(1, this->_renderTargetView.GetAddressOf(), nullptr);
 
     D3D11_VIEWPORT VP;
-    VP.Width = static_cast<FLOAT>(width);
-    VP.Height = static_cast<FLOAT>(height);
+    VP.Width = static_cast<FLOAT>(_width);
+    VP.Height = static_cast<FLOAT>(_height);
     VP.MinDepth = 0.0f;
     VP.MaxDepth = 1.0f;
     VP.TopLeftX = 0;
@@ -351,12 +348,12 @@ void DxToFrame::resetDeviceContext(int width, int height)
     this->_d3d11_deviceCtx->RSSetViewports(1, &VP);
     //this->_d3d11_deviceCtx->Dispatch(8, 8, 1);
     this->_d3d11_deviceCtx->Dispatch(
-                (UINT)ceil(width * 1.0 / 8),
-                (UINT)ceil(height * 1.0 / 8),
+                (UINT)ceil(_width * 1.0 / 8),
+                (UINT)ceil(_height * 1.0 / 8),
                 1);
 }
 
-bool DxToFrame::createSharedSurf(int width, int height)
+bool DxToFrame::createSharedSurf()
 {
     //
     HRESULT hr{ 0 };
@@ -364,8 +361,8 @@ bool DxToFrame::createSharedSurf(int width, int height)
     D3D11_TEXTURE2D_DESC texDesc_rgba;
     ZeroMemory(&texDesc_rgba, sizeof(texDesc_rgba));
     texDesc_rgba.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    texDesc_rgba.Width = width;
-    texDesc_rgba.Height = height;
+    texDesc_rgba.Width = _width;
+    texDesc_rgba.Height = _height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
     texDesc_rgba.BindFlags = D3D11_BIND_SHADER_RESOURCE;

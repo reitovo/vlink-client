@@ -20,6 +20,7 @@
     "detours",
     "pthreads",
     "spout2",
+    "ixwebsocket",
     {
       "name": "qtbase",
       "default-features": false,

@@ -91,10 +91,10 @@ void PeerItemWidget::updateStats()
 
     Peer* peer = nullptr;
     room->peersLock.lock();
-    if (room->isServer && room->servers.contains(p.peerId)) {
-        peer = room->servers[p.peerId].get();
+    if (room->isServer && room->clientPeers.contains(p.peerId)) {
+        peer = room->clientPeers[p.peerId].get();
     } else if (!room->isServer && room->peerId == p.peerId) {
-        peer = room->client.get();
+        peer = room->serverPeer.get();
     }
 
     if (peer == nullptr) {

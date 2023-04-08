@@ -16,7 +16,6 @@ SettingWindow::SettingWindow(CollabRoom *parent) :
         ui(new Ui::SettingWindow) {
     room = parent;
     init();
-
 }
 
 SettingWindow::~SettingWindow() {
@@ -47,16 +46,17 @@ void SettingWindow::init() {
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
+    ui->shouldForceCQP->setChecked(settings.value("forceCQP").toBool());
     ui->avCQP->setValue(settings.value("avCQP", 32).toInt());
     ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
-    connect(ui->encoders, &QComboBox::currentTextChanged, this, [=](const QString &s) {
+    connect(ui->encoders, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         settings.setValue("forceEncoderName", s);
         settings.sync();
         qDebug() << "force encoder to" << s;
     });
 
-    connect(ui->shouldForceEncoder, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->shouldForceEncoder, &QCheckBox::clicked, this, [=, this](bool v) {
         if (v) {
             settings.setValue("forceEncoderName", ui->encoders->currentText());
         }
@@ -65,19 +65,19 @@ void SettingWindow::init() {
         qDebug() << "force encoder" << v;
     });
 
-    connect(ui->useDxCapture, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->useDxCapture, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("useDxCapture", v);
         settings.sync();
         qDebug() << "force use dx capture" << v;
     });
 
-    connect(ui->showDxgiWindow, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->showDxgiWindow, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("showDxgiWindow", v);
         settings.sync();
         qDebug() << "show dxgi window" << v;
     });
 
-    connect(ui->restoreIgnored, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->restoreIgnored, &QCheckBox::clicked, this, [=, this](bool v) {
         for (auto& i : settings.allKeys()) {
             if (i.startsWith("ignore"))
                 settings.setValue(i, false);
@@ -94,20 +94,26 @@ void SettingWindow::init() {
        throw std::exception("active crashed");
     });
 
-    connect(ui->avCQP, &QSlider::valueChanged, this, [=](int v) {
+    connect(ui->shouldForceCQP, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("forceCQP", v);
+        settings.sync();
+        qDebug() << "force cqp" << v;
+    });
+
+    connect(ui->avCQP, &QSlider::valueChanged, this, [=, this](int v) {
         settings.setValue("avCQP", v);
         settings.sync();
 
         ui->avCQPValue->setText(QString("%1").arg(v));
     });
 
-    connect(ui->enableBuffering, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->enableBuffering, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("enableBuffering", v);
         settings.sync();
         qDebug() << "enable buffering" << v;
     });
 
-    connect(ui->forceShmem, &QCheckBox::clicked, this, [=](bool v) {
+    connect(ui->forceShmem, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("forceShmem", v);
         settings.sync();
         qDebug() << "force shmem" << v;

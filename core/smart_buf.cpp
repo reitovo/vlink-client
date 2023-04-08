@@ -1,5 +1,5 @@
 #include "smart_buf.h"
-#include "smartbuf.pb.h"
+#include "vts.pb.h"
 #include <memory>
 #include <QDebug>
 #include <brotli/decode.h>
@@ -22,7 +22,7 @@ void smart_buf::send(const std::string buf)
         auto remain = buf.size() - i;
         auto packetSize = remain > maxPacketSize ? maxPacketSize : remain;
 
-        auto msg = std::make_shared<SmartBuf>();
+        auto msg = std::make_shared<vts::SmartBuf>();
         msg->set_seq(txSeq);
         msg->set_part(part++);
         msg->set_total(total);
@@ -34,7 +34,7 @@ void smart_buf::send(const std::string buf)
 
 void smart_buf::onReceive(const std::string buf)
 {
-    auto msg = std::make_unique<SmartBuf>();
+    auto msg = std::make_unique<vts::SmartBuf>();
     if (msg->ParseFromArray(buf.data(), buf.size())) {
         auto total = msg->total();
         if (total == 1) {

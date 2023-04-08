@@ -7,6 +7,7 @@
 #include "QThread"
 #include "SpoutGL/SpoutSenderNames.h"
 #include "core/speed.h"
+#include "core/room_server.h"
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <map>
@@ -29,18 +30,18 @@ class CollabRoom : public QDialog, public IDebugCollectable
     Q_OBJECT
     friend class Peer;
     friend class PeerItemWidget;
+    friend class RoomServer;
 
 public:
     static CollabRoom* instance();
 
     explicit CollabRoom(QString roomId, bool isServer, QWidget *parent = nullptr);
-    ~CollabRoom();
+    ~CollabRoom() override;
 
-    QString debugInfo();
+    QString debugInfo() override;
 
 signals:
     void onUpdatePeersUi(QList<PeerUi> peerUis);
-    void onReconnectWebsocket();
     void onRoomExit(QString);
     void onShareError(QString);
     void onFatalError(QString);
@@ -54,7 +55,7 @@ private slots:
     void updatePeersUi(QList<PeerUi> peerUis);
 
     void copyRoomId();
-    void exitRoom(QString reason);
+    void exitRoom(const QString& reason);
     void setNick();
     void updateTurnServer();
     void toggleTurnVisible();
@@ -62,8 +63,8 @@ private slots:
     void toggleShare();
     void startShare();
     void stopShare();
-    void shareError(QString reason);
-    void fatalError(QString reason);
+    void shareError(const QString& reason);
+    void fatalError(const QString& reason);
     void rtcFailed(Peer* peer);
 
     void downgradedToSharedMemory();
@@ -78,9 +79,6 @@ private slots:
 private:
     QString errorToReadable(const QString& e);
 
-    void connectWebsocket();
-    void updatePeers(QJsonArray peers);
-
     void spoutShareWorkerClient();
     void spoutShareWorkerServer();
     void dxgiShareWorkerClient();
@@ -89,15 +87,21 @@ private:
 
     void dxgiSendWorker();
 
-    void peerDataChannelMessage(std::unique_ptr<VtsMsg>, Peer* peer) const;
-
     void heartbeatUpdate();
     void usageStatUpdate();
 
     std::atomic_bool needFixVtsRatio = false;
     void tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap);
 
+    std::unique_ptr<RoomServer> roomServer;
+    // Callback From RoomServer
+    void onNotifyRoomInfo(const vts::server::NotifyRoomInfo& info);
+    void onNotifyRtcSdp(const vts::server::NotifyRtcSdp& sdp);
+
+    void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> & peers);
+
 private:
+    std::atomic_bool exiting = false;
     Ui::CollabRoom *ui;
 
     bool isServer;
@@ -105,25 +109,23 @@ private:
     QString roomId;
     QString peerId;
 
-    QMutex wsLock;
-    std::unique_ptr<rtc::WebSocket> ws;
-    void wsSendAsync(const std::string& content);
-
-    volatile std::atomic_bool exiting = false;
+    float frameRate = 60;
+    int frameWidth = 1920;
+    int frameHeight = 1080;
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;
     FpsCounter shareRecvFps;
 
-    NatType localNatType;
+    NatType localNatType = NatType::StunTypeUnknown;
 
     QMutex peersLock;
 
     // As server
     QString turnServer;
-    std::map<QString, std::unique_ptr<Peer>> servers;
+    std::map<std::string, std::unique_ptr<Peer>> clientPeers;
     // As client
-    std::unique_ptr<Peer> client;
+    std::unique_ptr<Peer> serverPeer;
 
     std::unique_ptr<QTimer> heartbeat;
     std::unique_ptr<QTimer> usageStat;

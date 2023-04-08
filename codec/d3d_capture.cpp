@@ -62,12 +62,15 @@ static void dx_need_elevate(void *user) {
     dx->needElevate();
 }
 
-DxCapture::DxCapture(const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d) {
+DxCapture::DxCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d) {
     qDebug() << "begin d3d capture";
     if (d3d != nullptr) {
         d3d->registerSource(this);
         qDebug() << "running at server mode";
     }
+
+    _width = width;
+    _height = height;
 
     init();
 }
@@ -126,11 +129,6 @@ bool DxCapture::compileShader() {
 
 bool DxCapture::init() {
     HRESULT hr;
-
-    auto width = VTSLINK_FRAME_WIDTH;
-    auto height = VTSLINK_FRAME_HEIGHT;
-    _width = width;
-    _height = height;
 
     qDebug() << "dx capture init";
 
@@ -254,7 +252,7 @@ bool DxCapture::init() {
 
     qDebug() << "dx capture create vertex buffer";
 
-    auto ret = createSharedSurf(width, height);
+    auto ret = createSharedSurf();
     resetDeviceContext();
 
     initDxCapture();
@@ -266,14 +264,14 @@ bool DxCapture::init() {
     return ret;
 }
 
-bool DxCapture::createSharedSurf(int width, int height) {
+bool DxCapture::createSharedSurf() {
     HRESULT hr{0};
 
     D3D11_TEXTURE2D_DESC texDesc_rgba;
     ZeroMemory(&texDesc_rgba, sizeof(texDesc_rgba));
     texDesc_rgba.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    texDesc_rgba.Width = width;
-    texDesc_rgba.Height = height;
+    texDesc_rgba.Width = _width;
+    texDesc_rgba.Height = _height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
     texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;

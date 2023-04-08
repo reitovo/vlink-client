@@ -31,9 +31,12 @@ static QList<CodecOption> options = {
 	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
-FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
+FrameToAv::FrameToAv(int width, int height, float fps, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
 	qDebug() << "begin dx2av";
 	onPacketReceived = cb;
+    this->_width = width;
+    this->_height = height;
+    this->frameRate = fps;
 }
 
 FrameToAv::~FrameToAv()
@@ -71,15 +74,11 @@ static AVPixelFormat getPixelFormatOf(FrameToAvMode mode) {
 	return AV_PIX_FMT_NONE;
 }
 
-std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool forceBgra) {
-	this->xres = xres;
-	this->yres = yres;
-	this->frameD = d;
-	this->frameN = n; 
+std::optional<QString> FrameToAv::init(bool forceBgra) {
 
 	qDebug() << "dx2av init";
 
-	nv12 = std::make_unique<BgraToNv12>();
+	nv12 = std::make_unique<BgraToNv12>(_width, _height);
 	if (!nv12->init()) {
 		qDebug() << "failed to init bgranv12";
 		return "init bgra to nv12";
@@ -130,7 +129,7 @@ std::optional<QString> FrameToAv::init(int xres, int yres, int d, int n, bool fo
 				qDebug() << "alloc frame buffer rgb failed" << av_err2str(code);
 				return "alloc buffer";
 			}
-			memset(frame->data[1], 128, xres * yres / 2 * 2);
+			memset(frame->data[1], 128, _width * _height / 2 * 2);
 		}
 
 		qDebug() << "using" << o.readable;
@@ -174,10 +173,10 @@ std::optional<QString> FrameToAv::initCodec(const CodecOption& option)
 		return "codec alloc ctx";
 	}
 
-    ctx->width = xres;
-    ctx->height = yres * 2;
-    ctx->time_base.den = ctx->framerate.num = frameD;
-    ctx->time_base.num = ctx->framerate.den = frameN;
+    ctx->width = _width;
+    ctx->height = _height * 2;
+    ctx->time_base.den = ctx->framerate.num = 1;
+    ctx->time_base.num = ctx->framerate.den = frameRate;
     ctx->pkt_timebase = ctx->time_base;
 
 	initEncodingParameter(option, ctx);
@@ -349,29 +348,46 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 	ctx->gop_size = 60;
     ctx->slices = 4;
 
+    auto ret = 0;
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
-        av_opt_set(ctx->priv_data, "preset", "p4", 0);
-        av_opt_set(ctx->priv_data, "tune", "ull", 0);
-		av_opt_set(ctx->priv_data, "profile", "main", 0);
-		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
-		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
-        av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
-		//av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
-        //av_opt_set_int(ctx->priv_data, "single-slice-intra-refresh", 0, 0);
+        ret = av_opt_set(ctx->priv_data, "preset", "p4", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "tune", "ull", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "rc", "constqp", 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
+        assert(ret == 0);
+//        ret = av_opt_set_int(ctx->priv_data, "intra-refresh", 1, 0);
+//        assert(ret == 0);
+        av_opt_set_int(ctx->priv_data, "forced-idr", 1, 0);
+        assert(ret == 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
-		av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
-		av_opt_set(ctx->priv_data, "profile", "main", 0);
-		av_opt_set(ctx->priv_data, "quality", "speed", 0);
-        av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
-		av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
-		av_opt_set_int(ctx->priv_data, "intra_refresh_mb", 0, 0);
+        ret = av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "quality", "speed", 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
+        assert(ret == 0);
+		ret = av_opt_set_int(ctx->priv_data, "intra_refresh_mb", 0, 0);
+        assert(ret == 0);
 
-		av_opt_set(ctx->priv_data, "rc", "cqp", 0);
-		av_opt_set_int(ctx->priv_data, "qp_i", cqp, 0);
-		av_opt_set_int(ctx->priv_data, "qp_p", cqp, 0);
-		av_opt_set_int(ctx->priv_data, "qp_b", cqp, 0);
+        ret = av_opt_set(ctx->priv_data, "rc", "cqp", 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "qp_i", cqp, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "qp_p", cqp, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "qp_b", cqp, 0);
+        assert(ret == 0);
 
 		//av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
 		//ctx->rc_max_rate = ctx->bit_rate * 5;
@@ -383,21 +399,31 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}
 	else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
-		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
-		//av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
-		//av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
-		av_opt_set_int(ctx->priv_data, "idr_interval", 0, 0);
-        av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
+        ret = av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
+        assert(ret == 0);
+//        ret = av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
+//        assert(ret == 0);
+//        ret = av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
+//        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "idr_interval", 0, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
+        assert(ret == 0);
 
 		ctx->flags |= AV_CODEC_FLAG_QSCALE;
 		ctx->global_quality = cqp * FF_QP2LAMBDA;
 	}
 	else if (encoder == "libx264") {
-		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
-		av_opt_set(ctx->priv_data, "profile", "main", 0);
-		av_opt_set_int(ctx->priv_data, "crf", cqp, 0);
-		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
-		//av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+        ret = av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
+        assert(ret == 0);
+        ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "crf", cqp, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
+        assert(ret == 0);
+//        ret = av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+//        assert(ret == 0);
 	}
 }
 
@@ -429,8 +455,8 @@ void FrameToAv::stop()
 		return;
 	inited = false;
 
-	auto msg = std::make_shared<VtsMsg>();
-	msg->set_type(VTS_MSG_AVSTOP);
+	auto msg = std::make_shared<vts::VtsMsg>();
+	msg->set_type(vts::VTS_MSG_AVSTOP);
 	onPacketReceived(std::move(msg));
 
 	pts = 0;
@@ -449,8 +475,8 @@ std::optional<QString> FrameToAv::processInternal() {
 
     pts++;
     frame->pts = pts;
-    auto msg = std::make_shared<VtsMsg>();
-    msg->set_type(VTS_MSG_AVFRAME);
+    auto msg = std::make_shared<vts::VtsMsg>();
+    msg->set_type(vts::VTS_MSG_AVFRAME);
     auto avFrame = msg->mutable_avframe();
     avFrame->set_pts(pts);
 
@@ -491,6 +517,8 @@ std::optional<QString> FrameToAv::processInternal() {
         qDebug() << "one or more error occoured" << ee;
         return ee;
     }
+
+    //qDebug() << msg->avframe().pts();
 
     //e.end();
     onPacketReceived(std::move(msg));

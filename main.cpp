@@ -17,7 +17,11 @@ extern "C" {
 #include <libavutil\avutil.h>
 }
 
-#include <Windows.h>
+#include <ixwebsocket/IXNetSystem.h>
+#include <ixwebsocket/IXWebSocket.h>
+#include <ixwebsocket/IXUserAgent.h>
+
+#include <windows.h>
 
 #ifdef HAS_CRASHPAD
 
@@ -62,6 +66,8 @@ static void dxCaptureMessageHandler(int log_level, const char *format, va_list a
 }
 
 int main(int argc, char *argv[]) {
+    ix::initNetSystem();
+
     QFile log("../vtslink.log");
     if (log.exists() && log.size() > 1024 * 1024 * 32)
         log.remove();
