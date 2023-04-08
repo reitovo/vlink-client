@@ -347,7 +347,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
 	ctx->gop_size = 60;
-    ctx->slices = 16;
+    ctx->slices = 4;
 
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
@@ -356,8 +356,9 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
 		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
-		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
-        av_opt_set_int(ctx->priv_data, "single-slice-intra-refresh", 0, 0);
+        av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
+		//av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+        //av_opt_set_int(ctx->priv_data, "single-slice-intra-refresh", 0, 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
 		av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
@@ -365,7 +366,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set(ctx->priv_data, "quality", "speed", 0);
         av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
 		av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
-		//av_opt_set_int(ctx->priv_data, "intra_refresh_mb", ctx->gop_size, 0);
+		av_opt_set_int(ctx->priv_data, "intra_refresh_mb", 0, 0);
 
 		av_opt_set(ctx->priv_data, "rc", "cqp", 0);
 		av_opt_set_int(ctx->priv_data, "qp_i", cqp, 0);
@@ -383,8 +384,8 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 	}
 	else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
 		av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
-		av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
-		av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
+		//av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
+		//av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
 		av_opt_set_int(ctx->priv_data, "idr_interval", 0, 0);
         av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
 
@@ -396,7 +397,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set(ctx->priv_data, "profile", "main", 0);
 		av_opt_set_int(ctx->priv_data, "crf", cqp, 0);
 		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
-		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+		//av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
 	}
 }
 
