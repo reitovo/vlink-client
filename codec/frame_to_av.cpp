@@ -28,7 +28,7 @@ static QList<CodecOption> options = {
 
 	// You don't have a GPU? 
 	//{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
-	//{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
+	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
 FrameToAv::FrameToAv(std::function<void(std::shared_ptr<VtsMsg>)> cb) {
@@ -347,6 +347,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
 	ctx->gop_size = 60;
+    ctx->slices = 16;
 
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
@@ -356,6 +357,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		av_opt_set(ctx->priv_data, "rc", "constqp", 0);
 		av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
 		av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+        av_opt_set_int(ctx->priv_data, "single-slice-intra-refresh", 0, 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
 		av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
