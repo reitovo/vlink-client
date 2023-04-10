@@ -37,21 +37,23 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
 RoomServer::~RoomServer() {
     exit();
     exiting = true;
+    notifyContext->TryCancel();
     terminateQThread(natThread);
     terminateQThread(notifyThread);
+    service.reset();
+    channel.reset();
 }
 
 void RoomServer::startReceiveNotify() {
-    auto context = getCtx();
-    context->set_deadline(std::chrono::system_clock::time_point::max());
-    auto notify = service->ReceiveNotify(context.get(), vts::server::ReqCommon());
-    notifyThread = std::unique_ptr<QThread>(QThread::create([this, notify = std::move(notify), context = std::move(context)] {
+    notifyContext = getCtx();
+    notifyContext->set_deadline(std::chrono::system_clock::time_point::max());
+    auto notify = service->ReceiveNotify(notifyContext.get(), vts::server::ReqCommon());
+    notifyThread = std::unique_ptr<QThread>(QThread::create([this, notify = std::move(notify)] {
         vts::server::Notify msg;
         while (notify->Read(&msg) && !exiting) {
             handleMessage(msg);
         }
         notify->Finish();
-        context->TryCancel();
         qDebug() << "notify thread exited";
     }));
     notifyThread->start();
@@ -102,7 +104,7 @@ void RoomServer::createRoom(const std::string& peerId, const std::string& nick, 
 
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        room->onRoomInfoFailed(status.error_message());
+        room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
         return;
     }
 
@@ -129,7 +131,7 @@ void RoomServer::joinRoom(const std::string& peerId, const std::string& roomId, 
 
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        room->onRoomInfoFailed(status.error_message());
+        room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
         return;
     }
 

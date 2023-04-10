@@ -21,6 +21,7 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
 }
 
 DxgiOutput::~DxgiOutput() {
+    instance = nullptr;
     delete ui;
 }
 

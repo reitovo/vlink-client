@@ -19,6 +19,7 @@ class RoomServer {
 
     std::unique_ptr<QThread> natThread;
     std::unique_ptr<QThread> notifyThread;
+    std::unique_ptr<grpc::ClientContext> notifyContext;
     std::unique_ptr<vts::server::RoomService::Stub> service;
     std::shared_ptr<grpc::Channel> channel;
 

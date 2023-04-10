@@ -396,6 +396,8 @@ void CollabRoom::fatalError(const QString& reason) {
             error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
         } else if (reason == "init room req failed") {
             error = tr("请求房间信息失败");
+        } else if (reason == "room init timeout") {
+            error = tr("请求房间信息超时，请重试");
         }
         QMessageBox::critical(this, tr("错误"), errorToReadable(error));
     }
