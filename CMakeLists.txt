@@ -23,16 +23,6 @@ endif()
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools Network)
 qt_standard_project_setup()
 
-# Protobuf CMake generator
-find_package(Protobuf CONFIG REQUIRED)
-include_directories(${Protobuf_INCLUDE_DIRS})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-set(PROTO_FILES
-    proto/vts.proto
-    proto/vts_server.proto
-)
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
-
 # Translation files
 set(TS_FILES
         translations/VTSLink_zh_CN.ts
@@ -124,6 +114,24 @@ set_target_properties(VTSLink
 )
 
 target_link_libraries(VTSLink PRIVATE Qt6::Widgets Qt6::Network)
+
+# Protobuf/gRPC
+find_package(Protobuf CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+
+set(PROTO_FILES
+    proto/vts.proto
+    proto/vts_server.proto
+    )
+add_library(VTSLinkProto ${PROTO_FILES})
+target_link_libraries(VTSLinkProto PUBLIC protobuf::libprotobuf gRPC::grpc gRPC::grpc++)
+target_include_directories(VTSLinkProto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
+protobuf_generate(TARGET VTSLinkProto LANGUAGE cpp)
+protobuf_generate(TARGET VTSLinkProto LANGUAGE grpc GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
+
+target_link_libraries(VTSLink PUBLIC VTSLinkProto)
 
 # DxCapture
 add_subdirectory(deps/DxCapture)
@@ -223,9 +231,6 @@ find_package(unofficial-brotli CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlidec)
 # Brotli encoder library
 target_link_libraries(VTSLink PRIVATE unofficial::brotli::brotlienc)
-
-# protobuf library
-target_link_libraries(VTSLink PRIVATE protobuf::libprotoc protobuf::libprotobuf)
 
 set_target_properties(VTSLink PROPERTIES
     WIN32_EXECUTABLE TRUE

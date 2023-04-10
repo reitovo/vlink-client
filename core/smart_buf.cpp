@@ -1,5 +1,5 @@
 #include "smart_buf.h"
-#include "vts.pb.h"
+#include "proto/vts.pb.h"
 #include <memory>
 #include <QDebug>
 #include <brotli/decode.h>

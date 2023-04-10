@@ -5,8 +5,8 @@
 #include "ui_peeritemwidget.h"
 #include "ui/windows/collabroom.h"
 
-PeerItemWidget::PeerItemWidget(QWidget *parent, CollabRoom* room) :
-    QWidget(parent),
+PeerItemWidget::PeerItemWidget(CollabRoom* room) :
+    QWidget(room),
     ui(new Ui::PeerItemWidget)
 {
     ui->setupUi(this);
@@ -22,78 +22,38 @@ PeerItemWidget::~PeerItemWidget()
     delete ui;
 }
 
-void PeerItemWidget::setPeerUi(PeerUi p)
+void PeerItemWidget::updatePeer(const vts::server::Peer& p)
 {
-    QString natType = QString(CNatProb::DescribeNatType(p.nat).c_str());
-    switch (p.nat) {
-    default: {
-        natType = tr("正在获取 NAT");
-        break;
-    }
-    case NatType::StunTypeUnknown: {
-        natType = tr("未知 NAT");
-        break;
-    }
-    case NatType::StunTypePortRestrictedNat: {
-        natType = tr("端口受限 NAT");
-        break;
-    }
-    case NatType::StunTypeConeNat: {
-        natType = tr("锥型 NAT");
-        break;
-    }
-    case NatType::StunTypeRestrictedNat: {
-        natType = tr("受限 NAT");
-        break;
-    }
-    case NatType::StunTypeSymNat: {
-        natType = tr("对称 NAT");
-        break;
-    }
-    case NatType::StunTypeFailure: {
-        natType = tr("无法获取 NAT");
-        break;
-    }
-    case NatType::StunTypeBlocked: {
-        natType = tr("UDP 阻断");
-        break;
-    }
-    case NatType::StunTypeOpen: {
-        natType = tr("公网 IP");
-        break;
-    }
-    }
-    ui->natType->setText(natType);
+    ui->natType->setText(getNatTypeString((NatType)p.nattype()));
 
-    auto self = p.peerId == room->peerId;
-    auto nick = (p.nick.isEmpty() ? tr("用户") + p.peerId.first(4) : p.nick) + (self ? tr(" (你)") : "");
-    if (p.isServer) {
+    auto self = p.peerid() == room->localPeerId.toStdString();
+    auto qPeerId = QString::fromStdString(p.peerid());
+    auto qNick = QString::fromStdString(p.nick());
+    auto nick = (qNick.isEmpty() ? tr("用户") + qPeerId.first(4) : qNick) + (self ? tr(" (你)") : "");
+    if (p.isserver()) {
         nick += tr(" (房主)");
     }
     ui->nick->setText(nick);
 
-    if (p.rtt == 0) {
+    if (p.rtt() == 0) {
         ui->rtt->clear();
     } else {
-        ui->rtt->setText(QString("%1ms").arg(p.rtt));
+        ui->rtt->setText(QString("%1ms").arg(p.rtt()));
     }
 
-    peerUi = p;
+    peerId = qPeerId;
 }
 
 void PeerItemWidget::updateStats()
 {
-    if (!peerUi.has_value())
-        return;
-
-    auto& p = peerUi.value();
-    auto self = p.peerId == room->peerId;
+    auto self = peerId == room->localPeerId;
 
     Peer* peer = nullptr;
-    room->peersLock.lock();
-    if (room->isServer && room->clientPeers.contains(p.peerId)) {
-        peer = room->clientPeers[p.peerId].get();
-    } else if (!room->isServer && room->peerId == p.peerId) {
+    ScopedQMutex _(&room->peersLock);
+
+    if (room->isServer && room->clientPeers.contains(peerId)) {
+        peer = room->clientPeers[peerId].get();
+    } else if (!room->isServer && room->localPeerId == peerId) {
         peer = room->serverPeer.get();
     }
 
@@ -104,5 +64,47 @@ void PeerItemWidget::updateStats()
         ui->conn->setText(peer->connected() ? peer->usingTurn() ? tr("已中转") : tr("已连接") : tr("连接中"));
         ui->bytes->setText(peer->dataStats());
     }
-    room->peersLock.unlock();
+}
+
+QString PeerItemWidget::getNatTypeString(NatType type) {
+    QString natType;
+    switch (type) {
+        default: {
+            natType = tr("NAT ?");
+            break;
+        }
+        case NatType::StunTypeUnknown: {
+            natType = tr("NAT ?");
+            break;
+        }
+        case NatType::StunTypePortRestrictedNat: {
+            natType = tr("NAT C");
+            break;
+        }
+        case NatType::StunTypeConeNat: {
+            natType = tr("NAT B");
+            break;
+        }
+        case NatType::StunTypeRestrictedNat: {
+            natType = tr("NAT B");
+            break;
+        }
+        case NatType::StunTypeSymNat: {
+            natType = tr("NAT D");
+            break;
+        }
+        case NatType::StunTypeFailure: {
+            natType = tr("NAT ?");
+            break;
+        }
+        case NatType::StunTypeBlocked: {
+            natType = tr("NAT F");
+            break;
+        }
+        case NatType::StunTypeOpen: {
+            natType = tr("NAT A");
+            break;
+        }
+    }
+    return natType;
 }

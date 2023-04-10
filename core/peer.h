@@ -7,15 +7,16 @@
 #include "core/smart_buf.h"
 #include "qthread.h"
 #include "rtc/rtc.hpp"
-#include "vts.pb.h"
+#include "proto/vts.pb.h"
 #include <QDateTime>
 #include <QJsonObject>
 #include "concurrentqueue/concurrentqueue.h"
-#include "vts_server.pb.h"
+#include "proto/vts_server.pb.h"
+#include "ui/widgets/peeritemwidget.h"
 
-class PeerUi {
+class PeerBase {
 public:
-    QString peerId;
+    QString remotePeerId;
     QString nick;
     NatType nat;
     long rtt;
@@ -25,7 +26,7 @@ public:
 class CollabRoom;
 
 // This class is holding either server or client peer connection using libdatachannel
-class Peer : public PeerUi {
+class Peer : public PeerBase {
     CollabRoom* room;
     std::unique_ptr<rtc::PeerConnection> pc;
     std::shared_ptr<rtc::DataChannel> dc;
@@ -38,7 +39,7 @@ class Peer : public PeerUi {
     void printSelectedCandidate();
 
 public:
-    Peer(CollabRoom* room, QString remoteId, QDateTime timeVersion);
+    Peer(CollabRoom* room, QString remoteId);
     ~Peer();
 
     bool connected();
@@ -46,7 +47,7 @@ public:
     bool failed();
 
     void startServer();
-    void startClient(const vts::server::NotifyRtcSdp& serverSdp);
+    void startClient(const vts::server::Sdp& serverSdp);
     void close();
      
     std::atomic_bool dcInited = false;
@@ -57,11 +58,10 @@ public:
     std::unique_ptr<smart_buf> smartBuf;
     void sendAsync(std::shared_ptr<vts::VtsMsg> payload);
 
-    rtc::Description processLocalDescription(rtc::Description desc);
+    static rtc::Description processLocalDescription(rtc::Description desc);
 
     QString dataStats();
-    QDateTime timeVersion();
-    void setClientRemoteSdp(QJsonObject sdp);
+    void setClientRemoteSdp(const vts::server::Sdp& sdp);
     void initSmartBuf();
 
     void decode(std::unique_ptr<vts::VtsMsg> m);

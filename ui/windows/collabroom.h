@@ -35,14 +35,13 @@ class CollabRoom : public QDialog, public IDebugCollectable
 public:
     static CollabRoom* instance();
 
-    explicit CollabRoom(QString roomId, bool isServer, QWidget *parent = nullptr);
+    explicit CollabRoom(bool isServer, QString roomId = QString(), QWidget *parent = nullptr);
     ~CollabRoom() override;
 
     QString debugInfo() override;
 
 signals:
-    void onUpdatePeersUi(QList<PeerUi> peerUis);
-    void onRoomExit(QString);
+    void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
     void onShareError(QString);
     void onFatalError(QString);
     void onRtcFailed(Peer*);
@@ -52,10 +51,9 @@ signals:
     void onDowngradedToSharedMemory();
 
 private slots:
-    void updatePeersUi(QList<PeerUi> peerUis);
+    void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
 
     void copyRoomId();
-    void exitRoom(const QString& reason);
     void setNick();
     void updateTurnServer();
     void toggleTurnVisible();
@@ -77,7 +75,7 @@ private slots:
     void toggleKeepTop();
 
 private:
-    QString errorToReadable(const QString& e);
+    static QString errorToReadable(const QString& e);
 
     void spoutShareWorkerClient();
     void spoutShareWorkerServer();
@@ -87,6 +85,7 @@ private:
 
     void dxgiSendWorker();
 
+    void spoutDiscoveryUpdate();
     void heartbeatUpdate();
     void usageStatUpdate();
 
@@ -95,8 +94,12 @@ private:
 
     std::unique_ptr<RoomServer> roomServer;
     // Callback From RoomServer
-    void onNotifyRoomInfo(const vts::server::NotifyRoomInfo& info);
-    void onNotifyRtcSdp(const vts::server::NotifyRtcSdp& sdp);
+    void onNotifyPeers(const vts::server::NotifyPeers& peers);
+    void onNotifySdp(const vts::server::Sdp& sdp);
+    void onNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
+
+    void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
+    void onRoomInfoFailed(const std::string &error);
 
     void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> & peers);
 
@@ -107,7 +110,7 @@ private:
     bool isServer;
     bool useDxCapture;
     QString roomId;
-    QString peerId;
+    QString localPeerId;
 
     float frameRate = 60;
     int frameWidth = 1920;
@@ -117,13 +120,11 @@ private:
     FpsCounter sendProcessFps;
     FpsCounter shareRecvFps;
 
-    NatType localNatType = NatType::StunTypeUnknown;
-
     QMutex peersLock;
 
     // As server
     QString turnServer;
-    std::map<std::string, std::unique_ptr<Peer>> clientPeers;
+    std::map<QString, std::unique_ptr<Peer>> clientPeers;
     // As client
     std::unique_ptr<Peer> serverPeer;
 

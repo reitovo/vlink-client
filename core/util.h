@@ -6,6 +6,8 @@
 
 #include <QElapsedTimer>
 #include "QComboBox"
+#include "QThread"
+#include "QMutex"
 
 #define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ " reset " #x " ret" << remain;} }
 #define qDebugStd(x) { std::ostringstream oss; oss << x; qDebug(oss.str().c_str()); }
@@ -62,6 +64,26 @@ enum DeviceAdapterType {
     ADAPTER_VENDOR_NVIDIA,
     ADAPTER_VENDOR_AMD,
     ADAPTER_VENDOR_INTEL
+};
+
+template <typename T>
+inline void terminateQThread(const std::unique_ptr<T>& t) {
+    if (t != nullptr && !t->isFinished() && !t->wait(500)) {
+        qWarning() << "The thread is not exited in 500ms, terminate it";
+        t->terminate();
+        t->wait(500);
+    }
+}
+
+class ScopedQMutex {
+    QMutex* m;
+public:
+    explicit ScopedQMutex(QMutex* m) : m(m) {
+        m->lock();
+    }
+    ~ScopedQMutex() {
+        m->unlock();
+    }
 };
 
 inline DeviceAdapterType getGpuVendorTypeFromVendorId(uint32_t v) { 

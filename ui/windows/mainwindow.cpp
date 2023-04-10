@@ -112,8 +112,7 @@ void MainWindow::joinRoom() {
     auto roomId = ui->iptRoomId->text().trimmed();
     qDebug("Join room id %s", qPrintable(roomId));
 
-    auto c = new CollabRoom(roomId, false);
-    c->show();
+    auto c = new CollabRoom(false, roomId);
     hide();
     connect(c, &QDialog::destroyed, this, [=]() {
         show();
@@ -128,12 +127,8 @@ void MainWindow::joinRoom() {
 }
 
 void MainWindow::createRoom() {
-    auto roomId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-
-    qDebug() << "Create room id" << roomId;
-
-    auto c = new CollabRoom(roomId, true);
-    c->show();
+    qDebug() << "Create room" ;
+    auto c = new CollabRoom(true);
     hide();
     connect(c, &QDialog::destroyed, this, [=]() {
         show();

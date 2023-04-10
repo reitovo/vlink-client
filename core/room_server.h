@@ -5,23 +5,57 @@
 #ifndef VTSLINK_ROOM_SERVER_H
 #define VTSLINK_ROOM_SERVER_H
 
-#include "vts_server.pb.h"
+#include "proto/vts_server.pb.h"
+#include "proto/vts_server.grpc.pb.h"
 #include "QMutex"
-#include <ixwebsocket/IXWebSocket.h>
+#include "NatTypeProbe/p2p_api.h"
+#include <QThread>
 
 class CollabRoom;
 class RoomServer {
-    QMutex wsLock;
-    std::unique_ptr<ix::WebSocket> ws;
     CollabRoom* room;
+
+    std::atomic_bool exiting = false;
+
+    std::unique_ptr<QThread> natThread;
+    std::unique_ptr<QThread> notifyThread;
+    std::unique_ptr<vts::server::RoomService::Stub> service;
+    std::shared_ptr<grpc::Channel> channel;
+
+    std::string peerId;
+    std::string roomId;
+
+    NatType localNatType = NatType::StunTypeUnknown;
 
 public:
     explicit RoomServer(CollabRoom* room);
     ~RoomServer();
-    void sendRtcSdp(const vts::server::MessageRtcSdp& sdp);
-    void sendChangeTurn(const vts::server::TurnServerSetting& turn);
 
-    void handleMessage(const ix::WebSocketMessagePtr &msg);
+    void createRoom(const std::string& peerId, const std::string& nick, int width, int height, int fps, const std::string& turn);
+    void joinRoom(const std::string& peerId, const std::string& roomId, const std::string& nick);
+
+    inline std::unique_ptr<grpc::ClientContext> getCtx() {
+        auto ctx = std::make_unique<grpc::ClientContext>();
+        ctx->AddMetadata("peerid", peerId);
+        ctx->AddMetadata("roomid", roomId);
+        return ctx;
+    }
+
+    void startReceiveNotify();
+    void startNatTypeDetect();
+
+    void setRtt(const vts::server::ReqRtt& rtt);
+    void setNick(const std::string& nick);
+    void setSdp(const vts::server::Sdp& sdp);
+    void setNat(int type);
+    void setFrameFormat(const vts::server::FrameFormatSetting& format);
+
+    void exit();
+    void handleMessage(const vts::server::Notify &msg);
+
+    inline NatType getLocalNatType() {
+        return localNatType;
+    }
 };
 
 #endif //VTSLINK_ROOM_SERVER_H

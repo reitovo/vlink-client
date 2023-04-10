@@ -20,7 +20,11 @@
     "detours",
     "pthreads",
     "spout2",
-    "ixwebsocket",
+    {
+      "name": "grpc",
+      "default-features": true,
+      "features": [ "codegen" ]
+    },
     {
       "name": "qtbase",
       "default-features": false,

@@ -17,7 +17,7 @@ extern "C" {
 #include "libavutil/hwcontext.h"
 #include "libavutil/pixdesc.h"
 }
-#include "vts.pb.h"
+#include "proto/vts.pb.h"
 
 enum FrameToAvMode {
     FRAME_TO_AV_MODE_INVALID = 0,

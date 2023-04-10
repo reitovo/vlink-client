@@ -1,84 +1,92 @@
 syntax = "proto3"; 
 
 package vts.server;
+ 
+message ReqCommon {}
 
-// Common Types
+message RspCommon {}
+ 
 message FrameFormatSetting {
     int32 frameWidth = 1;
     int32 frameHeight = 2;
     int32 frameRate = 3;
-}
-
-message TurnServerSetting {
-    string turn = 1;
-}
+} 
 
 message Peer {
     string peerId = 1;
     bool isServer = 2;
     string nick = 3;
     int64 rtt = 4;
-    bool needTurn = 5;
+    int32 natType = 5;
+    int32 sortingOrder = 6;
 }
 
-// RtcSdp
-message MessageRtcSdp {
-    string sdp = 1;
-    string type = 2;
-    string targetPeerId = 3;
-    uint64 timestamp = 4;
-}
-
-message NotifyRtcSdp {
+message Sdp {
     string sdp = 1;
     string type = 2;
     string fromPeerId = 3;
-    uint64 timestamp = 4;
+    string toPeerId = 4;
+    uint64 timestamp = 5;
+    string turn = 6;
 }
 
-// Create/Join Room, RoomInfo
-message MessageCreateRoom {
+message ReqCreateRoom {
     string peerId = 1;
-    FrameFormatSetting format = 2;
-    TurnServerSetting turn = 3;
+    FrameFormatSetting format = 2; 
+    string nick = 4;
 }
 
-message MessageJoinRoom {
+message ReqJoinRoom {
     string roomId = 1;
     string peerId = 2;
+    string nick = 3;
 }
 
-message NotifyRoomInfo {
-    string roomId = 1;
-    FrameFormatSetting format = 2;
-    TurnServerSetting turn = 3;
-    repeated Peer peers = 4;
+message ReqNickname {
+    string nick = 2;
 }
 
-message VtsMessage {
-    enum MessageType {
-        ReqInvalid = 0;
-        ReqCreateRoom = 1;
-        ReqJoinRoom = 2;
-        ReqRtcSdp = 3;
-    }
-    MessageType type = 1;
-    oneof message {
-        MessageCreateRoom createRoom = 2;
-        MessageJoinRoom joinRoom = 3;
-        MessageRtcSdp rtcSdp = 4;
-    }
+message ReqNatType {
+    int32 natType = 2;
 }
 
-message VtsNotify {
-    enum NotifyType {
-        NotifyInvalid = 0;
-        NotifyRoomInfo = 1;
-        NotifyRtcSdp = 2;
-    }
-    NotifyType type = 1;
+message ReqRtt {
+    map<string, int64> rtt = 1;
+}
+
+message RspRoomInfo {
+    string roomId = 2;
+    FrameFormatSetting format = 3; 
+}
+
+message Notify {
     oneof notify {
-        NotifyRoomInfo roomInfo = 2;
-        NotifyRtcSdp rtcSdp = 3;
+        NotifyPeers peers = 2;
+        Sdp sdp = 3;
+        FrameFormatSetting frame = 4;
+        NotifyRoomDestroy destroy = 5;
     }
+}
+
+message NotifyPeers {
+    repeated Peer peers = 1;
+} 
+
+message NotifyRoomDestroy {}
+
+service RoomService {
+    rpc Hello(ReqCommon) returns (RspCommon);
+
+    rpc CreateRoom(ReqCreateRoom) returns (RspRoomInfo);
+    rpc JoinRoom(ReqJoinRoom) returns (RspRoomInfo);
+
+    rpc ReceiveNotify(ReqCommon) returns (stream Notify);
+
+    rpc SetSdp(Sdp) returns (RspCommon);
+    rpc SetFrameFormat(FrameFormatSetting) returns (RspCommon); 
+    rpc SetNickName(ReqNickname) returns (RspCommon);
+    rpc SetNatType(ReqNatType) returns (RspCommon);
+    rpc SetRtt(ReqRtt) returns (RspCommon);
+
+    rpc Exit(ReqCommon) returns (RspCommon);
 }

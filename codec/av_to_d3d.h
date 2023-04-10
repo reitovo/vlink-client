@@ -9,7 +9,7 @@
 #include <QString>
 
 #include "qthread.h"
-#include "vts.pb.h"
+#include "proto/vts.pb.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

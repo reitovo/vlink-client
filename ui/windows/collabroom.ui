@@ -546,7 +546,7 @@
          <string/>
         </property>
         <property name="text">
-         <string>☆提示</string>
+         <string>检测网络中</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

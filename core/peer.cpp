@@ -4,16 +4,14 @@
 #include <utility>
 #include "util.h"
 
-
-Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
+Peer::Peer(CollabRoom *room, QString id) {
     this->room = room;
-    this->peerId = std::move(id);
-    this->sdpTime = std::move(timeVersion);
+    this->remotePeerId = id;
 
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
         while (dcThreadAlive) {
-            QThread::usleep(500);
+            QThread::usleep(100);
 
             if (!dcInited) {
                 continue;
@@ -39,7 +37,7 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
                     }
                     case vts::VTS_MSG_HEARTBEAT: {
                         // server first, then client reply
-                        qDebug() << "receive dc heartbeat from" << peerId;
+                        qDebug() << "receive dc heartbeat from" << remotePeerId;
                         if (!isServer) {
                             sendHeartbeat();
                         }
@@ -59,13 +57,7 @@ Peer::Peer(CollabRoom *room, QString id, QDateTime timeVersion) {
 
 Peer::~Peer() {
     dcThreadAlive = false;
-
-    if (dcThread != nullptr && !dcThread->isFinished() && !dcThread->wait(500)) {
-        qWarning() << "uneasy to exit peer send thread";
-        dcThread->terminate();
-        dcThread->wait(500);
-        dcThread = nullptr;
-    }
+    terminateQThread(dcThread);
 
     close();
 
@@ -92,6 +84,8 @@ bool Peer::usingTurn() {
 }
 
 void Peer::startServer() {
+    sdpTime = QDateTime::currentDateTimeUtc();
+
     rtc::Configuration config;
 
     config.mtu = 1400;
@@ -109,6 +103,7 @@ void Peer::startServer() {
         qDebugStd("Server RtcState: " << state);
         if (state == rtc::PeerConnection::State::Failed) {
             emit room->onRtcFailed(this);
+            startServer();
         }
     });
 
@@ -119,14 +114,16 @@ void Peer::startServer() {
             if (description.has_value()) {
                 auto desc = processLocalDescription(description.value());
 
-                vts::server::MessageRtcSdp sdp;
+                vts::server::Sdp sdp;
                 sdp.set_type(desc.typeString());
                 sdp.set_sdp(std::string(desc));
                 sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
-                sdp.set_targetpeerid(peerId.toStdString());
+                sdp.set_frompeerid(room->localPeerId.toStdString());
+                sdp.set_topeerid(remotePeerId.toStdString());
+                sdp.set_turn(room->turnServer.toStdString());
 
                 qDebug() << "Send server sdp to client";
-                room->roomServer.sendRtcSdp(sdp);
+                room->roomServer->setSdp(sdp);
             }
         }
     });
@@ -156,17 +153,27 @@ void Peer::startServer() {
     });
 }
 
-void Peer::startClient(const vts::server::NotifyRtcSdp& serverSdp) {
+void Peer::startClient(const vts::server::Sdp& serverSdp) {
+    auto timeStamp = serverSdp.timestamp();
+    auto serverSdpTime = QDateTime::fromMSecsSinceEpoch(timeStamp, Qt::UTC);
+
+    if (serverSdpTime <= sdpTime) {
+        qDebug() << "Client ignore old sdp";
+        return;
+    }
+
+    sdpTime = serverSdpTime;
+
     rtc::Configuration config;
 
     config.mtu = 1400;
     config.maxMessageSize = 512 * 1024;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
-    auto turnServer = room->turnServer;
-    if (!turnServer.isEmpty()) {
+    auto turnServer = serverSdp.turn();
+    if (!turnServer.empty()) {
         //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
-        config.iceServers.emplace_back("turn:" + turnServer.toStdString());
+        config.iceServers.emplace_back("turn:" + turnServer);
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
@@ -186,14 +193,15 @@ void Peer::startClient(const vts::server::NotifyRtcSdp& serverSdp) {
             if (description.has_value()) {
                 auto desc = processLocalDescription(description.value());
 
-                vts::server::MessageRtcSdp sdp;
+                vts::server::Sdp sdp;
                 sdp.set_type(desc.typeString());
                 sdp.set_sdp(std::string(desc));
-                sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
-                sdp.set_targetpeerid(serverSdp.frompeerid());
+                sdp.set_timestamp(serverSdp.timestamp());
+                sdp.set_frompeerid(room->localPeerId.toStdString());
+                sdp.set_topeerid(remotePeerId.toStdString());
 
                 qDebug() << "Send client sdp to server";
-                room->roomServer.sendRtcSdp(sdp);
+                room->roomServer->setSdp(sdp);
             }
         }
     });
@@ -261,27 +269,27 @@ void Peer::sendAsync(std::shared_ptr<vts::VtsMsg> payload) {
 
 QString Peer::dataStats() {
     if (pc == nullptr)
-        return QString();
+        return {};
     return QString("%1 ↑↓ %2")
             .arg(humanizeBytes(pc->bytesSent()))
             .arg(humanizeBytes(pc->bytesReceived()));
 }
 
-QDateTime Peer::timeVersion() {
-    return sdpTime;
-}
-
-void Peer::setClientRemoteSdp(QJsonObject sdp) {
+void Peer::setClientRemoteSdp(const vts::server::Sdp& sdp) {
     if (pc == nullptr || pc->state() == rtc::PeerConnection::State::Connected ||
         pc->signalingState() == rtc::PeerConnection::SignalingState::Stable)
         return;
     if (connected())
         return;
 
+    if (sdpTime != QDateTime::fromMSecsSinceEpoch(sdp.timestamp(), Qt::UTC)) {
+        qDebug() << "Server ignore mismatched sdp";
+        return;
+    }
+
     qDebug() << "set client remote sdp";
     qDebugStd(pc->signalingState() << pc->state() << pc->gatheringState());
-    auto description = rtc::Description(sdp["sdp"].toString().toStdString(),
-                                        sdp["type"].toString().toStdString());
+    auto description = rtc::Description(sdp.sdp(), sdp.type());
     pc->setRemoteDescription(description);
     qDebugStd(description);
 }
@@ -308,7 +316,7 @@ void Peer::resetDecoder() {
 }
 
 void Peer::sendHeartbeat() {
-    qDebug() << "send dc heartbeat";
+    qDebug() << "send dc heartbeat to" << remotePeerId;
     std::unique_ptr<vts::VtsMsg> hb = std::make_unique<vts::VtsMsg>();
     hb->set_type(vts::VTS_MSG_HEARTBEAT);
     sendQueue.enqueue(std::move(hb));
@@ -345,27 +353,6 @@ bool Peer::failed() {
     return pc->state() == rtc::PeerConnection::State::Failed;
 }
 
-rtc::Description Peer::processLocalDescription(rtc::Description desc) {
-    auto candidates = desc.extractCandidates();
-    auto ret = desc;
-
-//    for (auto it = candidates.begin(); it != candidates.end();) {
-//        bool remove = false;
-//
-//        if (it->type() != rtc::Candidate::Type::ServerReflexive || it->family() != rtc::Candidate::Family::Ipv4)
-//            remove = true;
-//
-//        if (remove) {
-//            it = candidates.erase(it);
-//        } else {
-//            it++;
-//        }
-//    }
-
-    ret.addCandidates(candidates);
-    return ret;
-}
-
 size_t Peer::txBytes() {
     if (pc == nullptr)
         return 0;
@@ -378,4 +365,11 @@ size_t Peer::rxBytes() {
         return 0;
 
     return pc->bytesReceived();
+}
+
+rtc::Description Peer::processLocalDescription(rtc::Description desc) {
+    auto candidates = desc.extractCandidates();
+    auto ret = desc;
+    ret.addCandidates(candidates);
+    return ret;
 }

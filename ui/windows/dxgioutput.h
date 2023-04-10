@@ -25,6 +25,8 @@ public:
     static HWND getHwnd();
     static DxgiOutput* getWindow();
 
+    void setSize(int width, int height);
+
 private:
     Ui::DxgiOutput *ui;
 };

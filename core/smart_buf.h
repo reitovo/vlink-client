@@ -5,7 +5,7 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <vts.pb.h>
+#include <proto/vts.pb.h>
 
 class smart_buf
 {

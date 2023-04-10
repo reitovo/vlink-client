@@ -18,7 +18,6 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     ui->setupUi(this);
-    resize(192 * 3, 108 * 3);
 }
 
 DxgiOutput::~DxgiOutput() {
@@ -31,4 +30,8 @@ DxgiOutput *DxgiOutput::getWindow() {
 
 HWND DxgiOutput::getHwnd() {
     return instance->_hwnd;
+}
+
+void DxgiOutput::setSize(int width, int height) {
+    resize(width * 3 / 10, height * 3 / 10);
 }

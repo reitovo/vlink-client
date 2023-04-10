@@ -8,22 +8,23 @@ namespace Ui {
 class PeerItemWidget;
 }
 
-class PeerUi;
+class CollabRoom;
 class PeerItemWidget : public QWidget
 {
     Q_OBJECT
+    QString peerId;
 
 public:
-    explicit PeerItemWidget(QWidget *parent, CollabRoom* room);
-    ~PeerItemWidget();
+    explicit PeerItemWidget(CollabRoom* room);
+    ~PeerItemWidget() override;
 
-    void setPeerUi(PeerUi p);
+    void updatePeer(const vts::server::Peer& p);
+    static QString getNatTypeString(NatType type);
 
 private slots:
     void updateStats();
 
 private:
-    std::optional<PeerUi> peerUi;
     Ui::PeerItemWidget *ui;
     CollabRoom* room;
     std::unique_ptr<QTimer> refreshTimer;

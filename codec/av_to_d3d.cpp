@@ -187,12 +187,7 @@ void AvToDx::stop()
     inited = false;
 
     processThreadRunning = false;
-    if (processThread != nullptr && !processThread->isFinished() && !processThread->wait(500)) {
-        qWarning() << "uneasy to exit av2d3d worker";
-        processThread->terminate();
-        processThread->wait(500);
-        processThread = nullptr;
-    }
+    terminateQThread(processThread); 
 
     pts = 0;
 

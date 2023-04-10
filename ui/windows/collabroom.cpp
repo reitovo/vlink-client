@@ -36,13 +36,14 @@ extern "C" {
 
 static CollabRoom *roomInstance;
 
-CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
+CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         QDialog(parent),
         ui(new Ui::CollabRoom) {
     ui->setupUi(this);
+    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
-    roomServer = std::make_unique<RoomServer>(this);
-
+    // Workaround for color
     QPalette palette;
     QBrush brush(QColor(255, 124, 159));
     brush.setStyle(Qt::SolidPattern);
@@ -52,23 +53,17 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     ui->copyRoomId->setPalette(palette);
     ui->btnSharingStatus->setPalette(palette);
 
-    setAttribute(Qt::WA_DeleteOnClose);
-    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    this->setWindowTitle(tr("联动 VTube Studio Link"));
 
-    QSettings settings;
-    useDxCapture = settings.value("useDxCapture", false).toBool();
-    qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
-
-    ui->nick->setText(settings.value("nick").toString());
-
-    this->roomId = roomId;
     this->isServer = isServer;
 
-    auto output = new DxgiOutput();
-    if (settings.value("showDxgiWindow").toBool()) {
-        output->move(0, 0);
-        output->show();
-    }
+    QSettings settings;
+
+    this->roomId = roomId;
+    localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    useDxCapture = settings.value("useDxCapture", false).toBool();
+    qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
 
     if (useDxCapture) {
         dxgiCaptureStatus("idle");
@@ -77,19 +72,12 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         ui->shareMethods->setCurrentIndex(0);
     }
 
-//    peerId = settings.value("peerId", QString()).toString();
-//    if (peerId.isEmpty()) {
-//        peerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-//        qDebug() << "Generate new peer id" << peerId;
-//        settings.setValue("peerId", this->peerId);
-//        settings.sync();
-//    }
-    peerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-
     auto role = isServer ? "Server" : "Client";
-    qDebug() << "Role is" << (role) << peerId;
+    qDebug() << "Role is" << (role) << localPeerId;
 
     if (isServer) {
+        turnServer = settings.value("turnServer", QString()).toString();
+        ui->relayInput->setText(turnServer);
         qDebug() << "Turn server" << turnServer;
 
         auto expires = settings.value("turnServerExpiresAt", QDateTime()).toDateTime();
@@ -121,15 +109,9 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
             settings.setValue("turnServerExpiresAt", QDateTime());
             settings.sync();
         }
-
-        turnServer = settings.value("turnServer", QString()).toString();
-        ui->relayInput->setText(turnServer);
     }
 
-    this->setWindowTitle(tr("VTube Studio 联动"));
-
     connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi);
-    connect(this, &CollabRoom::onRoomExit, this, &CollabRoom::exitRoom);
     connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError);
     connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
     connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
@@ -145,7 +127,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     connect(ui->openSettings, &QPushButton::clicked, this, &CollabRoom::openSetting);
     connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
     connect(ui->keepTop, &QPushButton::clicked, this, &CollabRoom::toggleKeepTop);
-    connect(ui->btnFixRatio, &QPushButton::clicked, this, [=]() {
+    connect(ui->btnFixRatio, &QPushButton::clicked, this, [=, this]() {
         this->needFixVtsRatio = true;
     });
 
@@ -165,14 +147,12 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         QDesktopServices::openUrl(QUrl("https://pd.qq.com/s/3y2gr1nmy"));
     });
 
-    d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
-    d3d->init(true);
-
-    // Start sending thread
-    frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
-        dxgiSendWorker();
-    }));
-    frameSendThread->start();
+    connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
+        if (s.isEmpty())
+            return;
+        spoutName = s.toStdString();
+        qDebug() << "set spout" << s;
+    });
 
     // If server, start sending heartbeat, and rtt update
     if (isServer) {
@@ -180,7 +160,7 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         connect(heartbeat.get(), &QTimer::timeout, this, [this]() {
             heartbeatUpdate();
         });
-        heartbeat->start(30000);
+        heartbeat->start(10000);
     }
 
     usageStat = std::make_unique<QTimer>(this);
@@ -190,50 +170,10 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
     usageStat->start(500);
 
     spoutDiscovery = std::make_unique<QTimer>(this);
-    auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
     connect(spoutDiscovery.get(), &QTimer::timeout, this, [=, this]() {
-        std::set<std::string> senders;
-        spoutSender.GetSenderNames(&senders);
-
-        static int emptyCount = 0;
-        if (senders.empty()) {
-            emptyCount++;
-            if (emptyCount == 3 && !ignoreSpoutOpenHint) {
-                QMessageBox box(this);
-                box.setIcon(QMessageBox::Information);
-                box.setWindowTitle(tr("提示"));
-                box.setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
-                               "请点击「查看详情」了解如何开启"));
-                auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-                auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
-                auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
-                box.exec();
-                auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-                if (ret == ign) {
-                    QSettings s;
-                    s.setValue("ignoreSpoutOpenHint", true);
-                    s.sync();
-                } else if (ret == open) {
-                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
-                }
-            }
-            ui->spoutSourceSelect->clear();
-        } else {
-            emptyCount = 0;
-            QStringList strList;
-            for (const auto &i: senders) {
-                strList.push_back(QString::fromStdString(i));
-            }
-            setComboBoxIfChanged(strList, ui->spoutSourceSelect);
-        }
+        spoutDiscoveryUpdate();
     });
     spoutDiscovery->start(1000);
-    connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
-        if (s.isEmpty())
-            return;
-        spoutName = s.toStdString();
-        qDebug() << "set spout" << s;
-    });
 
     if (!isServer) {
         resize(QSize(381, 360));
@@ -241,7 +181,51 @@ CollabRoom::CollabRoom(QString roomId, bool isServer, QWidget *parent) :
         resize(QSize(730, 360));
     }
 
+    auto nick = settings.value("nick").toString();
+    ui->nick->setText(nick);
+
+    roomServer = std::make_unique<RoomServer>(this);
+    if (isServer) {
+        auto _frameWidth = settings.value("frameWidth", 1920).toInt();
+        auto _frameHeight = settings.value("frameHeight", 1080).toInt();
+        auto _frameRate = settings.value("frameRate", 60).toInt();
+        roomServer->createRoom(localPeerId.toStdString(), nick.toStdString(), _frameWidth, _frameHeight, _frameRate, turnServer.toStdString());
+    } else {
+        roomServer->joinRoom(localPeerId.toStdString(), roomId.toStdString(), nick.toStdString());
+    }
+
     roomInstance = this;
+}
+
+void CollabRoom::onRoomInfoSucceed(const vts::server::RspRoomInfo &info) {
+    QSettings settings;
+
+    this->roomId = QString::fromStdString(info.roomid());
+    frameWidth = info.format().framewidth();
+    frameHeight = info.format().frameheight();
+    frameRate = info.format().framerate();
+
+    auto output = new DxgiOutput();
+    output->setSize(frameWidth, frameHeight);
+    if (settings.value("showDxgiWindow").toBool()) {
+        output->move(0, 0);
+        output->show();
+    }
+
+    d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
+    d3d->init(true);
+
+    // Start sending thread
+    frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
+        dxgiSendWorker();
+    }));
+    frameSendThread->start();
+
+    show();
+}
+
+void CollabRoom::onRoomInfoFailed(const string &error) {
+    emit onFatalError(QString::fromStdString(error));
 }
 
 CollabRoom::~CollabRoom() {
@@ -259,17 +243,12 @@ CollabRoom::~CollabRoom() {
 
     stopShareWorker();
 
-    if (frameSendThread != nullptr && !frameSendThread->isFinished() && !frameSendThread->wait(500)) {
-        qWarning() << "uneasy to exit frame send thread";
-        frameSendThread->terminate();
-        frameSendThread->wait(500);
-        frameSendThread = nullptr;
-    }
+    terminateQThread(frameSendThread);
 
     roomServer.reset();
 
-    peersLock.lock();
     if (isServer) {
+        ScopedQMutex _(&peersLock);
         for (auto &a: clientPeers) {
             if (a.second != nullptr) {
                 a.second->close();
@@ -278,20 +257,59 @@ CollabRoom::~CollabRoom() {
         }
         clientPeers.clear();
     } else {
+        ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->close();
         serverPeer = nullptr;
     }
-    peersLock.unlock();
 
     delete ui;
     qWarning() << "room exit";
 }
 
+void CollabRoom::spoutDiscoveryUpdate() {
+    QSettings settings;
+    std::set<std::string> senders;
+    spoutSender.GetSenderNames(&senders);
+    auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
+
+    static int emptyCount = 0;
+    if (senders.empty()) {
+        emptyCount++;
+        if (emptyCount == 3 && !ignoreSpoutOpenHint) {
+            QMessageBox box(this);
+            box.setIcon(QMessageBox::Information);
+            box.setWindowTitle(tr("提示"));
+            box.setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
+                           "请点击「查看详情」了解如何开启"));
+            auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+            auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
+            box.exec();
+            auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+            if (ret == ign) {
+                QSettings s;
+                s.setValue("ignoreSpoutOpenHint", true);
+                s.sync();
+            } else if (ret == open) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
+            }
+        }
+        ui->spoutSourceSelect->clear();
+    } else {
+        emptyCount = 0;
+        QStringList strList;
+        for (const auto &i: senders) {
+            strList.push_back(QString::fromStdString(i));
+        }
+        setComboBoxIfChanged(strList, ui->spoutSourceSelect);
+    }
+}
+
 QString CollabRoom::debugInfo() {
     auto ret = QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
             .arg(isServer ? "Server" : "Client").arg(roomId)
-            .arg(peerId).arg(ui->nick->text())
+            .arg(localPeerId).arg(ui->nick->text())
             .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
             .arg(sendProcessFps.stat())
             .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
@@ -307,23 +325,6 @@ void CollabRoom::copyRoomId() {
                                               MainWindow::instance()->tray->icon());
 }
 
-void CollabRoom::exitRoom(const QString& reason) {
-    QString error = reason;
-    if (reason == "host leave") {
-        error = tr("房主已离开");
-    } else if (reason == "join frame missing") {
-        error = tr("协议错误");
-    } else if (reason == "room id format error") {
-        error = tr("房间号错误");
-    } else if (reason == "room not found") {
-        error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
-    }
-
-    stopShare();
-    QMessageBox::critical(this, tr("断开连接"), error);
-    close();
-}
-
 void CollabRoom::setNick() {
     auto n = ui->nick->text();
     if (n.length() > 16) {
@@ -332,19 +333,7 @@ void CollabRoom::setNick() {
     }
     qDebug() << "new nick" << n;
 
-    QSettings s;
-    s.setValue("nick", n);
-    s.sync();
 
-    QJsonObject dto;
-    dto["msg"] = n;
-    dto["type"] = "nick";
-    QJsonDocument doc(dto);
-
-    auto content = QString::fromUtf8(doc.toJson());
-    qDebug() << content;
-
-    wsSendAsync(content.toStdString());
 }
 
 void CollabRoom::updateTurnServer() {
@@ -353,14 +342,16 @@ void CollabRoom::updateTurnServer() {
 
     QSettings settings;
     settings.setValue("turnServer", turnServer);
+    settings.sync();
     qDebug() << "update turn server" << turnServer;
+
+    ScopedQMutex _(&peersLock);
+    for(auto & peer : clientPeers) {
+        peer.second->startServer();
+    }
 
     MainWindow::instance()->tray->showMessage(tr("设置成功"), tr("所有联动人将重新连接，请稍后"),
                                               MainWindow::instance()->tray->icon());
-
-    vts::server::TurnServerSetting turn;
-    turn.set_turn(turnServer.toStdString());
-    roomServer->sendChangeTurn(turn);
 }
 
 void CollabRoom::toggleTurnVisible() {
@@ -397,7 +388,16 @@ void CollabRoom::fatalError(const QString& reason) {
             QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
         }
     } else {
-        QMessageBox::critical(this, tr("致命错误"), errorToReadable(reason));
+        // Show default dialog
+        QString error;
+        if (reason == "host leave") {
+            error = tr("房主已离开");
+        } else if (reason == "room not found") {
+            error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
+        } else if (reason == "init room req failed") {
+            error = tr("请求房间信息失败");
+        }
+        QMessageBox::critical(this, tr("错误"), errorToReadable(error));
     }
     close();
 }
@@ -428,13 +428,11 @@ void CollabRoom::toggleShare() {
 
 void CollabRoom::startShare() {
     if (!isServer) {
-        peersLock.lock();
+        ScopedQMutex _(&peersLock);
         if (serverPeer == nullptr || !serverPeer->connected()) {
-            peersLock.unlock();
             emit onShareError(tr("尚未成功连接服务器，无法开始分享"));
             return;
         }
-        peersLock.unlock();
     }
 
     ui->btnSharingStatus->setText(tr("停止") + tr("分享 VTube Studio 画面"));
@@ -489,11 +487,10 @@ void CollabRoom::spoutShareWorkerClient() {
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=](auto av) {
-        peersLock.lock();
+    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=, this](auto av) {
+        ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
-        peersLock.unlock();
     });
 
     auto initErr = cvt.init(true);
@@ -597,11 +594,10 @@ void CollabRoom::dxgiShareWorkerClient() {
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=](auto av) {
-        peersLock.lock();
+    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=, this](auto av) {
+        ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
-        peersLock.unlock();
     });
 
     auto initErr = cvt.init(true);
@@ -700,140 +696,27 @@ void CollabRoom::dxgiShareWorkerServer() {
 
 void CollabRoom::stopShareWorker() {
     shareRunning = false;
-    if (shareThread != nullptr && !shareThread->isFinished() && !shareThread->wait(500)) {
-        qWarning() << "uneasy to exit share thread";
-        shareThread->terminate();
-        shareThread->wait(500);
-        shareThread = nullptr;
-    }
-}
-
-void CollabRoom::connectWebsocket() {
-    qDebug("Connect to reito server websocket");
-    roomServer = std::make_unique<rtc::WebSocket>();
-
-    roomServer->onOpen([this]() {
-        qDebug() << "Websocket open";
-        {
-            QJsonObject join;
-            join["roomId"] = roomId;
-            join["peerId"] = peerId;
-            join["isServer"] = isServer;
-            QJsonObject dto;
-            dto["join"] = join;
-            dto["type"] = "join";
-            QJsonDocument doc(dto);
-
-            qDebug("Send join frame");
-            wsSendAsync(doc.toJson().toStdString());
-        }
-
-        // Set nick name
-        {
-            QJsonObject dto;
-            dto["msg"] = ui->nick->text();
-            dto["type"] = "nick";
-            QJsonDocument doc(dto);
-
-            auto content = QString::fromUtf8(doc.toJson());
-            qDebug() << content;
-
-            wsSendAsync(content.toStdString());
-        }
-
-        auto t = QThread::create([=, this]() {
-            qDebug() << "Start nat type determine";
-            CNatProb natProb;
-            if (!natProb.Init("stun.miwifi.com")) {
-                qDebug() << "natProb init failed.";
-            }
-            int retry = 0;
-            NatType type;
-            while (true) {
-                type = natProb.GetNatType();
-                if (type != StunTypeBlocked && type != StunTypeFailure && type != StunTypeUnknown && retry++ < 3) {
-                    break;
-                }
-                QThread::msleep(100);
-            }
-            qDebug() << "nat type" << QString(natProb.DescribeNatType(type).c_str());
-            localNatType = type;
-
-            QJsonObject dto;
-            dto["nat"] = type;
-            dto["type"] = "nat";
-            QJsonDocument doc(dto);
-
-            auto content = QString::fromUtf8(doc.toJson());
-            qDebug() << content;
-
-            wsSendAsync(content.toStdString());
-        });
-        connect(t, &QThread::finished, t, &QThread::deleteLater);
-        t->start();
-    });
-
-    roomServer->onClosed([=, this]() {
-        qDebug("Websocket close");
-        if (exiting)
-            return;
-
-        QThread::sleep(1);
-        emit onReconnectWebsocket();
-    });
-
-    roomServer->onMessage([=, this](std::variant<rtc::binary, rtc::string> message) {
-        if (std::holds_alternative<rtc::string>(message)) {
-            auto msg = std::get<rtc::string>(message);
-            qDebug() << "WebSocket received: " << QString::fromStdString(msg);
-            auto frame = QJsonDocument::fromJson(QByteArray(msg.data(), msg.size()));
-            auto type = frame["type"].toString();
-            if (type == "peers") {
-                auto peers = frame["peers"].toArray();
-                updatePeers(peers);
-            } else if (type == "bye") {
-                exiting = true;
-                emit onRoomExit("host leave");
-            } else if (type == "error") {
-                auto err = frame["msg"].toString();
-                exiting = true;
-                emit onRoomExit(err);
-            }
-        }
-    });
+    terminateQThread(shareThread);
 }
 
 void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
     if (isServer) {
-        QList<std::string> alive;
+        ScopedQMutex _(&peersLock);
+        QList<QString> alive;
         for (const auto& peer: peers) {
-            auto svr = peer.isserver();
             // Find clients
-            if (!svr) {
-                auto id = peer.peerid();
+            if (!peer.isserver()) {
+                auto id = QString::fromStdString(peer.peerid());
                 alive.append(id);
 
-                peersLock.lock();
                 if (!clientPeers.contains(id)) {
                     qDebug() << "create peer" << id;
-                    auto server = std::make_unique<Peer>(this, id, QDateTime::currentDateTime());
+                    auto server = std::make_unique<Peer>(this, id);
                     server->startServer();
                     clientPeers[id] = std::move(server);
                 }
-                peersLock.unlock();
-
-                auto sdps = p["sdps"].toObject();
-                if (sdps.contains("server")) {
-                    auto clientSdp = sdps["server"].toObject();
-                    auto ver = clientSdp["time"].toInteger();
-                    if (ver == clientPeers[id]->timeVersion().toMSecsSinceEpoch()) {
-                        qDebug() << "client offered sdp to us";
-                        clientPeers[id]->setClientRemoteSdp(clientSdp);
-                    }
-                }
             }
         }
-        peersLock.lock();
         // If one leaves, remove it.
         for (auto it = clientPeers.begin(); it != clientPeers.end();) {
             if (!alive.contains(it->first)) {
@@ -842,74 +725,23 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
                 it++;
             }
         }
-
-        // If one failed, remote it.
-        for (auto it = clientPeers.begin(); it != clientPeers.end();) {
-            if (it->second->failed()) {
-                it = clientPeers.erase(it);
-            } else {
-                it++;
-            }
-        }
-
-        peersLock.unlock();
-    } else {
-        for (auto peer: peers) {
-            auto p = peer.toObject();
-            auto svr = p["isServer"].toBool();
-            // Find server
-            if (svr) {
-                auto id = p["id"].toString();
-                auto sdps = p["sdps"].toObject();
-                // If server has offered the remote description to us
-                if (sdps.contains(peerId)) {
-                    auto sdp = sdps[peerId].toObject();
-                    auto time = QDateTime::fromMSecsSinceEpoch(sdp["time"].toInteger());
-                    // If the turn server changed or client not started
-                    peersLock.lock();
-                    if (serverPeer == nullptr || serverPeer->timeVersion() < time) {
-                        qDebug() << "server offered sdp to us";
-                        // We need to reset the connection
-
-                        serverPeer = std::make_unique<Peer>(this, id, time);
-                        serverPeer->startClient(sdp);
-                    }
-                    peersLock.unlock();
-                }
-                break;
-            }
-        }
-        // We do not need to handle if the server leave, because the whole room will be destroyed.
     }
 
-    // Update UI and calculate nat
-    QList<PeerUi> peerUis;
-    for (auto peer: peers) {
-        PeerUi u;
-        auto p = peer.toObject();
-        u.peerId = p["id"].toString();
-        u.nat = (NatType) p["nat"].toInt();
-        u.nick = p["nick"].toString();
-        u.rtt = p["rtt"].toInteger();
-        u.isServer = p["isServer"].toBool();
-        peerUis.append(u);
-    }
-
-    emit onUpdatePeersUi(peerUis);
+    emit onUpdatePeersUi(peers);
 }
 
-void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
+void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
     qDebug() << "update peer ui";
 
-    while (ui->peerList->count() < peerUis.count()) {
+    while (ui->peerList->count() < peers.size()) {
         auto item = new QListWidgetItem(ui->peerList);
-        auto peer = new PeerItemWidget(this, this);
+        auto peer = new PeerItemWidget(this);
         item->setSizeHint(QSize(0, 32));
         ui->peerList->addItem(item);
         ui->peerList->setItemWidget(item, peer);
     }
 
-    while (ui->peerList->count() > peerUis.count()) {
+    while (ui->peerList->count() > peers.size()) {
         auto item = ui->peerList->item(0);
         auto widget = ui->peerList->itemWidget(item);
         ui->peerList->removeItemWidget(item);
@@ -919,18 +751,29 @@ void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
 
     auto idx = 0;
     QStringList badNatList;
-    for (auto &p: peerUis) {
+    auto allUnknown = true;
+    for (auto &p: peers) {
         auto item = ui->peerList->item(idx++);
         auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
-        widget->setPeerUi(p);
+        widget->updatePeer(p);
 
-        if (p.nat != StunTypeOpen && p.nat != StunTypeRestrictedNat && p.nat != StunTypeConeNat
-            && p.nat != StunTypePortRestrictedNat && p.nat != StunTypeUnavailable) {
-            badNatList.append(p.nick.isEmpty() ? QString("%1%2").arg(tr("用户")).arg(p.peerId.left(4)) : p.nick);
+        auto nat = (NatType)p.nattype();
+        auto qNick = QString::fromStdString(p.nick());
+        auto qPeerId = QString::fromStdString(p.peerid());
+        if (nat != StunTypeUnknown)
+            allUnknown = false;
+        if (nat != StunTypeOpen && nat != StunTypeRestrictedNat && nat != StunTypeConeNat
+            && nat != StunTypePortRestrictedNat && nat != StunTypeUnavailable) {
+            badNatList.append(qNick.isEmpty() ? QString("%1%2").arg(tr("用户")).arg(qPeerId.left(4)) : qNick);
         }
     }
 
-    if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
+    auto localNatType = roomServer->getLocalNatType();
+    if (allUnknown) {
+        ui->relayHint->setText("☕" + tr("网络检测中"));
+        ui->relayHint->setToolTip(tr("检测中，请稍后"));
+
+    }  else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
         localNatType == StunTypeRestrictedNat) {
         ui->relayHint->setText("✅" + tr("网络良好"));
         ui->relayHint->setToolTip(
@@ -941,20 +784,6 @@ void CollabRoom::updatePeersUi(QList<PeerUi> peerUis) {
                 tr("当前可能需要中转服务器。\n以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") +
                 tr("。\n但如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
     }
-}
-
-void CollabRoom::wsSendAsync(const std::string &content) {
-    if (exiting)
-        return;
-
-    auto t = QThread::create([=]() {
-        wsLock.lock();
-        if (roomServer != nullptr && roomServer->isOpen())
-            roomServer->send(content);
-        wsLock.unlock();
-    });
-    connect(t, &QThread::finished, t, &QThread::deleteLater);
-    t->start();
 }
 
 QString CollabRoom::errorToReadable(const QString &reason) {
@@ -979,8 +808,8 @@ void CollabRoom::usageStatUpdate() {
 
     // Speed Stat
     size_t tx = 0, rx = 0;
-    peersLock.lock();
     if (isServer) {
+        ScopedQMutex _(&peersLock);
         for (auto &s: clientPeers) {
             if (s.second == nullptr)
                 continue;
@@ -988,12 +817,12 @@ void CollabRoom::usageStatUpdate() {
             rx += s.second->rxBytes();
         }
     } else {
+        ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr) {
             tx += serverPeer->txBytes();
             rx += serverPeer->rxBytes();
         }
     }
-    peersLock.unlock();
     txSpeed.update(tx);
     rxSpeed.update(rx);
     ui->speedStat->setText(QString("%1 ↑↓ %2")
@@ -1002,23 +831,15 @@ void CollabRoom::usageStatUpdate() {
 }
 
 void CollabRoom::heartbeatUpdate() {
-    QJsonObject dict;
+    vts::server::ReqRtt rtt;
 
-    peersLock.lock();
+    ScopedQMutex _(&peersLock);
     for (auto &s: clientPeers) {
         s.second->sendHeartbeat();
-        dict[s.second->peerId] = (qint64) s.second->rtt();
+        rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
     }
-    peersLock.unlock();
 
-    QJsonObject dto;
-    dto["rtts"] = dict;
-    dto["type"] = "rtt";
-    QJsonDocument doc(dto);
-    auto content = QString::fromUtf8(doc.toJson());
-    qDebug() << content;
-
-    wsSendAsync(content.toStdString());
+    roomServer->setRtt(rtt);
 }
 
 void CollabRoom::dxgiSendWorker() {
@@ -1030,12 +851,11 @@ void CollabRoom::dxgiSendWorker() {
 
     if (isServer) {
         cvt = std::make_unique<FrameToAv>(frameWidth, frameHeight, frameRate, [=, this](auto av) {
-            peersLock.lock();
+            ScopedQMutex _(&peersLock);
             // This approach is bandwidth consuming, should be replaced by relay approach
             for (auto &s: clientPeers) {
                 s.second->sendAsync(av);
             }
-            peersLock.unlock();
         });
         auto initErr = cvt->init(true);
         if (initErr.has_value()) {
@@ -1100,56 +920,24 @@ void CollabRoom::openBuyRelay() {
         auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
 
         QSettings settings;
-        settings.setValue("turnServer", turnServer);
         settings.setValue("turnServerExpiresAt", expires);
         settings.setValue("turnServerMembers", buy->getTurnMembers());
         settings.setValue("ignoreTurnServerNotExpire", false);
         settings.sync();
         qDebug() << "update turn server" << turnServer;
 
-        peersLock.lock();
-        clientPeers.clear();
-        peersLock.unlock();
-
-        QJsonObject dto;
-        dto["type"] = "get";
-        QJsonDocument doc(dto);
-        auto content = QString::fromUtf8(doc.toJson());
-        qDebug() << content;
-
-        wsSendAsync(content.toStdString());
+        updateTurnServer();
     }
     buy->deleteLater();
 }
 
 void CollabRoom::rtcFailed(Peer *peer) {
     qDebug() << "rtc failed";
-    auto nick = peer->nick.isEmpty() ? tr("用户") + peer->peerId.first(4) : peer->nick;
+    auto nick = peer->nick.isEmpty() ? tr("用户") + peer->remotePeerId.first(4) : peer->nick;
     if (isServer) {
         auto tray = MainWindow::instance()->tray.get();
         tray->showMessage(tr("连接失败"),
                           QString(tr("与 %1 的连接失败，可能需要中转服务器！") + tr("正在尝试重新连接")).arg(nick));
-
-        peersLock.lock();
-
-        for (auto it = clientPeers.begin(); it != clientPeers.end();) {
-            if (it->second.get() == peer) {
-                qDebug() << "destroy peer for reconnect";
-                it = clientPeers.erase(it);
-            } else {
-                it++;
-            }
-        }
-
-        peersLock.unlock();
-
-        QJsonObject dto;
-        dto["type"] = "get";
-        QJsonDocument doc(dto);
-        auto content = QString::fromUtf8(doc.toJson());
-        qDebug() << content;
-
-        wsSendAsync(content.toStdString());
     } else {
         auto tray = MainWindow::instance()->tray.get();
         tray->showMessage(tr("连接失败"), QString(tr("与 %1 的连接失败，请等待服务器重新连接")).arg(nick));
@@ -1245,10 +1033,26 @@ void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
     }
 }
 
-void CollabRoom::onNotifyRoomInfo(const vts::server::NotifyRoomInfo &info) {
-    updatePeers(info.peers());
+void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers &peers) {
+    updatePeers(peers.peers());
 }
 
-void CollabRoom::onNotifyRtcSdp(const vts::server::NotifyRtcSdp &sdp) {
+void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
+    ScopedQMutex _(&peersLock);
+    auto from = QString::fromStdString(sdp.frompeerid());
+    if (isServer) {
+        for(auto & peer : clientPeers) {
+            if (peer.first == from) {
+                qDebug() << "client" << peer.first << "offered sdp to server" ;
+                peer.second->setClientRemoteSdp(sdp);
+            }
+        }
+    } else {
+        serverPeer = std::make_unique<Peer>(this, from);
+        serverPeer->startClient(sdp);
+    }
+}
+
+void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp) {
 
 }
