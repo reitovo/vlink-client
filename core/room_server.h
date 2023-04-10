@@ -16,6 +16,7 @@ class RoomServer {
     CollabRoom* room;
 
     std::atomic_bool exiting = false;
+    std::atomic_bool destroyed = false;
 
     std::unique_ptr<QThread> natThread;
     std::unique_ptr<QThread> notifyThread;

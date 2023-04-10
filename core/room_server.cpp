@@ -29,6 +29,14 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
         case vts::server::Notify::kFrame:
             room->onNotifyFrameFormat(notify.frame());
             break;
+        case vts::server::Notify::kDestroy: {
+            static QMutex destroyedMutex;
+            ScopedQMutex _(&destroyedMutex);
+            if (!destroyed) {
+                destroyed = true;
+                room->onNotifyDestroy();
+            }
+        }
         default:
             break;
     }
@@ -37,11 +45,10 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
 RoomServer::~RoomServer() {
     exit();
     exiting = true;
-    notifyContext->TryCancel();
+    if (notifyContext)
+        notifyContext->TryCancel();
     terminateQThread(natThread);
     terminateQThread(notifyThread);
-    service.reset();
-    channel.reset();
 }
 
 void RoomServer::startReceiveNotify() {

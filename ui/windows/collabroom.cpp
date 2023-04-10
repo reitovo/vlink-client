@@ -399,7 +399,12 @@ void CollabRoom::fatalError(const QString& reason) {
         } else if (reason == "room init timeout") {
             error = tr("请求房间信息超时，请重试");
         }
-        QMessageBox::critical(this, tr("错误"), errorToReadable(error));
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Critical);
+        box.setWindowTitle(tr("错误"));
+        box.setText(errorToReadable(error));
+        box.addButton(tr("关闭"), QMessageBox::NoRole);
+        box.exec();
     }
     close();
 }
@@ -1057,4 +1062,8 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
 
 void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp) {
 
+}
+
+void CollabRoom::onNotifyDestroy() {
+    emit onFatalError("host leave");
 }

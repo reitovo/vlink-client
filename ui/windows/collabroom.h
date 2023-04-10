@@ -97,6 +97,7 @@ private:
     void onNotifyPeers(const vts::server::NotifyPeers& peers);
     void onNotifySdp(const vts::server::Sdp& sdp);
     void onNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
+    void onNotifyDestroy();
 
     void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
     void onRoomInfoFailed(const std::string &error);
