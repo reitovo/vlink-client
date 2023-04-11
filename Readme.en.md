@@ -1,6 +1,6 @@
 ## VTube Studio Link!
 
-![build](https://github.com/reitovo/vtslink-serverPeer/actions/workflows/cmake.yml/badge.svg)
+![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
 ### Introduction
 

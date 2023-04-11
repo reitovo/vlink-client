@@ -1,12 +1,12 @@
 ## VTube Studio 联动!
  
-![build](https://github.com/reitovo/vtslink-serverPeer/actions/workflows/cmake.yml/badge.svg)
+![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
 [English](Readme.en.md)
 
 ### TODO
 
-- [ ] 重构联动房间`collabroom`，分离网络模块
+- [x] 重构联动房间`collabroom`，分离网络模块
 - [ ] 强制中转服务器模式，4人情况下都只需要上传一路带宽，交给中转服务器转发
 
 ### 简介
