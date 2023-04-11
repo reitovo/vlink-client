@@ -98,11 +98,16 @@ private:
     void onNotifySdp(const vts::server::Sdp& sdp);
     void onNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
     void onNotifyDestroy();
+    void onNotifyForceIdr();
 
     void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
     void onRoomInfoFailed(const std::string &error);
 
     void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> & peers);
+
+    std::atomic_bool notifiedForceIdr = false;
+public:
+    void requestIdr();
 
 private:
     std::atomic_bool exiting = false;

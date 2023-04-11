@@ -29,6 +29,8 @@ class RoomServer {
 
     NatType localNatType = NatType::StunTypeUnknown;
 
+    std::chrono::time_point<std::chrono::system_clock> lastRequestIdr = std::chrono::system_clock::time_point::min();
+
 public:
     explicit RoomServer(CollabRoom* room);
     ~RoomServer();
@@ -51,6 +53,8 @@ public:
     void setSdp(const vts::server::Sdp& sdp);
     void setNat(int type);
     void setFrameFormat(const vts::server::FrameFormatSetting& format);
+
+    void requestIdr();
 
     void exit();
     void handleMessage(const vts::server::Notify &msg);

@@ -435,8 +435,14 @@ void CollabRoom::toggleShare() {
 
 void CollabRoom::startShare() {
     if (!isServer) {
-        ScopedQMutex _(&peersLock);
-        if (serverPeer == nullptr || !serverPeer->connected()) {
+        bool notConnected = false;
+        {
+            ScopedQMutex _(&peersLock);
+            if (serverPeer == nullptr || !serverPeer->connected()) {
+                notConnected = true;
+            }
+        }
+        if (notConnected) {
             emit onShareError(tr("尚未成功连接服务器，无法开始分享"));
             return;
         }
@@ -523,6 +529,11 @@ void CollabRoom::spoutShareWorkerClient() {
         QElapsedTimer t;
         t.start();
 
+        if (notifiedForceIdr) {
+            notifiedForceIdr = false;
+            cvt.forceIdr();
+        }
+
         spout->captureTick(frameSeconds);
 
         auto e = cvt.processFast(spout);
@@ -543,7 +554,6 @@ void CollabRoom::spoutShareWorkerClient() {
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
         }
-
     }
 
     clean:
@@ -630,6 +640,11 @@ void CollabRoom::dxgiShareWorkerClient() {
         QElapsedTimer t;
         t.start();
 
+        if (notifiedForceIdr) {
+            notifiedForceIdr = false;
+            cvt.forceIdr();
+        }
+
         tryFixVtsRatio(dxCap);
 
         dxCap->captureTick(frameSeconds);
@@ -652,7 +667,6 @@ void CollabRoom::dxgiShareWorkerClient() {
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
         }
-
     }
 
     clean:
@@ -738,8 +752,6 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
 }
 
 void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
-    qDebug() << "update peer ui";
-
     while (ui->peerList->count() < peers.size()) {
         auto item = new QListWidgetItem(ui->peerList);
         auto peer = new PeerItemWidget(this);
@@ -839,13 +851,11 @@ void CollabRoom::usageStatUpdate() {
 
 void CollabRoom::heartbeatUpdate() {
     vts::server::ReqRtt rtt;
-
     ScopedQMutex _(&peersLock);
     for (auto &s: clientPeers) {
         s.second->sendHeartbeat();
         rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
     }
-
     roomServer->setRtt(rtt);
 }
 
@@ -883,6 +893,11 @@ void CollabRoom::dxgiSendWorker() {
 
             // encode and send
             if (isServer) {
+                if (notifiedForceIdr) {
+                    notifiedForceIdr = false;
+                    cvt->forceIdr();
+                }
+
                 cvt->processFast(d3d);
             }
 
@@ -1066,4 +1081,14 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp)
 
 void CollabRoom::onNotifyDestroy() {
     emit onFatalError("host leave");
+}
+
+void CollabRoom::requestIdr() {
+    if (exiting)
+        return;
+    roomServer->requestIdr();
+}
+
+void CollabRoom::onNotifyForceIdr() {
+    notifiedForceIdr = true;
 }

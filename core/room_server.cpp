@@ -29,13 +29,16 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
         case vts::server::Notify::kFrame:
             room->onNotifyFrameFormat(notify.frame());
             break;
-        case vts::server::Notify::kDestroy: {
+        case vts::server::Notify::kRoomDestroy: {
             static QMutex destroyedMutex;
             ScopedQMutex _(&destroyedMutex);
             if (!destroyed) {
                 destroyed = true;
                 room->onNotifyDestroy();
             }
+        }
+        case vts::server::Notify::kForceIdr: {
+            room->onNotifyForceIdr();
         }
         default:
             break;
@@ -204,6 +207,22 @@ void RoomServer::exit() {
     auto context = getCtx();
     vts::server::RspCommon rsp;
     auto status = service->Exit(context.get(), vts::server::ReqCommon(), &rsp);
+    if (!status.ok()) {
+        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+    }
+}
+
+void RoomServer::requestIdr() {
+    auto now = std::chrono::system_clock::now();
+    if (lastRequestIdr + std::chrono::seconds(1) > now) {
+        return;
+    }
+    lastRequestIdr = now;
+    qDebug() << "request idr";
+
+    auto context = getCtx();
+    vts::server::RspCommon rsp;
+    auto status = service->RequestIdr(context.get(), vts::server::ReqCommon(), &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
     }

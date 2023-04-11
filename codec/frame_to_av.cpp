@@ -345,12 +345,15 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->rc_max_rate = 4000000;
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
-	ctx->gop_size = 60;
-    ctx->slices = 4;
+    ctx->slices = 1;
+
+    auto intraRefresh = true;
+    auto gopSize = intraRefresh ? 300 : 60;
 
     auto ret = 0;
 	auto encoder = option.name;
 	if (encoder == "h264_nvenc" || encoder == "hevc_nvenc") {
+        ctx->gop_size = gopSize;
         ret = av_opt_set(ctx->priv_data, "preset", "p4", 0);
         assert(ret == 0);
         ret = av_opt_set(ctx->priv_data, "tune", "ull", 0);
@@ -361,12 +364,13 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
         assert(ret == 0);
-//        ret = av_opt_set_int(ctx->priv_data, "intra-refresh", 1, 0);
-//        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "intra-refresh", intraRefresh ? 1 : 0, 0);
+        assert(ret == 0);
         av_opt_set_int(ctx->priv_data, "forced-idr", 1, 0);
         assert(ret == 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
+        ctx->gop_size = intraRefresh ? 0 : gopSize;
         ret = av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
         assert(ret == 0);
         ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
@@ -375,9 +379,9 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0);
         assert(ret == 0);
-        ret = av_opt_set_int(ctx->priv_data, "header_spacing", ctx->gop_size, 0);
+        ret = av_opt_set_int(ctx->priv_data, "header_spacing", gopSize, 0);
         assert(ret == 0);
-		ret = av_opt_set_int(ctx->priv_data, "intra_refresh_mb", 0, 0);
+		ret = av_opt_set_int(ctx->priv_data, "intra_refresh_mb", intraRefresh ? 255 : 0, 0);
         assert(ret == 0);
 
         ret = av_opt_set(ctx->priv_data, "rc", "cqp", 0);
@@ -399,15 +403,26 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
 		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}
 	else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
+        ctx->gop_size = intraRefresh ? gopSize : 60;
         ret = av_opt_set(ctx->priv_data, "preset", "veryfast", 0);
         assert(ret == 0);
-//        ret = av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
-//        assert(ret == 0);
-//        ret = av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", ctx->gop_size, 0);
-//        assert(ret == 0);
-        ret = av_opt_set_int(ctx->priv_data, "idr_interval", 0, 0);
+        if (intraRefresh) {
+            ret = av_opt_set_int(ctx->priv_data, "int_ref_type", 1, 0);
+            assert(ret == 0);
+            ret = av_opt_set_int(ctx->priv_data, "int_ref_cycle_size", gopSize, 0);
+            assert(ret == 0);
+            ret = av_opt_set_int(ctx->priv_data, "int_ref_cycle_dist", gopSize, 0);
+            assert(ret == 0);
+            ret = av_opt_set_int(ctx->priv_data, "int_ref_qp_delta", 0, 0);
+            assert(ret == 0);
+            ret = av_opt_set_int(ctx->priv_data, "recovery_point_sei", 1, 0);
+            assert(ret == 0);
+        }
+        ret = av_opt_set_int(ctx->priv_data, "idr_interval", intraRefresh ? 100 : 0, 0);
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "forced_idr", 1, 0);
+        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "repeat_pps", 1, 0);
         assert(ret == 0);
 
 		ctx->flags |= AV_CODEC_FLAG_QSCALE;
@@ -422,8 +437,8 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "qp", cqp, 0);
         assert(ret == 0);
-//        ret = av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
-//        assert(ret == 0);
+        ret = av_opt_set_int(ctx->priv_data, "intra_refresh", 1, 0);
+        assert(ret == 0);
 	}
 }
 
@@ -487,6 +502,40 @@ std::optional<QString> FrameToAv::processInternal() {
 //    saveTextureToFile(d3d11va_device_ctx->device_context, (ID3D11Texture2D*) frame->data[0], "./bgra_nv12_output.png");
 
     //Elapsed e2("encode");
+    bool forceIdr = false;
+    if (multipleIdrCount-- > 0) {
+        qDebug() << "multi idr";
+        forceIdr = true;
+    }
+
+    if (regularIdrCount++ > (int)frameRate * 60) {
+        qDebug() << "regular idr";
+        forceIdr = true;
+        regularIdrCount = 0;
+    }
+
+    int requestIdrCoolDownLimit = (int)frameRate;
+
+    if (requestIdr && requestIdrCoolDown >= requestIdrCoolDownLimit) {
+        qDebug() << "requested idr";
+        requestIdr = false;
+        requestIdrCoolDown = 0;
+        multipleIdrCount = 0;
+        forceIdr = true;
+    }
+
+    if (requestIdrCoolDown < requestIdrCoolDownLimit) {
+        requestIdrCoolDown++;
+    }
+
+    if (forceIdr) {
+        frame->pict_type = AV_PICTURE_TYPE_I;
+        frame->key_frame = 1;
+    } else {
+        frame->pict_type = AV_PICTURE_TYPE_NONE;
+        frame->key_frame = 0;
+    }
+
     ret = avcodec_send_frame(ctx, frame);
     if (ret < 0) {
         qDebug() << "error sending frame for rgb encoding" << av_err2str(ret);
@@ -503,11 +552,16 @@ std::optional<QString> FrameToAv::processInternal() {
             err.append("recv packet");
         }
 
+        if (packet->flags & AV_PKT_FLAG_KEY) {
+            qDebug() << "key frame";
+        }
+
         //qDebug() << "rgb packet" << packet->size;
         auto d = avFrame->add_packets();
         d->mutable_data()->assign((const char*)packet->data, packet->size);
         d->set_dts(packet->dts);
         d->set_pts(packet->pts);
+        d->set_flags(packet->flags);
 
         av_packet_unref(packet);
     }

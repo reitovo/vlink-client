@@ -86,7 +86,13 @@ int main(int argc, char *argv[]) {
         }
 
         if (err.contains("The minimum required Nvidia driver for nvenc is")) {
-            emit CollabRoom::instance()->onShareError("nv driver old");
+            if (CollabRoom::instance())
+                emit CollabRoom::instance()->onShareError("nv driver old");
+        }
+
+        if (err.contains("non-existing PPS 0 referenced")) {
+            if (CollabRoom::instance())
+                CollabRoom::instance()->requestIdr();
         }
     });
 
@@ -178,12 +184,12 @@ void initializeCrashpad() {
                                    arguments,
                                    true,
                                    true);
-    if (ret == false) {
+    if (!ret) {
         return;
     }
 
     ret = client.WaitForHandlerStart(INFINITE);
-    if (ret == false) {
+    if (!ret) {
         qCritical() << "CrashpadClient Start Error";
         return;
     }

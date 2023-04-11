@@ -5,7 +5,9 @@ package vts.server;
 message ReqCommon {}
 
 message RspCommon {}
- 
+
+message NotifyCommon {}
+
 message FrameFormatSetting {
     int32 frameWidth = 1;
     int32 frameHeight = 2;
@@ -52,7 +54,7 @@ message ReqNatType {
 
 message ReqRtt {
     map<string, int64> rtt = 1;
-}
+} 
 
 message RspRoomInfo {
     string roomId = 2;
@@ -64,15 +66,14 @@ message Notify {
         NotifyPeers peers = 2;
         Sdp sdp = 3;
         FrameFormatSetting frame = 4;
-        NotifyRoomDestroy destroy = 5;
+        NotifyCommon roomDestroy = 5;
+        NotifyCommon forceIdr = 6;
     }
 }
 
 message NotifyPeers {
     repeated Peer peers = 1;
-} 
-
-message NotifyRoomDestroy {}
+}  
 
 service RoomService {
     rpc Hello(ReqCommon) returns (RspCommon);
@@ -87,6 +88,8 @@ service RoomService {
     rpc SetNickName(ReqNickname) returns (RspCommon);
     rpc SetNatType(ReqNatType) returns (RspCommon);
     rpc SetRtt(ReqRtt) returns (RspCommon);
+    
+    rpc RequestIdr(ReqCommon) returns (RspCommon);
 
     rpc Exit(ReqCommon) returns (RspCommon);
 }

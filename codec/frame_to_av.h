@@ -75,6 +75,12 @@ private:
 
     CodecOption currentOption;
 
+    // If the client joins after the encoding began, we need to send another IDR frame.
+    std::atomic_bool requestIdr = false;
+    std::atomic_int requestIdrCoolDown = 0;
+    int regularIdrCount = 0;
+    int multipleIdrCount = 0;
+
     int64_t pts = 0;
     std::function<void(std::shared_ptr<vts::VtsMsg>)> onPacketReceived = nullptr;
 
@@ -100,6 +106,10 @@ public:
     void stop();
 
     static const QList<CodecOption>& getEncoders();
+
+    inline void forceIdr() {
+        requestIdr = true;
+    }
 };
 
 #endif // FRAME_TO_AV_H

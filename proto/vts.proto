@@ -13,6 +13,7 @@ message AvPacket {
   bytes data = 1;
   int64 pts = 2;
   int64 dts = 3;
+  int32 flags = 4;
 }
 
 message VtsAvFrame {

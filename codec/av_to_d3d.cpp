@@ -159,17 +159,13 @@ void AvToDx::process(std::unique_ptr<vts::VtsMsg> m)
 {
     auto packet_pts = m->avframe().pts();
 
-    frameQueueLock.lock();
-    if (packet_pts < pts + 1) {
-        qDebug() << "discard rendered packet = " << packet_pts << " expect = " << (pts + 1);
-    } else {
-        // enqueue for reordering
-        auto f = new UnorderedFrame;
-        f->pts = packet_pts;
-        f->data = std::move(m);
-        frameQueue.push(f);
-    }
-    frameQueueLock.unlock();
+    ScopedQMutex _(&frameQueueLock);
+
+    // enqueue for reordering
+    auto f = new UnorderedFrame;
+    f->pts = packet_pts;
+    f->data = std::move(m);
+    frameQueue.push(f);
 }
 
 void AvToDx::reset()
@@ -187,7 +183,7 @@ void AvToDx::stop()
     inited = false;
 
     processThreadRunning = false;
-    terminateQThread(processThread); 
+    terminateQThread(processThread);
 
     pts = 0;
 
@@ -221,7 +217,7 @@ void AvToDx::processWorker() {
         if (!err.has_value()) {
             if (!enableBuffering) {
                 if (frameQueueSize() > 0) {
-                    startTime -= 2000;
+                    startTime -= 1000;
                 }
             }
         }
@@ -239,58 +235,63 @@ void AvToDx::processWorker() {
 }
 
 std::optional<QString> AvToDx::processFrame() {
-    frameQueueLock.lock();
+    UnorderedFrame* dd;
 
-    auto delay = frameDelay.delay();
-    if (!enableBuffering)
-        delay = 0;
+    {
+        ScopedQMutex _(&frameQueueLock);
 
-    if (frameQueue.size() <= delay) {
-        if (delay == 0) {
+        auto delay = frameDelay.delay();
+        if (!enableBuffering)
+            delay = 0;
+
+retryNextFrame:
+        if (frameQueue.size() <= delay) {
+            if (delay == 0) {
+                pts = 0;
+                frameDelay.failed();
+            }
+            return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
+        }
+
+        // We can't wait for an ordered frame in 1 seconds.
+        if (frameQueue.size() > 30) {
+            while (!frameQueue.empty()) {
+                delete frameQueue.top();
+                frameQueue.pop();
+            }
             pts = 0;
+            frameDelay.reset();
+            return "resetting";
+        }
+
+        dd = frameQueue.top();
+
+        if (pts != 0 && dd->pts > pts + 1) {
             frameDelay.failed();
+            qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+            return "misordered";
         }
-        frameQueueLock.unlock();
-        return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
-    }
 
-    // We can't wait for an ordered frame in 1 seconds.
-    if (frameQueue.size() > 30) {
-        while(!frameQueue.empty()) {
-            delete frameQueue.top();
+        if (pts != 0 && dd->pts < pts + 1) {
+            qDebug() << "repeated fetched = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
             frameQueue.pop();
+            goto retryNextFrame;
         }
-        pts = 0;
-        frameQueueLock.unlock();
-        frameDelay.reset();
-        return "resetting";
+
+        frameDelay.succeed();
+        frameQueue.pop();
     }
 
-    auto dd = frameQueue.top();
-    auto newPts = dd->pts;
-
-    if (pts != 0 && newPts > pts + 1) {
-        frameDelay.failed();
-        qDebug() << "misordered latest = " << newPts << " expect = " << (pts + 1) << frameQueue.size();
-        frameQueueLock.unlock();
-        return "misordered";
+    if (dd == nullptr) {
+        return "no frame";
     }
-
-    frameDelay.succeed();
-    frameQueue.pop();
-    frameQueueLock.unlock();
 
     auto mem = std::move(dd->data);
+    pts = dd->pts;
+
     delete dd;
 
     auto meta = mem->avframe();
-    if (newPts == pts + 1 || pts == 0) {
-        pts = newPts;
-    }
-    else {
-        qDebug() << "discontinued" << pts;
-        return "discontinued";
-    }
     //qDebug() << "av2d3d pts" << meta.pts();
 
     if (!inited) {
@@ -311,6 +312,7 @@ std::optional<QString> AvToDx::processFrame() {
         packet->size = d.size();
         packet->dts = a.dts();
         packet->pts = a.pts();
+        packet->flags = a.flags();
         ret = avcodec_send_packet(ctx, packet);
         if (ret < 0) {
             qDebug() << "error sending packet for decoding" << av_err2str(ret);
