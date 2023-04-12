@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     QCommandLineParser parser;
-    parser.addOption(QCommandLineOption("build-id", QString(), QString(), "Debug"));
+    parser.addOption(QCommandLineOption("build-id", QString(), "build-id", "Debug"));
     parser.process(app);
 
     vts::info::BuildId = parser.value("build-id");
