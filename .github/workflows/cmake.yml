@@ -33,6 +33,14 @@ jobs:
         working-directory: C:/vtslink/client
         run: git fetch && git reset --hard origin/main
 
+      - name: Fetch latest updator
+        working-directory: C:/vtslink/updator
+        run: git fetch && git reset --hard origin/master
+
+      - name: Fetch latest updator config
+        working-directory: C:/vtslink/config
+        run: git fetch && git reset --hard origin/ci
+
       - name: Configure CMake
         working-directory: C:/vtslink/client
         run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install
@@ -44,14 +52,6 @@ jobs:
       - name: Install
         working-directory: C:/vtslink/client
         run: cmake --build C:/vtslink/client/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
-
-      - name: Fetch latest Updator
-        working-directory: C:/vtslink/updator
-        run: git fetch && git reset --hard origin/master
-
-      - name: Fetch latest Updator config
-        working-directory: C:/vtslink/config
-        run: git fetch && git reset --hard origin/ci
 
       - name: Build Updator uploader
         working-directory: 'C:/vtslink/updator/Updator.Uploader'
