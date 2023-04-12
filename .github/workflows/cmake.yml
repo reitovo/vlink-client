@@ -29,53 +29,45 @@ jobs:
         working-directory: C:/vcpkg
         run: git fetch reito reito && git reset --hard reito/reito
 
-      - uses: actions/checkout@v3
-        with:
-          repository: 'reitovo/vtslink-client'
-          path: '${{github.workspace}}/vtslink'
-          ref: 'main'
+      - name: Fetch latest vtslink-client
+        working-directory: C:/vtslink/client
+        run: git fetch && git reset --hard origin/main
 
       - name: Configure CMake
-        working-directory: ${{github.workspace}}/vtslink
-        run: cmake -G Ninja -B ${{github.workspace}}/vtslink/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/vtslink/out/install
+        working-directory: C:/vtslink/client
+        run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install
 
       - name: Build
-        working-directory: ${{github.workspace}}/vtslink
-        run: cmake --build ${{github.workspace}}/vtslink/out/build --target VTSLink -j $NUMBER_OF_PROCESSORS
+        working-directory: C:/vtslink/client
+        run: cmake --build C:/vtslink/client/out/build --target VTSLink -j $NUMBER_OF_PROCESSORS
 
       - name: Install
-        working-directory: ${{github.workspace}}/vtslink
-        run: cmake --build ${{github.workspace}}/vtslink/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
+        working-directory: C:/vtslink/client
+        run: cmake --build C:/vtslink/client/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
 
-      - name: Get Updator
-        uses: actions/checkout@v3
-        with:
-          repository: 'cnSchwarzer/Updator'
-          path: '${{github.workspace}}/updator'
+      - name: Fetch latest Updator
+        working-directory: C:/vtslink/updator
+        run: git fetch && git reset --hard origin/master
 
-      - name: Get Updator config
-        uses: actions/checkout@v3
-        with:
-          repository: 'reitovo/ci-private'
-          path: '${{github.workspace}}/ci'
-          token: ${{ secrets.CI_PRIVATE_TOKEN }}
-          ref: 'ci'
+      - name: Fetch latest Updator config
+        working-directory: C:/vtslink/config
+        run: git fetch && git reset --hard origin/ci
 
       - name: Build Updator uploader
-        working-directory: '${{github.workspace}}/updator/Updator.Uploader'
-        run: 'dotnet build -o ${{github.workspace}}/uploader'
+        working-directory: 'C:/vtslink/updator/Updator.Uploader'
+        run: 'dotnet build -o C:/vtslink/uploader'
 
       - name: Publish build
         shell: pwsh
         run: | 
-          dotnet ${{github.workspace}}/uploader/Updator.Uploader.dll `
-          --config=${{github.workspace}}/ci/vtslink/config.json `
-          --distribution-root=${{github.workspace}}/vtslink/out/install `
-          --update-log="💡 ${{github.event.head_commit.message}}"
+          dotnet C:/vtslink/uploader/Updator.Uploader.dll `
+          --config=C:/vtslink/config/vtslink/config.json `
+          --distribution-root=C:/vtslink/client/out/install `
+          --update-log="> ${{github.event.head_commit.message}}"
 
       - name: Upload debug symbol
         shell: pwsh
         run: |
-          curl --noproxy '*' -F "upload_file=@${{github.workspace}}/vtslink/out/install/pdb/VTSLink.pdb" `
+          curl --noproxy '*' -F "upload_file=@C:/vtslink/client/out/install/pdb/VTSLink.pdb" `
           -X POST `
           "https://submit.backtrace.io/reito/${{secrets.BACKTRACE_SYMBOL_TOKEN}}/symbols"
