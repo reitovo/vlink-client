@@ -818,7 +818,7 @@ QString CollabRoom::errorToReadable(const QString &reason) {
 }
 
 void CollabRoom::usageStatUpdate() {
-    ui->usageStat->setText(QString("CPU: %1% FPS: %2 输入: %3 Build: %4 ")
+    ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 ")
                                    .arg(QString::number(usage::getCpuUsage(), 'f', 1))
                                    .arg(QString::number(outputFps.fps(), 'f', 1))
                                    .arg(useDxCapture ? "D3D11" : "Spout")
