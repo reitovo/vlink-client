@@ -12,6 +12,7 @@
 #include <cstring>
 
 #include "ui/windows/collabroom.h"
+#include <QCommandLineParser>
 
 extern "C" {
 #include <libavutil\avutil.h>
@@ -126,7 +127,13 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setOrganizationDomain("reito.fun");
     QCoreApplication::setApplicationName("VTSLink");
 
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
+
+    QCommandLineParser parser;
+    parser.addOption(QCommandLineOption("build-id", QString(), QString(), "Debug"));
+    parser.process(app);
+
+    vts::info::BuildId = parser.value("build-id");
 
     std::vector<int> fonts;
     fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/SmileySans-Oblique.ttf"));
@@ -135,7 +142,7 @@ int main(int argc, char *argv[]) {
     MainWindow w;
     w.show();
 
-    auto ret = a.exec();
+    auto ret = QApplication::exec();
 
     return ret;
 }

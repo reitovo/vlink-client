@@ -8,6 +8,7 @@
 #include <QTranslator>
 #include <QPushButton>
 #include <QDesktopServices>
+#include <utility>
 
 static MainWindow *_instance;
 

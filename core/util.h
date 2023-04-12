@@ -14,6 +14,10 @@
 
 #define DX_DEBUG_LAYER true
 
+namespace vts::info {
+    extern QString BuildId;
+}
+
 class Elapsed {
     bool ended = false;
     QString name;

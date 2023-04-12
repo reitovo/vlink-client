@@ -19,6 +19,7 @@ public:
     ~MainWindow();
 
     static MainWindow *instance();
+    static QString buildId;
     std::unique_ptr<QSystemTrayIcon> tray;
 
 private:
