@@ -57,7 +57,7 @@ Peer::Peer(CollabRoom *room, QString id) {
 
 Peer::~Peer() {
     dcThreadAlive = false;
-    terminateQThread(dcThread);
+    terminateQThread(dcThread, __FUNCTION__);
     stopDecoder();
     close();
 

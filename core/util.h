@@ -71,9 +71,9 @@ enum DeviceAdapterType {
 };
 
 template <typename T>
-inline void terminateQThread(const std::unique_ptr<T>& t) {
+inline void terminateQThread(const std::unique_ptr<T>& t, const char * func) {
     if (t != nullptr && !t->isFinished() && !t->wait(500)) {
-        qWarning() << "The thread is not exited in 500ms, terminate it";
+        qWarning() << "The thread is not exited in 500ms, terminate it" << func;
         t->terminate();
         t->wait(500);
     }

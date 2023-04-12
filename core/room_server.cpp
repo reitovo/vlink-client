@@ -50,8 +50,8 @@ RoomServer::~RoomServer() {
     exiting = true;
     if (notifyContext)
         notifyContext->TryCancel();
-    terminateQThread(natThread);
-    terminateQThread(notifyThread);
+    terminateQThread(natThread, __FUNCTION__);
+    terminateQThread(notifyThread, __FUNCTION__);
 }
 
 void RoomServer::startReceiveNotify() {

@@ -16,8 +16,6 @@ class CollabRoom;
 
 class FrameQuality : public QDialog {
 Q_OBJECT
-    CollabRoom* room;
-
     QSettings settings;
 
 public:
@@ -25,6 +23,10 @@ public:
     ~FrameQuality() override;
 
     bool changed = false;
+    float frameRate = 60;
+    int frameWidth = 1920;
+    int frameHeight = 1080;
+    int frameQuality = 0;
 
 private:
     Ui::FrameQuality *ui;

@@ -183,7 +183,7 @@ void AvToDx::stop()
     inited = false;
 
     processThreadRunning = false;
-    terminateQThread(processThread);
+    terminateQThread(processThread, __FUNCTION__);
 
     pts = 0;
 

@@ -12,8 +12,6 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::FrameQuality) {
     ui->setupUi(this);
 
-    this->room = parent;
-
     ui->frameQuality->setCurrentIndex(settings.value("frameQualityIdx", 0).toInt());
     ui->frameRate->setCurrentIndex(settings.value("frameRateIdx", 1).toInt());
     ui->frameSize->setCurrentIndex(settings.value("frameSizeIdx", 2).toInt());
@@ -22,7 +20,7 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
         changed = true;
         settings.setValue("frameQualityIdx", v);
 
-        room->frameQuality = v;
+        frameQuality = v;
 
         settings.sync();
         qDebug() << "frameQualityIdx" << v;
@@ -34,14 +32,14 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
 
         switch (v) {
             case 0:
-                room->frameRate = 30;
+                frameRate = 30;
                 break;
             case 1:
-                room->frameRate = 60;
+                frameRate = 60;
                 break;
         }
 
-        settings.setValue("frameRate", room->frameRate);
+        settings.setValue("frameRate", frameRate);
         settings.sync();
         qDebug() << "frameRateIdx" << v;
     });
@@ -52,21 +50,21 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
 
         switch (v) {
             case 0:
-                room->frameWidth = 1280;
-                room->frameHeight = 720;
+                frameWidth = 1280;
+                frameHeight = 720;
                 break;
             case 1:
-                room->frameWidth = 1600;
-                room->frameHeight = 900;
+                frameWidth = 1600;
+                frameHeight = 900;
                 break;
             case 2:
-                room->frameWidth = 1920;
-                room->frameHeight = 1080;
+                frameWidth = 1920;
+                frameHeight = 1080;
                 break;
         }
 
-        settings.setValue("frameWidth", room->frameWidth);
-        settings.setValue("frameHeight", room->frameHeight);
+        settings.setValue("frameWidth", frameWidth);
+        settings.setValue("frameHeight", frameHeight);
         settings.sync();
         qDebug() << "frameSizeIdx" << v;
     });

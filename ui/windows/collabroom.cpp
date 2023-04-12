@@ -259,7 +259,7 @@ CollabRoom::~CollabRoom() {
 
     stopShareWorker();
 
-    terminateQThread(frameSendThread);
+    terminateQThread(frameSendThread, __FUNCTION__);
 
     roomServer.reset();
 
@@ -279,6 +279,7 @@ CollabRoom::~CollabRoom() {
         serverPeer = nullptr;
     }
 
+    delete dxgiOutputWindow;
     delete ui;
     qWarning() << "room exit";
 }
@@ -454,13 +455,13 @@ void CollabRoom::openQualitySetting() {
 
     if (f.changed) {
         qDebug() << "resetting frame quality";
-        qDebug() << "frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+        qDebug() << "frame quality" << f.frameWidth << f.frameHeight << f.frameRate << f.frameQuality;
 
         vts::server::FrameFormatSetting req;
-        req.set_framequality(frameQuality);
-        req.set_frameheight(frameHeight);
-        req.set_framewidth(frameWidth);
-        req.set_framerate(frameRate);
+        req.set_framequality(f.frameQuality);
+        req.set_frameheight(f.frameHeight);
+        req.set_framewidth(f.frameWidth);
+        req.set_framerate(f.frameRate);
         roomServer->setFrameFormat(req);
     }
 }
@@ -757,7 +758,7 @@ void CollabRoom::dxgiShareWorkerServer() {
 
 void CollabRoom::stopShareWorker() {
     shareRunning = false;
-    terminateQThread(shareThread);
+    terminateQThread(shareThread, __FUNCTION__);
 }
 
 void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
@@ -1119,15 +1120,7 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
 void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
     qDebug() << "received new frame setting";
 
-    frameWidth = frame.framewidth();
-    frameHeight = frame.frameheight();
-    frameRate = frame.framerate();
-    frameQuality = frame.framequality();
-
-    qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
-
     stopShareWorker();
-    emit onNewFrameFormat();
 
     {
         ScopedQMutex _(&peersLock);
@@ -1141,11 +1134,18 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     }
 
     resettingFrameFormat = true;
-    terminateQThread(frameSendThread);
+    terminateQThread(frameSendThread, __FUNCTION__);
     resettingFrameFormat = false;
 
     qDebug() << "d3d use count" << d3d.use_count();
     d3d.reset();
+
+    frameWidth = frame.framewidth();
+    frameHeight = frame.frameheight();
+    frameRate = frame.framerate();
+    frameQuality = frame.framequality();
+
+    qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
 
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
     d3d->init(true);
@@ -1167,6 +1167,7 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
         }
     }
 
+    emit onNewFrameFormat();
     qDebug() << "done set new frame format";
 }
 
