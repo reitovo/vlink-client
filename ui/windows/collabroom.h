@@ -23,6 +23,7 @@ class CollabRoom;
 }
 
 class DxCapture;
+class DxgiOutput;
 
 // This is the collab main logic
 class CollabRoom : public QDialog, public IDebugCollectable
@@ -31,6 +32,7 @@ class CollabRoom : public QDialog, public IDebugCollectable
     friend class Peer;
     friend class PeerItemWidget;
     friend class RoomServer;
+    friend class FrameQuality;
 
 public:
     static CollabRoom* instance();
@@ -44,6 +46,7 @@ signals:
     void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
     void onShareError(QString);
     void onFatalError(QString);
+    void onNewFrameFormat();
     void onRtcFailed(Peer*);
 
     void onNeedElevate();
@@ -63,6 +66,7 @@ private slots:
     void stopShare();
     void shareError(const QString& reason);
     void fatalError(const QString& reason);
+    void newFrameFormat();
     void rtcFailed(Peer* peer);
 
     void downgradedToSharedMemory();
@@ -70,6 +74,7 @@ private slots:
     void dxgiNeedElevate();
 
     void openSetting();
+    void openQualitySetting();
     void openBuyRelay();
 
     void toggleKeepTop();
@@ -111,6 +116,7 @@ public:
 
 private:
     std::atomic_bool exiting = false;
+    std::atomic_bool resettingFrameFormat = false;
     Ui::CollabRoom *ui;
 
     bool isServer;
@@ -121,6 +127,9 @@ private:
     float frameRate = 60;
     int frameWidth = 1920;
     int frameHeight = 1080;
+    int frameQuality = 0;
+
+    DxgiOutput* dxgiOutputWindow;
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;

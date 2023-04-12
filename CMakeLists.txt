@@ -80,13 +80,14 @@ set(PROJECT_SOURCES
         ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
         ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
         ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
+        ui/windows/framequality.cpp ui/windows/framequality.h ui/windows/framequality.ui
         ${SHADER_FILES}
         ${CODEC_FILES}
         ${TS_FILES}
         ${PROTO_FILES}
         ${PROTO_SRCS} 
         ${PROTO_HDRS}
-    codec/d3d_capture.cpp codec/d3d_capture.h)
+    )
 
 qt_add_executable(VTSLink
     ui/vtslink.rc

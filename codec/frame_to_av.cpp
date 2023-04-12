@@ -6,6 +6,7 @@
 #include "qelapsedtimer.h"
 #include <QStringList>
 #include <sstream>
+#include <utility>
 #include "core/vtslink.h"
 #include "libyuv.h"
 #include <qsettings.h>
@@ -31,12 +32,13 @@ static QList<CodecOption> options = {
 	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
-FrameToAv::FrameToAv(int width, int height, float fps, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
+FrameToAv::FrameToAv(int width, int height, float fps, int quality, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
 	qDebug() << "begin dx2av";
-	onPacketReceived = cb;
+	onPacketReceived = std::move(cb);
     this->_width = width;
     this->_height = height;
     this->frameRate = fps;
+    this->frameQuality = quality;
 }
 
 FrameToAv::~FrameToAv()
@@ -334,20 +336,31 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext* ctx)
 {
     QSettings settings;
-    auto cqp = settings.value("avCQP", 32).toInt();
-    if (cqp < 16) cqp = 16;
-    else if (cqp > 36) cqp = 36;
-    settings.setValue("avCQP", cqp);
-    settings.sync();
+    auto cqp = 36;
+    switch (frameQuality) {
+        case 0:
+            cqp = 36;
+            break;
+        case 1:
+            cqp = 28;
+            break;
+        case 2:
+            cqp = 20;
+            break;
+        case 3:
+            cqp = 12;
+            break;
+    }
 
-    qDebug() << "use cqp" << cqp;
+    qDebug() << "use cqp" << cqp << "level" << frameQuality;
 
     ctx->rc_max_rate = 4000000;
     ctx->bit_rate = 2000000;
 	ctx->max_b_frames = 0;
     ctx->slices = 1;
 
-    auto intraRefresh = true;
+    auto disableIntraRefresh = settings.value("disableIntraRefresh", false).toBool();
+    auto intraRefresh = !disableIntraRefresh;
     auto gopSize = intraRefresh ? 300 : 60;
 
     auto ret = 0;

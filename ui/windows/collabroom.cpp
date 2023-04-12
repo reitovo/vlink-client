@@ -33,6 +33,7 @@ extern "C" {
 #include "buyrelay.h"
 #include "d3d_capture.h"
 #include "spout_capture.h"
+#include "framequality.h"
 
 static CollabRoom *roomInstance;
 
@@ -118,6 +119,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
     connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
     connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
+    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -127,6 +129,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(ui->openSettings, &QPushButton::clicked, this, &CollabRoom::openSetting);
     connect(ui->createRelay, &QPushButton::clicked, this, &CollabRoom::openBuyRelay);
     connect(ui->keepTop, &QPushButton::clicked, this, &CollabRoom::toggleKeepTop);
+    connect(ui->openQualitySetting, &QPushButton::clicked, this, &CollabRoom::openQualitySetting);
     connect(ui->btnFixRatio, &QPushButton::clicked, this, [=, this]() {
         this->needFixVtsRatio = true;
     });
@@ -189,7 +192,17 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         auto _frameWidth = settings.value("frameWidth", 1920).toInt();
         auto _frameHeight = settings.value("frameHeight", 1080).toInt();
         auto _frameRate = settings.value("frameRate", 60).toInt();
-        roomServer->createRoom(localPeerId.toStdString(), nick.toStdString(), _frameWidth, _frameHeight, _frameRate, turnServer.toStdString());
+        auto _frameQuality = settings.value("frameQualityIdx", 0).toInt();
+
+        vts::server::ReqCreateRoom req;
+        req.set_peerid(localPeerId.toStdString());
+        req.set_nick(nick.toStdString());
+        req.mutable_format()->set_framewidth(_frameWidth);
+        req.mutable_format()->set_frameheight(_frameHeight);
+        req.mutable_format()->set_framerate(_frameRate);
+        req.mutable_format()->set_framequality(_frameQuality);
+
+        roomServer->createRoom(req);
     } else {
         roomServer->joinRoom(localPeerId.toStdString(), roomId.toStdString(), nick.toStdString());
     }
@@ -204,12 +217,15 @@ void CollabRoom::onRoomInfoSucceed(const vts::server::RspRoomInfo &info) {
     frameWidth = info.format().framewidth();
     frameHeight = info.format().frameheight();
     frameRate = info.format().framerate();
+    frameQuality = info.format().framequality();
 
-    auto output = new DxgiOutput();
-    output->setSize(frameWidth, frameHeight);
+    qDebug() << "frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+
+    dxgiOutputWindow = new DxgiOutput();
+    dxgiOutputWindow->setSize(frameWidth, frameHeight);
     if (settings.value("showDxgiWindow").toBool()) {
-        output->move(0, 0);
-        output->show();
+        dxgiOutputWindow->move(0, 0);
+        dxgiOutputWindow->show();
     }
 
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
@@ -333,7 +349,6 @@ void CollabRoom::setNick() {
     }
     qDebug() << "new nick" << n;
 
-
 }
 
 void CollabRoom::updateTurnServer() {
@@ -346,7 +361,7 @@ void CollabRoom::updateTurnServer() {
     qDebug() << "update turn server" << turnServer;
 
     ScopedQMutex _(&peersLock);
-    for(auto & peer : clientPeers) {
+    for (auto &peer: clientPeers) {
         peer.second->startServer();
     }
 
@@ -364,7 +379,7 @@ void CollabRoom::toggleTurnVisible() {
     }
 }
 
-void CollabRoom::shareError(const QString& reason) {
+void CollabRoom::shareError(const QString &reason) {
     stopShareWorker();
 
     QMessageBox::critical(this, tr("分享错误"), errorToReadable(reason));
@@ -373,7 +388,15 @@ void CollabRoom::shareError(const QString& reason) {
     ui->btnSharingStatus->setEnabled(true);
 }
 
-void CollabRoom::fatalError(const QString& reason) {
+void CollabRoom::newFrameFormat() {
+    QMessageBox::information(this, tr("新的画面设置"), tr("调整了新的画面设置，请重新开始分享"));
+    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
+    ui->btnSharingStatus->setEnabled(true);
+    ui->btnFixRatio->setEnabled(false);
+    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+}
+
+void CollabRoom::fatalError(const QString &reason) {
     if (reason == "nv driver old") {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Critical);
@@ -423,6 +446,23 @@ void CollabRoom::openSetting() {
             ui->shareMethods->setCurrentIndex(0);
         }
     });
+}
+
+void CollabRoom::openQualitySetting() {
+    FrameQuality f(this);
+    f.exec();
+
+    if (f.changed) {
+        qDebug() << "resetting frame quality";
+        qDebug() << "frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+
+        vts::server::FrameFormatSetting req;
+        req.set_framequality(frameQuality);
+        req.set_frameheight(frameHeight);
+        req.set_framewidth(frameWidth);
+        req.set_framerate(frameRate);
+        roomServer->setFrameFormat(req);
+    }
 }
 
 void CollabRoom::toggleShare() {
@@ -500,7 +540,7 @@ void CollabRoom::spoutShareWorkerClient() {
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=, this](auto av) {
+    FrameToAv cvt(frameWidth, frameHeight, frameRate, frameQuality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
@@ -611,7 +651,7 @@ void CollabRoom::dxgiShareWorkerClient() {
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, [=, this](auto av) {
+    FrameToAv cvt(frameWidth, frameHeight, frameRate, frameQuality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
@@ -634,7 +674,7 @@ void CollabRoom::dxgiShareWorkerClient() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-    float frameSeconds = 1.0f  / frameRate;
+    float frameSeconds = 1.0f / frameRate;
 
     while (shareRunning) {
         QElapsedTimer t;
@@ -720,11 +760,11 @@ void CollabRoom::stopShareWorker() {
     terminateQThread(shareThread);
 }
 
-void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
+void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
     if (isServer) {
         ScopedQMutex _(&peersLock);
         QList<QString> alive;
-        for (const auto& peer: peers) {
+        for (const auto &peer: peers) {
             // Find clients
             if (!peer.isserver()) {
                 auto id = QString::fromStdString(peer.peerid());
@@ -751,7 +791,7 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
     emit onUpdatePeersUi(peers);
 }
 
-void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
+void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
     while (ui->peerList->count() < peers.size()) {
         auto item = new QListWidgetItem(ui->peerList);
         auto peer = new PeerItemWidget(this);
@@ -776,7 +816,7 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
         auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
         widget->updatePeer(p);
 
-        auto nat = (NatType)p.nattype();
+        auto nat = (NatType) p.nattype();
         auto qNick = QString::fromStdString(p.nick());
         auto qPeerId = QString::fromStdString(p.peerid());
         if (nat != StunTypeUnknown)
@@ -792,8 +832,8 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
         ui->relayHint->setText("☕" + tr("网络检测中"));
         ui->relayHint->setToolTip(tr("检测中，请稍后"));
 
-    }  else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
-        localNatType == StunTypeRestrictedNat) {
+    } else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
+               localNatType == StunTypeRestrictedNat) {
         ui->relayHint->setText("✅" + tr("网络良好"));
         ui->relayHint->setToolTip(
                 tr("当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
@@ -845,8 +885,8 @@ void CollabRoom::usageStatUpdate() {
     txSpeed.update(tx);
     rxSpeed.update(rx);
     ui->speedStat->setText(QString("%1 ↑↓ %2")
-            .arg(txSpeed.speed())
-            .arg(rxSpeed.speed()));
+                                   .arg(txSpeed.speed())
+                                   .arg(rxSpeed.speed()));
 }
 
 void CollabRoom::heartbeatUpdate() {
@@ -867,13 +907,14 @@ void CollabRoom::dxgiSendWorker() {
     std::unique_ptr<FrameToAv> cvt = nullptr;
 
     if (isServer) {
-        cvt = std::make_unique<FrameToAv>(frameWidth, frameHeight, frameRate, [=, this](auto av) {
-            ScopedQMutex _(&peersLock);
-            // This approach is bandwidth consuming, should be replaced by relay approach
-            for (auto &s: clientPeers) {
-                s.second->sendAsync(av);
-            }
-        });
+        cvt = std::make_unique<FrameToAv>(frameWidth, frameHeight, frameRate, frameQuality,
+                                          [=, this](auto av) {
+                                              ScopedQMutex _(&peersLock);
+                                              // This approach is bandwidth consuming, should be replaced by relay approach
+                                              for (auto &s: clientPeers) {
+                                                  s.second->sendAsync(av);
+                                              }
+                                          });
         auto initErr = cvt->init(true);
         if (initErr.has_value()) {
             emit onFatalError(initErr.value());
@@ -885,7 +926,7 @@ void CollabRoom::dxgiSendWorker() {
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
 
-    while (!exiting) {
+    while (!exiting && !resettingFrameFormat) {
         QElapsedTimer t;
         t.start();
 
@@ -1063,9 +1104,9 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
     ScopedQMutex _(&peersLock);
     auto from = QString::fromStdString(sdp.frompeerid());
     if (isServer) {
-        for(auto & peer : clientPeers) {
+        for (auto &peer: clientPeers) {
             if (peer.first == from) {
-                qDebug() << "client" << peer.first << "offered sdp to server" ;
+                qDebug() << "client" << peer.first << "offered sdp to server";
                 peer.second->setClientRemoteSdp(sdp);
             }
         }
@@ -1075,8 +1116,58 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
     }
 }
 
-void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp) {
+void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
+    qDebug() << "received new frame setting";
 
+    frameWidth = frame.framewidth();
+    frameHeight = frame.frameheight();
+    frameRate = frame.framerate();
+    frameQuality = frame.framequality();
+
+    qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+
+    stopShareWorker();
+    emit onNewFrameFormat();
+
+    {
+        ScopedQMutex _(&peersLock);
+        if (isServer) {
+            for (auto &peer: clientPeers) {
+                peer.second->stopDecoder();
+            }
+        } else {
+            serverPeer->stopDecoder();
+        }
+    }
+
+    resettingFrameFormat = true;
+    terminateQThread(frameSendThread);
+    resettingFrameFormat = false;
+
+    qDebug() << "d3d use count" << d3d.use_count();
+    d3d.reset();
+
+    d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
+    d3d->init(true);
+
+    // Start sending thread
+    frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
+        dxgiSendWorker();
+    }));
+    frameSendThread->start();
+
+    {
+        ScopedQMutex _(&peersLock);
+        if (isServer) {
+            for (auto &peer: clientPeers) {
+                peer.second->startDecoder();
+            }
+        } else {
+            serverPeer->startDecoder();
+        }
+    }
+
+    qDebug() << "done set new frame format";
 }
 
 void CollabRoom::onNotifyDestroy() {

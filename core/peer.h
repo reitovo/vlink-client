@@ -49,6 +49,10 @@ public:
     void startServer();
     void startClient(const vts::server::Sdp& serverSdp);
     void close();
+
+    QMutex decoderMutex;
+    void startDecoder();
+    void stopDecoder();
      
     std::atomic_bool dcInited = false;
     std::atomic_bool dcThreadAlive;

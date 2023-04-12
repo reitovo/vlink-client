@@ -19,6 +19,7 @@ void Speed::update(size_t value) {
     lastTime = time;
 
     if (deltaTime == 0 || value < lastValue) {
+        lastValue = value;
         bytesPerSecond = 0;
         return;
     }

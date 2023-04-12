@@ -35,7 +35,7 @@ public:
     explicit RoomServer(CollabRoom* room);
     ~RoomServer();
 
-    void createRoom(const std::string& peerId, const std::string& nick, int width, int height, int fps, const std::string& turn);
+    void createRoom(const vts::server::ReqCreateRoom& req);
     void joinRoom(const std::string& peerId, const std::string& roomId, const std::string& nick);
 
     inline std::unique_ptr<grpc::ClientContext> getCtx() {

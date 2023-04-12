@@ -46,9 +46,6 @@ void SettingWindow::init() {
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
-    ui->shouldForceCQP->setChecked(settings.value("forceCQP").toBool());
-    ui->avCQP->setValue(settings.value("avCQP", 32).toInt());
-    ui->avCQPValue->setText(QString("%1").arg(settings.value("avCQP", 32).toInt()));
 
     connect(ui->encoders, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         settings.setValue("forceEncoderName", s);
@@ -92,19 +89,6 @@ void SettingWindow::init() {
 
     connect(ui->actionCrash, &QAction::triggered, this, [=]() {
        throw std::exception("active crashed");
-    });
-
-    connect(ui->shouldForceCQP, &QCheckBox::clicked, this, [=, this](bool v) {
-        settings.setValue("forceCQP", v);
-        settings.sync();
-        qDebug() << "force cqp" << v;
-    });
-
-    connect(ui->avCQP, &QSlider::valueChanged, this, [=, this](int v) {
-        settings.setValue("avCQP", v);
-        settings.sync();
-
-        ui->avCQPValue->setText(QString("%1").arg(v));
     });
 
     connect(ui->enableBuffering, &QCheckBox::clicked, this, [=, this](bool v) {

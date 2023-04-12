@@ -66,6 +66,7 @@ private:
     bool inited = false;
     int _width, _height;
     float frameRate;
+    int frameQuality;
 
     AVPacket *packet = nullptr;
 
@@ -89,7 +90,7 @@ private:
     std::optional<QString> processInternal();
 
 public:
-    FrameToAv(int width, int height, float fps, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb);
+    FrameToAv(int width, int height, float fps, int quality, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb);
     ~FrameToAv();
 
     QString debugInfo();

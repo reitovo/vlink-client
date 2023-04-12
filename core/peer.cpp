@@ -52,13 +52,13 @@ Peer::Peer(CollabRoom *room, QString id) {
     }));
     dcThread->start();
 
-    dec = std::make_unique<AvToDx>(room->frameWidth, room->frameHeight, room->frameRate, room->d3d);
+    startDecoder();
 }
 
 Peer::~Peer() {
     dcThreadAlive = false;
     terminateQThread(dcThread);
-
+    stopDecoder();
     close();
 
     qDebug() << "Peer destroyed";
@@ -263,7 +263,7 @@ void Peer::sendAsync(std::shared_ptr<vts::VtsMsg> payload) {
         return;
     }
 
-    if (sendQueue.size_approx() > 10) {
+    if (sendQueue.size_approx() > 15) {
         //qDebug() << "throw away payload because queue is full";
         return;
     }
@@ -312,12 +312,28 @@ void Peer::initSmartBuf() {
 }
 
 void Peer::decode(std::unique_ptr<vts::VtsMsg> m) {
-    dec->process(std::move(m));
+    ScopedQMutex _(&decoderMutex);
+    if (dec != nullptr)
+        dec->process(std::move(m));
 }
 
 void Peer::resetDecoder() {
-    dec->reset();
+    ScopedQMutex _(&decoderMutex);
+    if (dec != nullptr)
+        dec->reset();
 }
+
+
+void Peer::startDecoder() {
+    ScopedQMutex _(&decoderMutex);
+    dec = std::make_unique<AvToDx>(room->frameWidth, room->frameHeight, room->frameRate, room->d3d);
+}
+
+void Peer::stopDecoder() {
+    ScopedQMutex _(&decoderMutex);
+    dec.reset();
+}
+
 
 void Peer::sendHeartbeat() {
     qDebug() << "send dc heartbeat to" << remotePeerId;

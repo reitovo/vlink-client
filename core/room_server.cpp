@@ -96,17 +96,10 @@ void RoomServer::startNatTypeDetect() {
     natThread->start();
 }
 
-void RoomServer::createRoom(const std::string& peerId, const std::string& nick, int width, int height, int fps, const std::string& turn) {
-    this->peerId = peerId;
+void RoomServer::createRoom(const vts::server::ReqCreateRoom& req) {
+    this->peerId = req.peerid();
 
     vts::server::RspRoomInfo rsp;
-
-    vts::server::ReqCreateRoom req;
-    req.set_peerid(peerId);
-    req.set_nick(nick);
-    req.mutable_format()->set_framewidth(width);
-    req.mutable_format()->set_frameheight(height);
-    req.mutable_format()->set_framerate(fps);
 
     grpc::ClientContext context;
     context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
