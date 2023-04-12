@@ -430,7 +430,9 @@ void CollabRoom::fatalError(const QString &reason) {
         box.addButton(tr("关闭"), QMessageBox::NoRole);
         box.exec();
     }
-    close();
+    QTimer::singleShot(500, this, [this]() {
+        close();
+    });
 }
 
 void CollabRoom::openSetting() {
