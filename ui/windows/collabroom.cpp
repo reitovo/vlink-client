@@ -112,14 +112,14 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         }
     }
 
-    connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate, Qt::BlockingQueuedConnection);
-    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi);
+    connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError);
+    connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
+    connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
+    connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
+    connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
+    connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
+    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -247,11 +247,6 @@ void CollabRoom::onRoomInfoFailed(const string &error) {
 CollabRoom::~CollabRoom() {
     roomInstance = nullptr;
     exiting = true;
-
-    auto messageBoxes = QObject::findChildren<QMessageBox*>();
-    for (auto &a: messageBoxes) {
-        a->close();
-    }
 
     auto dxgi = DxgiOutput::getWindow();
     if (dxgi) {
@@ -404,7 +399,7 @@ void CollabRoom::shareError(const QString &reason) {
 
 void CollabRoom::fatalError(const QString &reason) {
     if (reason == "nv driver old") {
-        QMessageBox box(this);
+        QMessageBox box(nullptr);
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle(tr("错误"));
         box.setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
@@ -428,7 +423,7 @@ void CollabRoom::fatalError(const QString &reason) {
         } else if (reason == "room init timeout") {
             error = tr("请求房间信息超时，请重试");
         }
-        QMessageBox box(this);
+        QMessageBox box(nullptr);
         box.setIcon(QMessageBox::Critical);
         box.setWindowTitle(tr("错误"));
         box.setText(errorToReadable(error));

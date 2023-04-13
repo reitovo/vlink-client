@@ -313,19 +313,36 @@ retryNextFrame:
         packet->dts = a.dts();
         packet->pts = a.pts();
         packet->flags = a.flags();
+        packet->stream_index = 0;
         ret = avcodec_send_packet(ctx, packet);
         if (ret < 0) {
-            qDebug() << "error sending packet for decoding" << av_err2str(ret);
+            qDebug() << "error sending packet for decoding" << av_err2str(ret) << ret;
             errList.append("send packet");
         }
     }
 
     //qDebug() << "recv frame rgb";
 
-    ret = avcodec_receive_frame(ctx, frame);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF || ret < 0) {
-        qDebug() << "error while decoding rgb" << av_err2str(ret);
-        errList.append("receive frame");
+    int decodeCount = 0;
+    while (true) {
+        ret = avcodec_receive_frame(ctx, frame);
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
+            if (decodeCount == 0) {
+                qDebug() << "no frame decoded" << av_err2str(ret) << ret;
+                errList.append("no frame decoded");
+            } else if (decodeCount > 1) {
+                qDebug() << "multiple frame decoded" << decodeCount;
+                break;
+            } else {
+                break;
+            }
+        }
+        else if (ret < 0){
+            qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
+            errList.append("receive frame");
+            break;
+        }
+        decodeCount++;
     }
 
     //qDebug() << "to bgra";

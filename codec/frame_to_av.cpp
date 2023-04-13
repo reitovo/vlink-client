@@ -565,10 +565,6 @@ std::optional<QString> FrameToAv::processInternal() {
             err.append("recv packet");
         }
 
-        if (packet->flags & AV_PKT_FLAG_KEY) {
-            qDebug() << "key frame";
-        }
-
         //qDebug() << "rgb packet" << packet->size;
         auto d = avFrame->add_packets();
         d->mutable_data()->assign((const char*)packet->data, packet->size);
