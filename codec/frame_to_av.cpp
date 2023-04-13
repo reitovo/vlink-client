@@ -23,13 +23,13 @@ static QList<CodecOption> options = {
 	{"h264_amf", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_D3D11, "AMF Native (H.264)"}, // Good
 
 	// Try mapped, as app might run on different GPU, it might perform bad.
-	{"h264_nvenc", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "NVENC Mapped (H.264)"},
-	{"h264_amf", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "AMF Mapped (H.264)"},
-	{"h264_qsv", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
+//	{"h264_nvenc", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "NVENC Mapped (H.264)"},
+//	{"h264_amf", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "AMF Mapped (H.264)"},
+//	{"h264_qsv", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
 
 	// You don't have a GPU? 
-	//{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
-	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
+//	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
+//	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
 FrameToAv::FrameToAv(int width, int height, float fps, int quality, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
