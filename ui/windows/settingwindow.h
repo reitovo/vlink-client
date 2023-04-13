@@ -3,6 +3,7 @@
 
 #include "qtimer.h"
 #include "QSettings"
+#include "out/build/x64-RelWithDebInfo/vcpkg_installed/x64-windows/include/Qt6/QtNetwork/QNetworkAccessManager"
 #include <QMainWindow>
 
 namespace Ui {
@@ -17,6 +18,7 @@ class SettingWindow : public QMainWindow
     QTimer debugGather;
     CollabRoom* room;
     QSettings settings;
+    QNetworkAccessManager networkAccessManager;
 
 public:
     explicit SettingWindow(QWidget* parent);

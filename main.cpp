@@ -63,8 +63,8 @@ static void dxCaptureMessageHandler(int log_level, const char *format, va_list a
 }
 
 int main(int argc, char *argv[]) {
-    QFile log("../vtslink.log");
-    if (log.exists() && log.size() > 1024 * 1024 * 32)
+    QFile log(VTSLINK_LOG_FILE);
+    if (log.exists() && log.size() > 1024 * 1024 * 4)
         log.remove();
 
     base_set_log_handler(dxCaptureMessageHandler, nullptr);
@@ -229,7 +229,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
             break;
     }
 
-    QFile outFile("../vtslink.log");
+    QFile outFile(VTSLINK_LOG_FILE);
     outFile.open(QIODevice::WriteOnly | QIODevice::Append);
 
     QTextStream textStream(&outFile);
@@ -274,7 +274,7 @@ void redirectDebugOutput() {
     pdbBuffer = (PDEBUGBUFFER) MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
 
     // 循环
-    while (true) {
+    while (!QCoreApplication::closingDown()) {
         // 激活事件
         SetEvent(hAckEvent);
         // 等待缓冲区数据

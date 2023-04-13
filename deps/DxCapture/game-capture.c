@@ -15,6 +15,7 @@
 #include "app-helpers.h"
 #include "nt-stuff.h"
 #include "dx-capture.h"
+#include "math.h"
 
 #define do_log(level, format, ...)                  \
     blog(level, "[game-capture: '%s'] " format, \
@@ -332,7 +333,7 @@ void game_fix_window_ratio(void* data) {
         GetClientRect(gc->window, &rect);
         GetWindowRect(gc->window, &windowRect);
         int width = rect.right - rect.left;
-        int height = width * 9 / 16;
+        int height = (int)round(width * 9.0 / 16.0);
         rect.bottom = rect.top + height;
         long style = GetWindowLong(gc->window, GWL_STYLE);
         AdjustWindowRect(&rect, style, 0);

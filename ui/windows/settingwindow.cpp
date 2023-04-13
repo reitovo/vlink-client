@@ -3,6 +3,9 @@
 #include "collabroom.h"
 #include "codec/frame_to_av.h"
 #include "QSettings"
+#include "QFile"
+#include "QNetworkReply"
+#include "QMessageBox"
 
 SettingWindow::SettingWindow(QWidget *parent) :
         QMainWindow(parent),
@@ -91,8 +94,48 @@ void SettingWindow::init() {
         qDebug() << "restore ignored";
     });
 
-    connect(ui->actionSendLog, &QAction::triggered, this, [=]() {
+    connect(ui->actionSendLog, &QAction::triggered, this, [=, this]() {
+        QNetworkRequest req;
+        req.setUrl(QUrl("https://misc.reito.fun/report"));
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "plain/text");
 
+        QFile outFile(VTSLINK_LOG_FILE);
+        outFile.open(QIODevice::ReadOnly);
+        auto arr = outFile.readAll();
+
+        QNetworkReply* reply = networkAccessManager.post(req, arr);
+
+        auto* box = new QMessageBox;
+        box->setIcon(QMessageBox::Information);
+        box->setWindowTitle(tr("正在上传"));
+        box->setText(tr("请稍后"));
+        auto ok = box->addButton(tr("确定"), QMessageBox::NoRole);
+        auto cancel = box->addButton(tr("取消"), QMessageBox::NoRole);
+        ok->setEnabled(false);
+
+        connect(reply, &QNetworkReply::uploadProgress, this, [=](qint64 sent, qint64 total) {
+            box->setText(tr("请稍后，已上传 %1/%2").arg(sent).arg(total));
+        });
+
+        connect(reply, &QNetworkReply::finished, this, [=]() {
+            ok->setEnabled(true);
+            cancel->setEnabled(false);
+            box->setWindowTitle(tr("上传完成"));
+            if (reply->error() != QNetworkReply::NetworkError::NoError) {
+                box->setText(reply->errorString());
+            } else {
+                box->setText(tr("上传成功"));
+            }
+        });
+
+        box->exec();
+        auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+        if (ret == cancel) {
+            reply->abort();
+        }
+
+        delete reply;
+        delete box;
     });
 
     connect(ui->actionCrash, &QAction::triggered, this, [=]() {
