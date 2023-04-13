@@ -149,6 +149,7 @@ void RoomServer::setSdp(const vts::server::Sdp &sdp) {
     auto status = service->SetSdp(context.get(), sdp, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }
 
@@ -162,6 +163,7 @@ void RoomServer::setNat(int type) {
     auto status = service->SetNatType(context.get(), req, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }
 
@@ -171,6 +173,7 @@ void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
     auto status = service->SetRtt(context.get(), rtt, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }
 
@@ -184,6 +187,7 @@ void RoomServer::setNick(const string &nick) {
     auto status = service->SetNickName(context.get(), req, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }
 
@@ -193,6 +197,7 @@ void RoomServer::setFrameFormat(const vts::server::FrameFormatSetting &format) {
     auto status = service->SetFrameFormat(context.get(), format, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }
 
@@ -218,5 +223,6 @@ void RoomServer::requestIdr() {
     auto status = service->RequestIdr(context.get(), vts::server::ReqCommon(), &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
     }
 }

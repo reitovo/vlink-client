@@ -121,6 +121,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
     connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
     connect(this, &CollabRoom::onSpoutOpenSharedFailed, this, &CollabRoom::spoutOpenSharedFailed);
+    connect(this, &CollabRoom::onRoomServerError, this, &CollabRoom::roomServerError);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -351,6 +352,7 @@ void CollabRoom::setNick() {
     }
     qDebug() << "new nick" << n;
 
+    roomServer->setNick(n.toStdString());
 }
 
 void CollabRoom::updateTurnServer() {
@@ -431,6 +433,17 @@ void CollabRoom::fatalError(const QString &reason) {
         box.addButton(tr("关闭"), QMessageBox::NoRole);
         box.exec();
     }
+    close();
+}
+
+void CollabRoom::roomServerError(const QString& func, const QString &reason) {
+    QMessageBox box(nullptr);
+    box.setIcon(QMessageBox::Critical);
+    box.setWindowTitle(tr("房间服务器错误"));
+    box.setText(tr("请求 ") + func + tr(" 时发生错误") + reason +
+        tr("\n可能是由于远程房间服务器更新时发生重启，请重新创建房间，抱歉！已购买的中转服务器将不受影响。"));
+    box.addButton(tr("关闭"), QMessageBox::NoRole);
+    box.exec();
     close();
 }
 
@@ -1047,6 +1060,8 @@ void CollabRoom::downgradedToSharedMemory() {
 }
 
 void CollabRoom::spoutOpenSharedFailed() {
+    stopShare();
+
     QMessageBox box(this);
     box.setIcon(QMessageBox::Critical);
     box.setWindowTitle(tr("错误"));

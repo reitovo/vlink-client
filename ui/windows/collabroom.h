@@ -48,6 +48,7 @@ signals:
     void onFatalError(QString);
     void onNewFrameFormat();
     void onRtcFailed(Peer*);
+    void onRoomServerError(QString, QString);
 
     void onNeedElevate();
     void onDxgiCaptureStatus(QString text);
@@ -65,6 +66,7 @@ private slots:
     void toggleShare();
     void startShare();
     void stopShare();
+    void roomServerError(const QString& func, const QString& reason);
     void shareError(const QString& reason);
     void fatalError(const QString& reason);
     void newFrameFormat();

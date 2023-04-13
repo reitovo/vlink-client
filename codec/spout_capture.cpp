@@ -68,7 +68,8 @@ SpoutCapture::~SpoutCapture() {
     lock.lock();
 
     releaseSharedSurf();
-    _texture_captured->Release();
+    if (_texture_captured != nullptr)
+        _texture_captured->Release();
 
     COM_RESET(_d3d11_samplerState);
     COM_RESET(_d3d11_inputLayout);
