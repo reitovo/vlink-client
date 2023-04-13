@@ -68,6 +68,6 @@ jobs:
       - name: Upload debug symbol
         shell: pwsh
         run: |
-          curl --noproxy '*' -F "upload_file=@C:/vtslink/client/out/install/pdb/VTSLink.pdb" `
+          curl -F "upload_file=@C:/vtslink/client/out/install/pdb/VTSLink.pdb" `
           -X POST `
           "https://submit.backtrace.io/reito/${{secrets.BACKTRACE_SYMBOL_TOKEN}}/symbols"
