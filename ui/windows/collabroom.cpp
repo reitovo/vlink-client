@@ -112,14 +112,14 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         }
     }
 
-    connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi);
-    connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError);
-    connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
-    connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed);
-    connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
-    connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
-    connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
-    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
+    connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onRtcFailed, this, &CollabRoom::rtcFailed, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate, Qt::BlockingQueuedConnection);
+    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat, Qt::BlockingQueuedConnection);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -247,6 +247,11 @@ void CollabRoom::onRoomInfoFailed(const string &error) {
 CollabRoom::~CollabRoom() {
     roomInstance = nullptr;
     exiting = true;
+
+    auto messageBoxes = QObject::findChildren<QMessageBox*>();
+    for (auto &a: messageBoxes) {
+        a->close();
+    }
 
     auto dxgi = DxgiOutput::getWindow();
     if (dxgi) {
@@ -380,6 +385,14 @@ void CollabRoom::toggleTurnVisible() {
     }
 }
 
+void CollabRoom::newFrameFormat() {
+    QMessageBox::information(this, tr("新的画面设置"), tr("调整了新的画面设置，请重新开始分享"));
+    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
+    ui->btnSharingStatus->setEnabled(true);
+    ui->btnFixRatio->setEnabled(false);
+    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+}
+
 void CollabRoom::shareError(const QString &reason) {
     stopShareWorker();
 
@@ -387,14 +400,6 @@ void CollabRoom::shareError(const QString &reason) {
 
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(true);
-}
-
-void CollabRoom::newFrameFormat() {
-    QMessageBox::information(this, tr("新的画面设置"), tr("调整了新的画面设置，请重新开始分享"));
-    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(true);
-    ui->btnFixRatio->setEnabled(false);
-    dxgiOutputWindow->setSize(frameWidth, frameHeight);
 }
 
 void CollabRoom::fatalError(const QString &reason) {
@@ -430,9 +435,7 @@ void CollabRoom::fatalError(const QString &reason) {
         box.addButton(tr("关闭"), QMessageBox::NoRole);
         box.exec();
     }
-    QTimer::singleShot(500, this, [this]() {
-        close();
-    });
+    close();
 }
 
 void CollabRoom::openSetting() {
