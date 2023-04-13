@@ -9,7 +9,7 @@
 #include "QThread"
 #include "QMutex"
 
-#define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ " reset " #x " ret" << remain;} }
+#define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ << "reset " #x " ret" << remain;} }
 #define qDebugStd(x) { std::ostringstream oss; oss << x; qDebug(oss.str().c_str()); }
 
 #define DX_DEBUG_LAYER true
