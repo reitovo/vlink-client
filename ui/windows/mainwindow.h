@@ -30,6 +30,7 @@ private:
 
     void iterateCodec();
     void iterateHwAccels();
+    void debugVideoAdapters();
 
 private slots:
     void actionExit();

@@ -10,6 +10,8 @@
 #include <QDesktopServices>
 #include <utility>
 
+#include "dxgi1_2.h"
+
 static MainWindow *_instance;
 
 MainWindow::MainWindow(QWidget *parent)
@@ -52,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // iterateCodec();
     // iterateHwAccels();
+    debugVideoAdapters();
 
     QSettings settings;
     auto lang = settings.value("languageCode", "").toString();
@@ -118,13 +121,6 @@ void MainWindow::joinRoom() {
     connect(c, &QDialog::destroyed, this, [=]() {
         show();
     });
-
-//    auto* http = new BlockingHttpRequest(this);
-//    http->getAsync("https://www.baidu.com", [=](QNetworkReply* reply) {
-//        auto e = reply->readAll();
-//        qDebug() << "Received";
-//        http->deleteLater();
-//    });
 }
 
 void MainWindow::createRoom() {
@@ -204,4 +200,34 @@ void MainWindow::iterateHwAccels() {
 void MainWindow::openSetting() {
     auto w = new SettingWindow(this);
     w->show();
+}
+
+void MainWindow::debugVideoAdapters() {
+    // We need dxgi to share texture
+    IDXGIFactory2* pDXGIFactory;
+    IDXGIAdapter* pAdapter = NULL;
+    HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory2, (void**)&pDXGIFactory);
+    if (FAILED(hr)) {
+        qDebug() << "failed to create dxgi factory";
+        return;
+    }
+
+    int count = 0;
+    while (true){
+        hr = pDXGIFactory->EnumAdapters(count, &pAdapter);
+        if (FAILED(hr)) {
+            break;
+        }
+
+        DXGI_ADAPTER_DESC descAdapter;
+        hr = pAdapter->GetDesc(&descAdapter);
+        if (FAILED(hr)) {
+            break;
+        }
+
+        qDebug() << "adapter device" << count << QString::fromWCharArray(descAdapter.Description);
+        auto vendor = getGpuVendorTypeFromVendorId(descAdapter.VendorId);
+        qDebug() << "device vendor" << getGpuVendorName(vendor);
+        count++;
+    }
 }
