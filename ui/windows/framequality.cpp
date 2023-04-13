@@ -12,6 +12,11 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::FrameQuality) {
     ui->setupUi(this);
 
+    frameQuality = parent->frameQuality;
+    frameRate = parent->frameRate;
+    frameWidth = parent->frameWidth;
+    frameHeight = parent->frameHeight;
+
     ui->frameQuality->setCurrentIndex(settings.value("frameQualityIdx", 0).toInt());
     ui->frameRate->setCurrentIndex(settings.value("frameRateIdx", 1).toInt());
     ui->frameSize->setCurrentIndex(settings.value("frameSizeIdx", 2).toInt());

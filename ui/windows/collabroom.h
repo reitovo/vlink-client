@@ -32,6 +32,7 @@ class CollabRoom : public QDialog, public IDebugCollectable
     friend class Peer;
     friend class PeerItemWidget;
     friend class RoomServer;
+    friend class FrameQuality;
 
 public:
     static CollabRoom* instance();
