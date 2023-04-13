@@ -323,26 +323,14 @@ retryNextFrame:
 
     //qDebug() << "recv frame rgb";
 
-    int decodeCount = 0;
-    while (true) {
-        ret = avcodec_receive_frame(ctx, frame);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
-            if (decodeCount == 0) {
-                qDebug() << "no frame decoded" << av_err2str(ret) << ret;
-                errList.append("no frame decoded");
-            } else if (decodeCount > 1) {
-                qDebug() << "multiple frame decoded" << decodeCount;
-                break;
-            } else {
-                break;
-            }
-        }
-        else if (ret < 0){
-            qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
-            errList.append("receive frame");
-            break;
-        }
-        decodeCount++;
+    ret = avcodec_receive_frame(ctx, frame);
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
+        qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
+        errList.append("receive frame");
+    }
+    else if (ret < 0){
+        qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
+        errList.append("receive frame");
     }
 
     //qDebug() << "to bgra";
