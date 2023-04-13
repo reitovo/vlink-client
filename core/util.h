@@ -10,6 +10,7 @@
 #include "QMutex"
 
 #define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ << "reset " #x " ret" << remain;} }
+#define COM_RESET_TO_SINGLE(x) { x->AddRef(); while(true) { int remain = x->Release(); if (remain == 1) break; } }
 #define qDebugStd(x) { std::ostringstream oss; oss << x; qDebug(oss.str().c_str()); }
 
 #define DX_DEBUG_LAYER true
@@ -61,7 +62,10 @@ inline QString humanizeBytes(uint64_t bytes) {
     } else {
         return QString("%1 B").arg(bytes);
     }
-} 
+}
+
+class ID3D11DeviceChild;
+void setDxDebugName(ID3D11DeviceChild* child, const std::string& name);
 
 enum DeviceAdapterType {
     ADAPTER_VENDOR_INVALID,
@@ -74,7 +78,7 @@ template <typename T>
 inline void terminateQThread(const std::unique_ptr<T>& t, const char * func) {
     if (t != nullptr && !t->isFinished() && !t->wait(500)) {
         qWarning() << "The thread is not exited in 500ms, terminate it" << func;
-        t->terminate();
+        //t->terminate();
         t->wait(500);
     }
 }
@@ -90,8 +94,8 @@ public:
     }
 };
 
-class ID3D11Device;
-void printDxLiveObjects(ID3D11Device* dev, const char *);
+class IUnknown;
+void printDxLiveObjects(IUnknown* dev, const char *);
 
 inline DeviceAdapterType getGpuVendorTypeFromVendorId(uint32_t v) { 
     switch (v) {

@@ -92,6 +92,17 @@ DxCapture::~DxCapture() {
     lock.lock();
 
     releaseSharedSurf();
+    COM_RESET(_rtv_target_bgra);
+    COM_RESET(_d3d11_vertexBuffer);
+    COM_RESET(_d3d11_scale_ps);
+    COM_RESET(_d3d11_scale_vs);
+    COM_RESET(_d3d11_inputLayout);
+    COM_RESET(_d3d11_samplerState);
+    COM_RESET(_scale_pixel_shader);
+    COM_RESET(_scale_vertex_shader);
+    if  (_capturedView) {
+        COM_RESET(_capturedView);
+    }
 
     COM_RESET(_d3d11_deviceCtx);
     printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
@@ -199,6 +210,7 @@ bool DxCapture::init() {
     hr = this->_d3d11_device->CreateSamplerState(&desc, this->_d3d11_samplerState.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_d3d11_samplerState.Get(), "dx capture sampler state");
 
     qDebug() << "dx capture create sampler state";
 
@@ -207,6 +219,7 @@ bool DxCapture::init() {
                                                  nullptr, this->_d3d11_scale_vs.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_d3d11_scale_vs.Get(),  "dx capture vertex shader");
 
     qDebug() << "dx capture create vertex shader";
 
@@ -227,6 +240,7 @@ bool DxCapture::init() {
                                                 this->_d3d11_inputLayout.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_d3d11_inputLayout.Get(), "dx capture input layout");
 
     qDebug() << "dx capture create input layout";
 
@@ -234,6 +248,7 @@ bool DxCapture::init() {
     hr = this->_d3d11_device->CreatePixelShader(_scale_pixel_shader->GetBufferPointer(), _scale_pixel_shader->GetBufferSize(), nullptr, this->_d3d11_scale_ps.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_d3d11_scale_ps.Get(),  "dx capture pixel shader");
 
     qDebug() << "dx capture create pixel shader";
 
@@ -250,6 +265,7 @@ bool DxCapture::init() {
     hr = this->_d3d11_device->CreateBuffer(&BufferDesc, &InitData, this->_d3d11_vertexBuffer.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_d3d11_vertexBuffer.Get(), "dx capture vertex buffer");
 
     qDebug() << "dx capture create vertex buffer";
 
@@ -285,6 +301,7 @@ bool DxCapture::createSharedSurf() {
     hr = this->_d3d11_device->CreateTexture2D(&texDesc_rgba, nullptr, this->_texture_bgra.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_texture_bgra.Get(), "dx capture texture bgra");
 
     qDebug() << "dx capture create texture bgra";
 
@@ -306,6 +323,7 @@ bool DxCapture::createSharedSurf() {
     hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_bgra.Get(), &rtvDesc, this->_rtv_target_bgra.GetAddressOf());
     if (FAILED(hr))
         return false;
+    setDxDebugName(_rtv_target_bgra.Get(), "dx capture render target view");
 
     qDebug() << "d3d2dx create render target view";
 
@@ -425,13 +443,16 @@ void DxCapture::capturedTexture(dx_texture_t *tex) {
             qDebug() << "format bgra";
         }
 
-        ComPtr<ID3D11ShaderResourceView> _capturedView = nullptr;
+        if  (_capturedView) {
+            COM_RESET(_capturedView);
+        }
         D3D11_SHADER_RESOURCE_VIEW_DESC const srcDesc
                 = CD3D11_SHADER_RESOURCE_VIEW_DESC(_texture_captured, D3D11_SRV_DIMENSION_TEXTURE2D, type);
         HRESULT hr = this->_d3d11_device->CreateShaderResourceView(_texture_captured, &srcDesc, _capturedView.GetAddressOf());
         if (FAILED(hr)) {
             qDebug() << "captured texture failed create shader resource view";
         }
+        setDxDebugName(_capturedView.Get(), "captured texture shader resource view");
 
         std::array<ID3D11ShaderResourceView *, 1> const textureViews = {
                 _capturedView.Get()

@@ -52,7 +52,12 @@ BgraToNv12::~BgraToNv12() {
 
 	releaseSharedSurf();
 
-	COM_RESET(_d3d11_vertexBuffer);
+    COM_RESET(_bgra_nv24_vertex_shader);
+    COM_RESET(_bgra_nv24_pixel_shader);
+    COM_RESET(_nv24_nv12_vertex_shader);
+    COM_RESET(_nv24_nv12_pixel_shader);
+
+    COM_RESET(_d3d11_vertexBuffer);
 
 	COM_RESET(_d3d11_nv24_nv12_ps);
 	COM_RESET(_d3d11_nv24_nv12_vs);
@@ -62,14 +67,11 @@ BgraToNv12::~BgraToNv12() {
 	COM_RESET(_d3d11_inputLayout);
 	COM_RESET(_d3d11_samplerState);
 
-	COM_RESET(_bgra_nv24_vertex_shader);
-	COM_RESET(_bgra_nv24_pixel_shader);
-	COM_RESET(_nv24_nv12_vertex_shader);
-	COM_RESET(_nv24_nv12_pixel_shader);
-
-	COM_RESET(_d3d11_deviceCtx);
+    COM_RESET_TO_SINGLE(_d3d11_deviceCtx);
+    COM_RESET(_d3d11_deviceCtx);
+    COM_RESET_TO_SINGLE(_d3d11_device);
     printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
-	COM_RESET(_d3d11_device);
+    COM_RESET(_d3d11_device);
 
 	lock.unlock();
 	qDebug() << "end bgranv12 done";

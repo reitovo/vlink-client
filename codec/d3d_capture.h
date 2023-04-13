@@ -28,6 +28,7 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
     ComPtr<ID3D11Buffer> _d3d11_vertexBuffer = nullptr;
 
     ComPtr<ID3D11RenderTargetView> _rtv_target_bgra = nullptr;
+    ComPtr<ID3D11ShaderResourceView> _capturedView = nullptr;
 
     ComPtr<ID3D11Texture2D> _texture_bgra = nullptr;
     HANDLE _texture_bgra_shared = nullptr;

@@ -133,7 +133,7 @@ private:
     int frameHeight = 1080;
     int frameQuality = 0;
 
-    DxgiOutput* dxgiOutputWindow;
+    DxgiOutput* dxgiOutputWindow = nullptr;
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;

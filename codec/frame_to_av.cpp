@@ -260,69 +260,73 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 				return "adapter mismatch";
 			}
 
+            QString retErr;
+
 			ctx->pix_fmt = AV_PIX_FMT_QSV;
 			ctx->sw_pix_fmt = AV_PIX_FMT_NV12;
 
 			// Init d3d11 child device
-			AVBufferRef* ch = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
+			AVBufferRef* ch = nullptr;
+            AVBufferRef* hw = nullptr;
+            AVBufferRef* chf = nullptr;
+            AVBufferRef* hwf = nullptr;
+            AVHWFramesContext* hwFrameCtx = nullptr;
+
+            ch = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
 			auto* ch_device_ctx = reinterpret_cast<AVHWDeviceContext*>(ch->data);
 			auto* ch_d3d11va_device_ctx = reinterpret_cast<AVD3D11VADeviceContext*>(ch_device_ctx->hwctx);
 			ch_d3d11va_device_ctx->device = nv12->getDevice();
 			if (ch_d3d11va_device_ctx->device == nullptr) {
 				qDebug("dx2av qsv d3d11 device null");
-				av_buffer_unref(&ch);
-				return "open child d3d11 device";
+                retErr = "open child d3d11 device";
+                goto free;
 			}
 
 			if ((err = av_hwdevice_ctx_init(ch)) < 0) {
 				qDebug() << "dx2av qsv hwdevice failed" << av_err2str(err);
-				av_buffer_unref(&ch);
-				return "init child hwdevice ctx";
+                retErr = "init child hwdevice ctx";
+                goto free;
 			}
 
-			AVBufferRef* hw;
-			if ((err = av_hwdevice_ctx_create_derived(&hw, AV_HWDEVICE_TYPE_QSV, av_buffer_ref(ch), 0)) < 0) {
+			if ((err = av_hwdevice_ctx_create_derived(&hw, AV_HWDEVICE_TYPE_QSV, ch, 0)) < 0) {
 				qDebug() << "dx2av qsv hwdevice failed" << av_err2str(err);
-				av_buffer_unref(&ch);
-				av_buffer_unref(&hw);
-				return "init qsv hwdevice ctx";
+                retErr = "init qsv hwdevice ctx";
+                goto free;
 			}
 
 			ctx->hw_device_ctx = av_buffer_ref(hw);
 
 			// Create child hwframe
-			AVBufferRef* chf = av_hwframe_ctx_alloc(ch);
-			auto* frame = reinterpret_cast<AVHWFramesContext*>(chf->data);
-			frame->format = AV_PIX_FMT_D3D11;
-			frame->sw_format = AV_PIX_FMT_NV12;
-			frame->width = ctx->width;
-			frame->height = ctx->height;
-			frame->initial_pool_size = 2;
+			chf = av_hwframe_ctx_alloc(ch);
+            hwFrameCtx = reinterpret_cast<AVHWFramesContext*>(chf->data);
+            hwFrameCtx->format = AV_PIX_FMT_D3D11;
+            hwFrameCtx->sw_format = AV_PIX_FMT_NV12;
+            hwFrameCtx->width = ctx->width;
+            hwFrameCtx->height = ctx->height;
+            hwFrameCtx->initial_pool_size = 2;
 
 			if ((err = av_hwframe_ctx_init(chf)) < 0) {
 				qDebug() << "dx2av child qsv hwframe failed" << av_err2str(err);
-				av_buffer_unref(&ch);
-				av_buffer_unref(&hw);
-				av_buffer_unref(&chf);
-				return "init child qsv hwframe ctx";
+                retErr = "init child qsv hwframe ctx";
+                goto free;
 			}
 
-			AVBufferRef* hwf;
 			if ((err = av_hwframe_ctx_create_derived(&hwf, AV_PIX_FMT_QSV, hw, chf, 0)) < 0) {
 				qDebug() << "dx2av qsv hwframe failed" << av_err2str(err);
-				av_buffer_unref(&ch);
-				av_buffer_unref(&hw);
-				av_buffer_unref(&chf);
-				av_buffer_unref(&hwf);
-				return "init qsv hwframe ctx";
+                retErr = "init qsv hwframe ctx";
+                goto free;
 			}
 
 			ctx->hw_frames_ctx = av_buffer_ref(hwf);
-
+free:
 			av_buffer_unref(&ch);
 			av_buffer_unref(&hw);
 			av_buffer_unref(&chf);
 			av_buffer_unref(&hwf);
+
+            if (!retErr.isEmpty()) {
+                return retErr;
+            }
 		}
 	}
 	else {
@@ -330,7 +334,7 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 		ctx->pix_fmt = AV_PIX_FMT_NV12;
 	}
 
-	return std::optional<QString>();
+	return {};
 }
 
 void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext* ctx)
@@ -490,7 +494,8 @@ void FrameToAv::stop()
 	pts = 0;
 	av_packet_free(&packet);
 	av_frame_free(&frame);
-	avcodec_free_context(&ctx);
+    avcodec_free_context(&ctx);
+
     nv12 = nullptr;
 }
 

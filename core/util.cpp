@@ -217,7 +217,9 @@ void setComboBoxIfChanged(const QStringList &strList, QComboBox *box) {
     }
 }
 
-void printDxLiveObjects(ID3D11Device *dev, const char * func) {
+
+
+void printDxLiveObjects(IUnknown *dev, const char * func) {
     if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
         ID3D11Debug *d3dDebug;
         HRESULT hr = dev->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void **>(&d3dDebug));
@@ -228,6 +230,11 @@ void printDxLiveObjects(ID3D11Device *dev, const char * func) {
         if (d3dDebug != nullptr)
             d3dDebug->Release();
     }
+}
+
+void setDxDebugName(ID3D11DeviceChild *child, const std::string &name) {
+    if (child != nullptr)
+        child->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 }
 
 void FpsCounter::add(long nsConsumed)

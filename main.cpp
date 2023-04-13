@@ -19,6 +19,7 @@ extern "C" {
 }
 
 #include <windows.h>
+#include "concurrentqueue/concurrentqueue.h"
 
 #ifdef HAS_CRASHPAD
 
@@ -33,6 +34,7 @@ void initializeCrashpad();
 
 void redirectDebugOutput();
 
+void writeQtLogThread();
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 static void dxCaptureMessageHandler(int log_level, const char *format, va_list args,
@@ -62,16 +64,20 @@ static void dxCaptureMessageHandler(int log_level, const char *format, va_list a
     UNUSED_PARAMETER(param);
 }
 
+namespace {
+    moodycamel::ConcurrentQueue<QString> logQueue;
+    QThread* writeLogFileThread;
+}
+
 int main(int argc, char *argv[]) {
     QFile log(VTSLINK_LOG_FILE);
     if (log.exists() && log.size() > 1024 * 1024 * 4)
         log.remove();
 
     base_set_log_handler(dxCaptureMessageHandler, nullptr);
-#ifdef HAS_CRASHPAD
-    initializeCrashpad();
-#endif
     if (!IsDebuggerPresent()) {
+        writeLogFileThread = QThread::create(writeQtLogThread);
+        writeLogFileThread->start();
         qInstallMessageHandler(customMessageHandler);
         QThread::create(redirectDebugOutput)->start();
     }
@@ -139,6 +145,10 @@ int main(int argc, char *argv[]) {
     fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/SmileySans-Oblique.ttf"));
     fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/MiSans-Demibold.ttf"));
 
+#ifdef HAS_CRASHPAD
+    initializeCrashpad();
+#endif
+
     MainWindow w;
     w.show();
 
@@ -163,6 +173,7 @@ void initializeCrashpad() {
     annotations["format"] = "minidump";
     annotations["git-branch"] = GIT_BRANCH;
     annotations["git-commit"] = GIT_HASH;
+    annotations["build-id"] = vts::info::BuildId.toStdString();
 
     arguments.emplace_back("--no-rate-limit");
     arguments.emplace_back("--attachment=../vtslink.log");
@@ -204,6 +215,24 @@ void initializeCrashpad() {
 
 #endif
 
+void writeQtLogThread() {
+    std::cout << "writeQtLogThread start" << std::endl;
+
+    QFile outFile(VTSLINK_LOG_FILE);
+    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
+    QTextStream textStream(&outFile);
+    QString txt;
+    while (!QCoreApplication::closingDown()) {
+        if (logQueue.try_dequeue(txt)) {
+            textStream << txt << "\r\n";
+        } else {
+            QThread::sleep(1);
+        }
+    }
+
+    std::cout << "writeQtLogThread exit" << std::endl;
+}
+
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
     Q_UNUSED(context);
 
@@ -225,15 +254,10 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
             break;
         case QtFatalMsg:
             txt += QString("{Fatal}    %1").arg(msg);
-            abort();
             break;
     }
 
-    QFile outFile(VTSLINK_LOG_FILE);
-    outFile.open(QIODevice::WriteOnly | QIODevice::Append);
-
-    QTextStream textStream(&outFile);
-    textStream << txt << "\r\n";
+    logQueue.enqueue(txt);
 }
 
 const int MAX_DebugBuffer = 4096;
@@ -250,6 +274,7 @@ void redirectDebugOutput() {
     PDEBUGBUFFER pdbBuffer = NULL;
 
     auto thisProcId = QCoreApplication::applicationPid();
+    std::cout << "redirectDebugOutput start" << thisProcId;
 
     // 打开事件句柄
     hAckEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("DBWIN_BUFFER_READY"));
@@ -285,6 +310,8 @@ void redirectDebugOutput() {
             }
         }
     }
+
+    std::cout << "redirectDebugOutput exit";
 
     // 释放
     if (pdbBuffer) {

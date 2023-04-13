@@ -281,6 +281,7 @@ CollabRoom::~CollabRoom() {
         serverPeer = nullptr;
     }
 
+
     delete dxgiOutputWindow;
     delete ui;
     qWarning() << "room exit";
