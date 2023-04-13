@@ -50,7 +50,6 @@ void PeerItemWidget::updateStats()
 
     Peer* peer = nullptr;
     ScopedQMutex _(&room->peersLock);
-
     if (room->isServer && room->clientPeers.contains(peerId)) {
         peer = room->clientPeers[peerId].get();
     } else if (!room->isServer && room->localPeerId == peerId) {

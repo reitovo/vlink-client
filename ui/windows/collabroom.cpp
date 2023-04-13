@@ -364,9 +364,11 @@ void CollabRoom::updateTurnServer() {
     settings.sync();
     qDebug() << "update turn server" << turnServer;
 
-    ScopedQMutex _(&peersLock);
-    for (auto &peer: clientPeers) {
-        peer.second->startServer();
+    {
+        ScopedQMutex _(&peersLock);
+        for (auto &peer: clientPeers) {
+            peer.second->startServer();
+        }
     }
 
     MainWindow::instance()->tray->showMessage(tr("设置成功"), tr("所有联动人将重新连接，请稍后"),
@@ -433,6 +435,7 @@ void CollabRoom::fatalError(const QString &reason) {
         box.addButton(tr("关闭"), QMessageBox::NoRole);
         box.exec();
     }
+
     close();
 }
 
@@ -440,10 +443,11 @@ void CollabRoom::roomServerError(const QString& func, const QString &reason) {
     QMessageBox box(nullptr);
     box.setIcon(QMessageBox::Critical);
     box.setWindowTitle(tr("房间服务器错误"));
-    box.setText(tr("请求 ") + func + tr(" 时发生错误") + reason +
+    box.setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
         tr("\n可能是由于远程房间服务器更新时发生重启，请重新创建房间，抱歉！已购买的中转服务器将不受影响。"));
     box.addButton(tr("关闭"), QMessageBox::NoRole);
     box.exec();
+
     close();
 }
 
@@ -906,10 +910,12 @@ void CollabRoom::usageStatUpdate() {
 
 void CollabRoom::heartbeatUpdate() {
     vts::server::ReqRtt rtt;
-    ScopedQMutex _(&peersLock);
-    for (auto &s: clientPeers) {
-        s.second->sendHeartbeat();
-        rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
+    {
+        ScopedQMutex _(&peersLock);
+        for (auto &s: clientPeers) {
+            s.second->sendHeartbeat();
+            rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
+        }
     }
     roomServer->setRtt(rtt);
 }
