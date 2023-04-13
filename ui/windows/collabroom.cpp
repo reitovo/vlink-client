@@ -120,6 +120,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
     connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
     connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
+    connect(this, &CollabRoom::onSpoutOpenSharedFailed, this, &CollabRoom::spoutOpenSharedFailed);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -1042,6 +1043,23 @@ void CollabRoom::downgradedToSharedMemory() {
         } else if (ret == open) {
             QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
         }
+    }
+}
+
+void CollabRoom::spoutOpenSharedFailed() {
+    QMessageBox box(this);
+    box.setIcon(QMessageBox::Critical);
+    box.setWindowTitle(tr("错误"));
+    box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
+                   "解决方案：\n"
+                   "1. 点击「查看详情」按教程提示进行修复（推荐）\n"
+                   "2. 勾选设置中的「使用 D3D11 捕获」重试"));
+    auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
+    auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+    box.exec();
+    auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
+    if (ret == open) {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
     }
 }
 

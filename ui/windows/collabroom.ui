@@ -706,7 +706,7 @@
         <property name="font">
          <font>
           <family>Microsoft YaHei UI</family>
-          <pointsize>10</pointsize>
+          <pointsize>9</pointsize>
           <italic>false</italic>
           <bold>false</bold>
           <stylestrategy>PreferDefault</stylestrategy>

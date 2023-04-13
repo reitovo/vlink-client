@@ -52,6 +52,7 @@ signals:
     void onNeedElevate();
     void onDxgiCaptureStatus(QString text);
     void onDowngradedToSharedMemory();
+    void onSpoutOpenSharedFailed();
 
 private slots:
     void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
@@ -90,6 +91,7 @@ private:
 
     void dxgiSendWorker();
 
+    void spoutOpenSharedFailed();
     void spoutDiscoveryUpdate();
     void heartbeatUpdate();
     void usageStatUpdate();

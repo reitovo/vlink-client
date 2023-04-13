@@ -46,6 +46,14 @@ void SettingWindow::init() {
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
+    ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
+
+    connect(ui->disableIntraRefresh, &QCheckBox::clicked, this, [=, this](bool v) {
+       settings.setValue("disableIntraRefresh", v);
+       settings.sync();
+
+        qDebug() << "disableIntraRefresh" << v;
+    });
 
     connect(ui->encoders, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         settings.setValue("forceEncoderName", s);

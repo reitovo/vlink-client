@@ -415,6 +415,9 @@ void SpoutCapture::captureTick(float time) {
                 UINT Stride = sizeof(VERTEX);
                 UINT Offset = 0;
                 this->_d3d11_deviceCtx->IASetVertexBuffers(0, 1, this->_d3d11_vertexBuffer.GetAddressOf(), &Stride, &Offset);
+            } else {
+                qDebug() << "failed to open spout handle";
+                emit CollabRoom::instance()->onSpoutOpenSharedFailed();
             }
         }
 
