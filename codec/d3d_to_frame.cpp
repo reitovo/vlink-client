@@ -68,9 +68,11 @@ DxToFrame::~DxToFrame()
     COM_RESET(_vertex_shader);
     COM_RESET(_pixel_shader);
 
+    COM_RESET(_swap_chain_back_buffer);
     COM_RESET(_swap_chain);
 
     COM_RESET(_d3d11_deviceCtx);
+    printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
     COM_RESET(_d3d11_device);
 
     lock.unlock();
@@ -446,6 +448,7 @@ void DxToFrame::releaseSharedSurf()
 
     COM_RESET(_texture_rgba_src);
     COM_RESET(_texture_rgba_target);
+    COM_RESET(_texture_rgba_target_shared);
     COM_RESET(_texture_rgba_copy);
 
     this->_width = 0;

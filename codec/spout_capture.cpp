@@ -12,6 +12,7 @@
 
 #include <utility>
 #include "d3d_to_frame.h"
+#include "dxgidebug.h"
 
 #pragma comment(lib, "d3dcompiler.lib")
 
@@ -50,12 +51,13 @@ SpoutCapture::SpoutCapture(int width, int height, const std::shared_ptr<DxToFram
         d3d->registerSource(this);
         qDebug() << "running at server mode";
     }
-
-    init();
 }
 
 SpoutCapture::~SpoutCapture() {
     qDebug() << "end spout capture";
+
+    _inited = false;
+
     if (CollabRoom::instance() != nullptr)
             emit CollabRoom::instance()->onDxgiCaptureStatus("idle");
 
@@ -66,11 +68,21 @@ SpoutCapture::~SpoutCapture() {
     lock.lock();
 
     releaseSharedSurf();
+    _texture_captured->Release();
+
+    COM_RESET(_d3d11_samplerState);
+    COM_RESET(_d3d11_inputLayout);
+    COM_RESET(_d3d11_scale_vs);
+    COM_RESET(_d3d11_scale_ps);
+    COM_RESET(_d3d11_vertexBuffer);
+    COM_RESET(_rtv_target_bgra);
+    COM_RESET(_scale_vertex_shader);
+    COM_RESET(_scale_pixel_shader);
+    COM_RESET(_captured_view);
 
     COM_RESET(_d3d11_deviceCtx);
+    printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
     COM_RESET(_d3d11_device);
-
-    _inited = false;
 
     lock.unlock();
     qDebug() << "end spout capture done";
@@ -345,6 +357,8 @@ void SpoutCapture::resetDeviceContext() {
 }
 
 void SpoutCapture::captureTick(float time) {
+    if (!_inited)
+        return;
 
     char name[256] = {};
     strcpy_s(name, "VTubeStudioSpout");

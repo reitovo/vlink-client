@@ -488,10 +488,10 @@ void FrameToAv::stop()
 	onPacketReceived(std::move(msg));
 
 	pts = 0;
-	nv12 = nullptr;
 	av_packet_free(&packet);
 	av_frame_free(&frame);
 	avcodec_free_context(&ctx);
+    nv12 = nullptr;
 }
 
 const QList<CodecOption>& FrameToAv::getEncoders() {

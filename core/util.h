@@ -90,6 +90,9 @@ public:
     }
 };
 
+class ID3D11Device;
+void printDxLiveObjects(ID3D11Device* dev, const char *);
+
 inline DeviceAdapterType getGpuVendorTypeFromVendorId(uint32_t v) { 
     switch (v) {
     case 0x1002:

@@ -217,6 +217,19 @@ void setComboBoxIfChanged(const QStringList &strList, QComboBox *box) {
     }
 }
 
+void printDxLiveObjects(ID3D11Device *dev, const char * func) {
+    if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
+        ID3D11Debug *d3dDebug;
+        HRESULT hr = dev->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void **>(&d3dDebug));
+        if (SUCCEEDED(hr)) {
+            qDebug() << "Report Live Objects of" << func;
+            hr = d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        }
+        if (d3dDebug != nullptr)
+            d3dDebug->Release();
+    }
+}
+
 void FpsCounter::add(long nsConsumed)
 {
     auto sec = QDateTime::currentSecsSinceEpoch();

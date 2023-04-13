@@ -57,6 +57,7 @@ Nv12ToBgra::~Nv12ToBgra() {
     COM_RESET(_pixel_shader);
 
     COM_RESET(_d3d11_deviceCtx);
+    printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
     COM_RESET(_d3d11_device);
 
     lock.unlock();

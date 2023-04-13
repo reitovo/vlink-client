@@ -94,6 +94,7 @@ DxCapture::~DxCapture() {
     releaseSharedSurf();
 
     COM_RESET(_d3d11_deviceCtx);
+    printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
     COM_RESET(_d3d11_device);
 
     _inited = false;

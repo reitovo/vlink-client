@@ -186,11 +186,9 @@ void AvToDx::stop()
     terminateQThread(processThread, __FUNCTION__);
 
     pts = 0;
-
     av_packet_free(&packet);
     av_frame_free(&frame);
     avcodec_free_context(&ctx);
-
     bgra = nullptr;
 }
 

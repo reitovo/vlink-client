@@ -68,6 +68,7 @@ BgraToNv12::~BgraToNv12() {
 	COM_RESET(_nv24_nv12_pixel_shader);
 
 	COM_RESET(_d3d11_deviceCtx);
+    printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
 	COM_RESET(_d3d11_device);
 
 	lock.unlock();

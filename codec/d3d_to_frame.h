@@ -19,8 +19,8 @@ class DxToFrame : public IDxCopyable, public IDebugCollectable {
     QList<IDxToFrameSrc*> sources;
 
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
-    ComPtr<ID3D11BlendState> _d3d11_blendState = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
+    ComPtr<ID3D11BlendState> _d3d11_blendState = nullptr;
     ComPtr<ID3D11SamplerState> _d3d11_samplerState = nullptr;
     ComPtr<ID3D11VertexShader> _d3d11_vertexShader = nullptr;
     ComPtr<ID3D11InputLayout> _d3d11_inputLayout = nullptr;
