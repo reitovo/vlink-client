@@ -71,8 +71,6 @@ DxCapture::DxCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3
 
     _width = width;
     _height = height;
-
-    init();
 }
 
 DxCapture::~DxCapture() {
