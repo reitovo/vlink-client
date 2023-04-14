@@ -91,6 +91,11 @@ MainWindow::MainWindow(QWidget *parent)
             QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
         }
     }
+
+    auto lastJoinRoomId = settings.value("lastJoinRoomId", "").toString();
+    if (!lastJoinRoomId.isEmpty()) {
+        ui->iptRoomId->setText(lastJoinRoomId);
+    }
 }
 
 MainWindow::~MainWindow() {
@@ -115,6 +120,10 @@ void MainWindow::actionExit() {
 void MainWindow::joinRoom() {
     auto roomId = ui->iptRoomId->text().trimmed();
     qDebug("Join room id %s", qPrintable(roomId));
+
+    QSettings settings;
+    settings.setValue("lastJoinRoomId", roomId);
+    settings.sync();
 
     auto c = new CollabRoom(false, roomId);
     hide();
