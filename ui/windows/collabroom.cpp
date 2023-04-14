@@ -191,10 +191,10 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     roomServer = std::make_unique<RoomServer>(this);
     if (isServer) {
-        auto _frameWidth = settings.value("frameWidth", 1920).toInt();
-        auto _frameHeight = settings.value("frameHeight", 1080).toInt();
+        auto _frameWidth = settings.value("frameWidth", 1280).toInt();
+        auto _frameHeight = settings.value("frameHeight", 720).toInt();
         auto _frameRate = settings.value("frameRate", 60).toInt();
-        auto _frameQuality = settings.value("frameQualityIdx", 0).toInt();
+        auto _frameQuality = settings.value("frameQualityIdx", 1).toInt();
 
         vts::server::ReqCreateRoom req;
         req.set_peerid(localPeerId.toStdString());
@@ -220,6 +220,7 @@ void CollabRoom::onRoomInfoSucceed(const vts::server::RspRoomInfo &info) {
     frameHeight = info.format().frameheight();
     frameRate = info.format().framerate();
     frameQuality = info.format().framequality();
+    updateFrameQualityText();
 
     qDebug() << "frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
 
@@ -457,13 +458,17 @@ void CollabRoom::openSetting() {
     w->show();
     connect(w, &QObject::destroyed, this, [=, this]() {
         QSettings settings;
-        useDxCapture = settings.value("useDxCapture", false).toBool();
-        qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
-        if (useDxCapture) {
-            dxgiCaptureStatus("idle");
-            ui->shareMethods->setCurrentIndex(1);
-        } else {
-            ui->shareMethods->setCurrentIndex(0);
+        auto newUseDxCapture = settings.value("useDxCapture", false).toBool();
+        if (useDxCapture != newUseDxCapture) {
+            useDxCapture = newUseDxCapture;
+            stopShare();
+            qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
+            if (useDxCapture) {
+                dxgiCaptureStatus("idle");
+                ui->shareMethods->setCurrentIndex(1);
+            } else {
+                ui->shareMethods->setCurrentIndex(0);
+            }
         }
     });
 }
@@ -482,6 +487,7 @@ void CollabRoom::openQualitySetting() {
         req.set_framewidth(f.frameWidth);
         req.set_framerate(f.frameRate);
         roomServer->setFrameFormat(req);
+        updateFrameQualityText();
     }
 }
 
@@ -1050,11 +1056,14 @@ void CollabRoom::downgradedToSharedMemory() {
     if (!ig) {
         QMessageBox box(this);
         box.setIcon(QMessageBox::Information);
-        box.setWindowTitle(tr("性能提示"));
-        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。"));
-        auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-        auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
+        box.setWindowTitle(tr("哎呀"));
+        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
+                       "可选的解决方案：\n"
+                       "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+                       "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
+        auto open = box.addButton(tr("查看教程"), QMessageBox::NoRole);
+        auto ok = box.addButton(tr("忽略"), QMessageBox::NoRole);
+        auto ign = box.addButton(tr("不再显示"), QMessageBox::NoRole);
         box.exec();
         auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
         if (ret == ign) {
@@ -1070,18 +1079,25 @@ void CollabRoom::spoutOpenSharedFailed() {
     stopShare();
 
     QMessageBox box(this);
-    box.setIcon(QMessageBox::Critical);
-    box.setWindowTitle(tr("错误"));
+    box.setIcon(QMessageBox::Warning);
+    box.setWindowTitle(tr("哎呀"));
     box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
-                   "解决方案：\n"
-                   "1. 点击「查看详情」按教程提示进行修复（推荐）\n"
-                   "2. 勾选设置中的「使用 D3D11 捕获」重试"));
-    auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-    auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
+                   "可选的解决方案：\n"
+                   "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+                   "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
+    auto ok = box.addButton(tr("查看教程"), QMessageBox::NoRole);
+    auto open = box.addButton(tr("  使用备用捕获方式  "), QMessageBox::NoRole);
     box.exec();
     auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-    if (ret == open) {
+    if (ret == ok) {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
+    } else if (ret == open) {
+        QSettings settings;
+        settings.setValue("useDxCapture", true);
+        dxgiCaptureStatus("idle");
+        ui->shareMethods->setCurrentIndex(1);
+        useDxCapture = true;
+        startShare();
     }
 }
 
@@ -1185,6 +1201,7 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     frameRate = frame.framerate();
     frameQuality = frame.framequality();
 
+    updateFrameQualityText();
     qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
 
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
@@ -1223,4 +1240,16 @@ void CollabRoom::requestIdr() {
 
 void CollabRoom::onNotifyForceIdr() {
     notifiedForceIdr = true;
+}
+
+void CollabRoom::updateFrameQualityText() {
+    QString qua;
+    switch (frameQuality) {
+        case 0: qua = "一般"; break;
+        case 1: qua = "良好"; break;
+        case 2: qua = "优秀"; break;
+        case 3: qua = "极致"; break;
+    }
+    ui->frameFormatHint->setText(QString("%1×%2 %3FPS %4")
+                                         .arg(frameWidth).arg(frameHeight).arg(frameRate).arg(qua));
 }

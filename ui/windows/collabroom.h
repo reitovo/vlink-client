@@ -62,6 +62,7 @@ private slots:
     void setNick();
     void updateTurnServer();
     void toggleTurnVisible();
+    void updateFrameQualityText();
 
     void toggleShare();
     void startShare();
