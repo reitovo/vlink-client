@@ -2,29 +2,28 @@
   "name": "vts-link-client",
   "license": "GPL-2.0-only",
   "dependencies": [
-    "kcp",
     {
       "name": "libdatachannel",
       "default-features": true,
       "features": [ "ws", "stdcall" ]
     },
-    "brotli",
-    "protobuf",
-    "concurrentqueue",
-    "crashpad",
-    "libyuv",
-    "directxtk",
-    "libqrencode",
-    "qttools",
-    "qttranslations",
-    "detours",
-    "pthreads",
-    "spout2",
+    {
+      "name": "ffmpeg",
+      "default-features": true,
+      "features": [ "nvcodec", "qsv", "amf" ]
+    },
     {
       "name": "grpc",
       "default-features": true,
       "features": [ "codegen" ]
     },
+    "protobuf",
+    "concurrentqueue",
+    "crashpad",
+    "libqrencode",
+    "detours",
+    "pthreads",
+    "spout2",
     {
       "name": "qtbase",
       "default-features": false,
@@ -43,15 +42,13 @@
         "widgets"
       ]
     },
+    "qttools",
+    "qttranslations",
+    "directxtk",
     {
       "name": "opencv2",
       "default-features": true,
       "features": [ "png" ]
-    },
-    {
-      "name": "ffmpeg",
-      "default-features": true,
-      "features": [ "nvcodec", "qsv", "x264", "amf" ]
     }
   ],
   "overrides": [

@@ -173,10 +173,6 @@ add_custom_command(TARGET VTSLink POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if
         $<TARGET_FILE_DIR:VTSLink>)
 install(FILES "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/tools/crashpad_handler.exe" DESTINATION bin)
 
-# kcp
-find_package(kcp CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE kcp::kcp)
-
 # ffmpeg
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
@@ -189,10 +185,6 @@ pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
     libavutil
 )
 target_link_libraries(VTSLink PUBLIC PkgConfig::LIBAV)
-
-# libyuv
-find_package(libyuv CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE yuv) 
 
 # for debug purpose
 # directxtk

@@ -8,7 +8,6 @@
 #include <sstream>
 #include <utility>
 #include "core/vtslink.h"
-#include "libyuv.h"
 #include <qsettings.h>
 #include "mfx/mfxcommon.h"
 

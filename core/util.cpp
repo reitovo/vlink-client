@@ -1,7 +1,6 @@
 #include "util.h"
 #include <d3d11.h>
 #include <wrl/client.h>
-#include "libyuv.h"
 #include <QString>
 
 namespace vts::info {
