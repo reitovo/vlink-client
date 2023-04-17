@@ -127,7 +127,7 @@ void MainWindow::joinRoom() {
 
     auto c = new CollabRoom(false, roomId);
     hide();
-    connect(c, &QDialog::destroyed, this, [=]() {
+    connect(c, &QDialog::destroyed, this, [=, this]() {
         show();
     });
 }
@@ -136,7 +136,7 @@ void MainWindow::createRoom() {
     qDebug() << "Create room" ;
     auto c = new CollabRoom(true);
     hide();
-    connect(c, &QDialog::destroyed, this, [=]() {
+    connect(c, &QDialog::destroyed, this, [=, this]() {
         show();
     });
 }

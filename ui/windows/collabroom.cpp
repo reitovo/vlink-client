@@ -122,6 +122,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
     connect(this, &CollabRoom::onSpoutOpenSharedFailed, this, &CollabRoom::spoutOpenSharedFailed);
     connect(this, &CollabRoom::onRoomServerError, this, &CollabRoom::roomServerError);
+    connect(this, &CollabRoom::onRoomInfoSucceed, this, &CollabRoom::roomInfoSucceed);
+    connect(this, &CollabRoom::onRoomInfoFailed, this, &CollabRoom::roomInfoFailed);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -189,6 +191,9 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     auto nick = settings.value("nick").toString();
     ui->nick->setText(nick);
 
+    roomOpenWaiting = new QMessageBox(this);
+    roomOpenWaiting->setIcon(QMessageBox::Information);
+    roomOpenWaiting->setWindowTitle(tr("提示"));
     roomServer = std::make_unique<RoomServer>(this);
     if (isServer) {
         auto _frameWidth = settings.value("frameWidth", 1280).toInt();
@@ -205,14 +210,18 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         req.mutable_format()->set_framequality(_frameQuality);
 
         roomServer->createRoom(req);
+        roomOpenWaiting->setText(tr("正在创建房间"));
     } else {
         roomServer->joinRoom(localPeerId.toStdString(), roomId.toStdString(), nick.toStdString());
+        roomOpenWaiting->setText(tr("正在加入房间"));
     }
+
+    roomOpenWaiting->show();
 
     roomInstance = this;
 }
 
-void CollabRoom::onRoomInfoSucceed(const vts::server::RspRoomInfo &info) {
+void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     QSettings settings;
 
     this->roomId = QString::fromStdString(info.roomid());
@@ -240,11 +249,21 @@ void CollabRoom::onRoomInfoSucceed(const vts::server::RspRoomInfo &info) {
     }));
     frameSendThread->start();
 
+    roomOpenWaiting->close();
+    delete roomOpenWaiting;
+    roomOpenWaiting = nullptr;
+
     show();
 }
 
-void CollabRoom::onRoomInfoFailed(const string &error) {
-    emit onFatalError(QString::fromStdString(error));
+void CollabRoom::roomInfoFailed(const string &error) {
+    roomOpenWaiting->close();
+    delete roomOpenWaiting;
+    roomOpenWaiting = nullptr;
+
+    show();
+
+    emit fatalError(QString::fromStdString(error));
 }
 
 CollabRoom::~CollabRoom() {

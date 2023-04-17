@@ -99,48 +99,58 @@ void RoomServer::startNatTypeDetect() {
 void RoomServer::createRoom(const vts::server::ReqCreateRoom& req) {
     this->peerId = req.peerid();
 
-    vts::server::RspRoomInfo rsp;
+    auto worker = QThread::create([=, this]() {
+        vts::server::RspRoomInfo rsp;
 
-    grpc::ClientContext context;
-    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
-    auto status = service->CreateRoom(&context, req, &rsp);
+        grpc::ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+        auto status = service->CreateRoom(&context, req, &rsp);
 
-    if (!status.ok()) {
-        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
-        return;
-    }
+        if (!status.ok()) {
+            qDebug() << "createRoom failed:" << status.error_message().c_str();
+            emit room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
+            return;
+        }
 
-    this->roomId = rsp.roomid();
-    startReceiveNotify();
-    startNatTypeDetect();
-    room->onRoomInfoSucceed(rsp);
+        this->roomId = rsp.roomid();
+        startReceiveNotify();
+        startNatTypeDetect();
+        emit room->onRoomInfoSucceed(rsp);
+    });
+    CollabRoom::connect(worker, &QThread::finished, worker, &QThread::deleteLater);
+    worker->setParent(room);
+    worker->start();
 }
 
 void RoomServer::joinRoom(const std::string& peerId, const std::string& roomId, const std::string& nick) {
     this->peerId = peerId;
     this->roomId = roomId;
 
-    vts::server::RspRoomInfo rsp;
+    auto worker = QThread::create([=, this]() {
+        vts::server::RspRoomInfo rsp;
 
-    vts::server::ReqJoinRoom req;
-    req.set_peerid(peerId);
-    req.set_roomid(roomId);
-    req.set_nick(nick);
+        vts::server::ReqJoinRoom req;
+        req.set_peerid(peerId);
+        req.set_roomid(roomId);
+        req.set_nick(nick);
 
-    grpc::ClientContext context;
-    context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(2));
-    auto status = service->JoinRoom(&context, req, &rsp);
+        grpc::ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::seconds(10));
+        auto status = service->JoinRoom(&context, req, &rsp);
 
-    if (!status.ok()) {
-        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
-        return;
-    }
+        if (!status.ok()) {
+            qDebug() << "joinRoom failed:" << status.error_message().c_str();
+            emit room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
+            return;
+        }
 
-    startReceiveNotify();
-    startNatTypeDetect();
-    room->onRoomInfoSucceed(rsp);
+        startReceiveNotify();
+        startNatTypeDetect();
+        emit room->onRoomInfoSucceed(rsp);
+    });
+    CollabRoom::connect(worker, &QThread::finished, worker, &QThread::deleteLater);
+    worker->setParent(room);
+    worker->start();
 }
 
 void RoomServer::setSdp(const vts::server::Sdp &sdp) {

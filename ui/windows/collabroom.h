@@ -8,6 +8,7 @@
 #include "SpoutGL/SpoutSenderNames.h"
 #include "core/speed.h"
 #include "core/room_server.h"
+#include "QMessageBox"
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <map>
@@ -54,6 +55,9 @@ signals:
     void onDxgiCaptureStatus(QString text);
     void onDowngradedToSharedMemory();
     void onSpoutOpenSharedFailed();
+
+    void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
+    void onRoomInfoFailed(const std::string &error);
 
 private slots:
     void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
@@ -110,8 +114,8 @@ private:
     void onNotifyDestroy();
     void onNotifyForceIdr();
 
-    void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
-    void onRoomInfoFailed(const std::string &error);
+    void roomInfoSucceed(const vts::server::RspRoomInfo& info);
+    void roomInfoFailed(const std::string &error);
 
     void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> & peers);
 
@@ -135,6 +139,7 @@ private:
     int frameQuality = 0;
 
     DxgiOutput* dxgiOutputWindow = nullptr;
+    QMessageBox* roomOpenWaiting = nullptr;
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;
