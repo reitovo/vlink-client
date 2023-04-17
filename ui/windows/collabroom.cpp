@@ -41,7 +41,6 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         QDialog(parent),
         ui(new Ui::CollabRoom) {
     ui->setupUi(this);
-    setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     // Workaround for color

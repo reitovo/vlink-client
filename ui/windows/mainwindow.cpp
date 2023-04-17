@@ -125,20 +125,19 @@ void MainWindow::joinRoom() {
     settings.setValue("lastJoinRoomId", roomId);
     settings.sync();
 
-    auto c = new CollabRoom(false, roomId);
     hide();
-    connect(c, &QDialog::destroyed, this, [=, this]() {
-        show();
-    });
+    CollabRoom c(false, roomId);
+    c.exec();
+    show();
 }
 
 void MainWindow::createRoom() {
     qDebug() << "Create room" ;
-    auto c = new CollabRoom(true);
+
     hide();
-    connect(c, &QDialog::destroyed, this, [=, this]() {
-        show();
-    });
+    CollabRoom c(true);
+    c.exec();
+    show();
 }
 
 void MainWindow::actionSetLang(QString code) {
