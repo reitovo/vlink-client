@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->iptRoomId->setStyleSheet("QLineEdit[echoMode=\"2\"]{ lineedit-password-character: 42 }");
 
+    qDebug() << "vtslink version" << vts::info::BuildId;
 
     const QStringList uiLanguages = QLocale::system().uiLanguages();
     qDebug() << "Languages" << uiLanguages.join(", ");
