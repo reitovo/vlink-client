@@ -878,14 +878,14 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
 
     } else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
                localNatType == StunTypeRestrictedNat) {
-        ui->relayHint->setText("✅" + tr("网络良好"));
+        ui->relayHint->setText("✅" + tr("无需中转") + "ℹ");
         ui->relayHint->setToolTip(
-                tr("当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
+                tr("当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。\n如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
     } else {
-        ui->relayHint->setText("⚠" + tr("存在问题"));
+        ui->relayHint->setText("⚠" + tr("需要中转") + "ℹ");
         ui->relayHint->setToolTip(
                 tr("当前可能需要中转服务器。\n以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") +
-                tr("。\n但如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
+                tr("。\n如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
     }
 }
 
