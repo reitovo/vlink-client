@@ -38,7 +38,7 @@ Peer::Peer(CollabRoom *room, QString id) {
                     case vts::VTS_MSG_HEARTBEAT: {
                         // server first, then client reply
                         qDebug() << "receive dc heartbeat from" << remotePeerId;
-                        if (!isServer) {
+                        if (!room->isServer) {
                             sendHeartbeat();
                         }
                         break;

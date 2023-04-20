@@ -720,6 +720,9 @@
         <property name="toolTip">
          <string/>
         </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
         <property name="text">
          <string>检测网络中</string>
         </property>

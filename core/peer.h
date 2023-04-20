@@ -14,19 +14,10 @@
 #include "proto/vts_server.pb.h"
 #include "ui/widgets/peeritemwidget.h"
 
-class PeerBase {
-public:
-    QString remotePeerId;
-    QString nick;
-    NatType nat;
-    long rtt;
-    bool isServer;
-};
-
 class CollabRoom;
 
 // This class is holding either server or client peer connection using libdatachannel
-class Peer : public PeerBase {
+class Peer {
     CollabRoom* room;
     std::unique_ptr<rtc::PeerConnection> pc;
     std::shared_ptr<rtc::DataChannel> dc;
@@ -39,6 +30,9 @@ class Peer : public PeerBase {
     void printSelectedCandidate();
 
 public:
+    QString remotePeerId;
+    QString nick;
+
     Peer(CollabRoom* room, QString remoteId);
     ~Peer();
 
