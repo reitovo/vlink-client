@@ -363,7 +363,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
     ctx->slices = 1;
 
     auto disableIntraRefresh = settings.value("disableIntraRefresh", false).toBool();
-    auto intraRefresh = !disableIntraRefresh;
+    auto intraRefresh = false; // !disableIntraRefresh;
     auto gopSize = intraRefresh ? 300 : 60;
 
     auto ret = 0;
