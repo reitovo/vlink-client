@@ -42,6 +42,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         ui(new Ui::CollabRoom) {
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    setAttribute(Qt::WA_DeleteOnClose);
 
     // Workaround for color
     QPalette palette;
@@ -240,7 +241,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     }
 
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
-    d3d->init(true);
+    d3d->init();
 
     // Start sending thread
     frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
@@ -269,14 +270,12 @@ CollabRoom::~CollabRoom() {
     roomInstance = nullptr;
     exiting = true;
 
-    auto dxgi = DxgiOutput::getWindow();
-    if (dxgi) {
-        dxgi->deleteLater();
-    }
-
     spoutDiscovery.reset();
     usageStat.reset();
     heartbeat.reset();
+
+    dxgiOutputWindow->close();
+    delete dxgiOutputWindow;
 
     stopShareWorker();
 
@@ -300,8 +299,6 @@ CollabRoom::~CollabRoom() {
         serverPeer = nullptr;
     }
 
-
-    delete dxgiOutputWindow;
     delete ui;
     qWarning() << "room exit";
 }
@@ -1211,9 +1208,6 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     terminateQThread(frameSendThread, __FUNCTION__);
     resettingFrameFormat = false;
 
-    qDebug() << "d3d use count" << d3d.use_count();
-    d3d.reset();
-
     frameWidth = frame.framewidth();
     frameHeight = frame.frameheight();
     frameRate = frame.framerate();
@@ -1222,8 +1216,11 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     updateFrameQualityText();
     qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
 
+    qDebug() << "d3d use count" << d3d.use_count();
+    d3d.reset();
+
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
-    d3d->init(true);
+    d3d->init();
 
     // Start sending thread
     frameSendThread = std::unique_ptr<QThread>(QThread::create([=, this]() {

@@ -4,6 +4,7 @@
 #include "av_to_d3d.h"
 #include <QList>
 #include <d3dcompiler.h>
+#include <dxgi1_2.h>
 
 // merge sources from all av2d3d
 struct D3D11_MAPPED_SUBRESOURCE;
@@ -37,7 +38,7 @@ class DxToFrame : public IDxCopyable, public IDebugCollectable {
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
-    ComPtr<IDXGISwapChain2> _swap_chain = nullptr;
+    ComPtr<IDXGISwapChain> _swap_chain = nullptr;
     ComPtr<ID3D11Texture2D> _swap_chain_back_buffer = nullptr;
 
     HANDLE _texture_rgba_target_shared_handle;
@@ -59,7 +60,7 @@ public:
     void registerSource(IDxToFrameSrc* src);
     void unregisterSource(IDxToFrameSrc* src);
 
-    bool init(bool swap);
+    bool init();
     bool compileShader();
     void resetDeviceContext();
     bool createSharedSurf();

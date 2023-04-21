@@ -34,7 +34,7 @@ AvToDx::AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame
     d3d->registerSource(this);
 
     QSettings settings;
-    enableBuffering = true; //settings.value("enableBuffering", false).toBool();
+    enableBuffering = settings.value("enableBuffering", false).toBool();
 
     _width = width;
     _height = height;

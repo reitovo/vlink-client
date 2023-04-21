@@ -1,21 +1,20 @@
 //
-// Created by reito on 2022/12/27.
+// Created by reito on 2023/4/21.
 //
 
-// You may need to build the project (run Qt uic code generator) to get "ui_DxgiOutput.h" resolved
+// You may need to build the project (run Qt uic code generator) to get "ui_dxgidialog.h" resolved
 
 #include "dxgioutput.h"
-#include "ui_DxgiOutput.h"
-#include "QtGui"
+#include "ui_dxgioutput.h"
 
 static DxgiOutput* instance;
 
 DxgiOutput::DxgiOutput(QWidget *parent) :
-        QMainWindow(parent), ui(new Ui::DxgiOutput) {
+        QDialog(parent), ui(new Ui::dxgioutput) {
     instance = this;
     _hwnd = (HWND)instance->winId();
-    setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
-    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    //setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+    //setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     ui->setupUi(this);
 }
@@ -36,3 +35,4 @@ HWND DxgiOutput::getHwnd() {
 void DxgiOutput::setSize(int width, int height) {
     resize(width * 3 / 10, height * 3 / 10);
 }
+

@@ -55,6 +55,7 @@ DxToFrame::~DxToFrame()
     lock.lock();
 
     _inited = false;
+
     releaseSharedSurf();
 
     COM_RESET(_d3d11_vertexBuffer);
@@ -132,7 +133,7 @@ bool DxToFrame::compileShader()
     return true;
 }
 
-bool DxToFrame::init(bool swap)
+bool DxToFrame::init()
 {
     HRESULT hr;
 
@@ -160,11 +161,10 @@ bool DxToFrame::init(bool swap)
     // This flag adds support for surfaces with a different color channel ordering
     // than the default. It is required for compatibility with Direct2D.
     UINT creationFlags =
-            //D3D11_CREATE_DEVICE_SINGLETHREADED | Make OBS hookable
             D3D11_CREATE_DEVICE_BGRA_SUPPORT ;
 
     if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
-        creationFlags |= D3D11_CREATE_DEVICE_DEBUG; 
+        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
     }
 
     IDXGIFactory3 *pDXGIFactory;
@@ -188,10 +188,27 @@ bool DxToFrame::init(bool swap)
     pAdapter->GetDesc(&descAdapter);
     qDebug() << "using device" << QString::fromWCharArray(descAdapter.Description);
 
+    auto hwnd = DxgiOutput::getHwnd();
+    DXGI_SWAP_CHAIN_DESC desc1 = {};
+    desc1.BufferDesc.Width = _width;
+    desc1.BufferDesc.Height = _height;
+    desc1.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
+    desc1.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc1.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    desc1.BufferDesc.RefreshRate.Numerator = 60;
+    desc1.BufferDesc.RefreshRate.Denominator = 1;
+    desc1.SampleDesc.Quality = 0;
+    desc1.SampleDesc.Count = 1;
+    desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    desc1.BufferCount = 2;
+    desc1.OutputWindow = hwnd;
+    desc1.Windowed = TRUE;
+
     for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
     {
-        hr = D3D11CreateDevice(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
-                               D3D11_SDK_VERSION, this->_d3d11_device.GetAddressOf(), &FeatureLevel,
+        hr = D3D11CreateDeviceAndSwapChain(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
+                               D3D11_SDK_VERSION, &desc1, this->_swap_chain.GetAddressOf(), this->_d3d11_device.GetAddressOf(), &FeatureLevel,
                                this->_d3d11_deviceCtx.GetAddressOf());
         if (SUCCEEDED(hr))
         {
@@ -203,40 +220,12 @@ bool DxToFrame::init(bool swap)
     if (FAILED(hr))
         return false;
 
-    if (swap) {
-        auto hwnd = DxgiOutput::getHwnd();
-
-        DXGI_SWAP_CHAIN_DESC1 desc1 = {};
-        desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc1.Scaling = DXGI_SCALING_STRETCH;
-        desc1.Height = _height;
-        desc1.Width = _width;
-        desc1.BufferCount = 2;
-        desc1.SampleDesc.Quality = 0;
-        desc1.SampleDesc.Count = 1;
-        desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-
-        ComPtr<IDXGISwapChain1> sw1;
-        hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, sw1.GetAddressOf());
-        if (FAILED(hr)) {
-            qDebug() << "failed to create swapchain1";
-            return false;
-        }
-
-        hr = sw1->QueryInterface(__uuidof(IDXGISwapChain2), (void**) _swap_chain.GetAddressOf());
-        if (FAILED(hr)) {
-            qDebug() << "failed to create swapchain2";
-            return false;
-        }
-
-        hr = _swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)_swap_chain_back_buffer.GetAddressOf());
-        if (FAILED(hr)) {
-            qDebug() << "failed to get swapchain backbuffer";
-            return false;
-        } 
+    hr = _swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)_swap_chain_back_buffer.GetAddressOf());
+    if (FAILED(hr)) {
+        qDebug() << "failed to get swapchain backbuffer";
+        return false;
     }
+    setDxDebugName(this->_swap_chain_back_buffer.Get(), "dx2frame swapchain buffer");
 
     pDXGIFactory->Release();
     pAdapter->Release();
@@ -248,6 +237,7 @@ bool DxToFrame::init(bool swap)
         return false;
 
     qDebug() << "d3d2dx create sampler state";
+    setDxDebugName(this->_d3d11_samplerState.Get(), "dx2frame create sampler state");
 
     //VertexShader
     hr = this->_d3d11_device->CreateVertexShader(_vertex_shader->GetBufferPointer(), _vertex_shader->GetBufferSize(), nullptr, this->_d3d11_vertexShader.GetAddressOf());
@@ -257,6 +247,7 @@ bool DxToFrame::init(bool swap)
     }
 
     qDebug() << "d3d2dx create vertex shader";
+    setDxDebugName(this->_d3d11_vertexShader.Get(), "dx2frame create vertex shader");
 
     constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> Layout =
     { {
@@ -273,6 +264,7 @@ bool DxToFrame::init(bool swap)
         return false;
 
     qDebug() << "d3d2dx create input layout";
+    setDxDebugName(this->_d3d11_inputLayout.Get(), "dx2frame create input layout");
 
     //PixelShader
     hr = this->_d3d11_device->CreatePixelShader(_pixel_shader->GetBufferPointer(), _pixel_shader->GetBufferSize(), nullptr, this->_d3d11_pixelShader.GetAddressOf());
@@ -280,6 +272,7 @@ bool DxToFrame::init(bool swap)
         return false;
 
     qDebug() << "d3d2dx create pixel shader";
+    setDxDebugName(this->_d3d11_pixelShader.Get(), "dx2frame create pixel shader");
 
     //VertexBuffer
     D3D11_BUFFER_DESC BufferDesc;
@@ -296,6 +289,7 @@ bool DxToFrame::init(bool swap)
         return false;
 
     qDebug() << "d3d2dx create vertex buffer";
+    setDxDebugName(this->_d3d11_vertexBuffer.Get(), "dx2frame create vertex buffer");
 
     auto ret = createSharedSurf();
     resetDeviceContext();
@@ -320,6 +314,8 @@ void DxToFrame::resetDeviceContext()
     brt.BlendOpAlpha = D3D11_BLEND_OP_ADD;
     brt.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
     _d3d11_device->CreateBlendState(&blendDesc, _d3d11_blendState.GetAddressOf());
+
+    setDxDebugName(this->_d3d11_blendState.Get(), "dx2frame create blend state");
 
     //init set
     this->_d3d11_deviceCtx->IASetInputLayout(this->_d3d11_inputLayout.Get());
@@ -379,6 +375,7 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create texture src";
+    setDxDebugName(this->_texture_rgba_src.Get(), "dx2frame create texture src");
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const srcDesc
@@ -388,6 +385,7 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create shader resource view src";
+    setDxDebugName(this->_textureView.Get(), "dx2frame create shader resource view src");
 
     texDesc_rgba.BindFlags = D3D11_BIND_RENDER_TARGET;
     hr = this->_d3d11_device->CreateTexture2D(&texDesc_rgba, nullptr, this->_texture_rgba_target.GetAddressOf());
@@ -395,6 +393,7 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create texture target";
+    setDxDebugName(this->_texture_rgba_target.Get(), "dx2frame create texture target");
 
     // Copy by ndi to av
     texDesc_rgba.BindFlags = 0;
@@ -404,6 +403,7 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create texture target shared";
+    setDxDebugName(this->_texture_rgba_target_shared.Get(), "dx2frame create texture target shared");
 
     IDXGIResource* pDXGIResource = NULL;
     _texture_rgba_target_shared->QueryInterface(__uuidof(IDXGIResource), (LPVOID*) &pDXGIResource);
@@ -424,6 +424,7 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create texture copy cpu";
+    setDxDebugName(this->_texture_rgba_copy.Get(), "dx2frame create texture copy cpu");
 
     D3D11_RENDER_TARGET_VIEW_DESC rtvDesc{};
     rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -434,15 +435,13 @@ bool DxToFrame::createSharedSurf()
         return false;
 
     qDebug() << "d3d2dx create render target view";
+    setDxDebugName(this->_renderTargetView.Get(), "dx2frame create render target view");
 
     return true;
 }
 
 void DxToFrame::releaseSharedSurf()
 {
-    if (this->_d3d11_deviceCtx.Get() != nullptr)
-        this->_d3d11_deviceCtx->ClearState();
-
     COM_RESET(_textureView);
     COM_RESET(_renderTargetView);
 

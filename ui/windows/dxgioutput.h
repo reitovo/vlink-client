@@ -1,25 +1,23 @@
 //
-// Created by reito on 2022/12/27.
+// Created by reito on 2023/4/21.
 //
 
-#ifndef VTSLINK_DXGIOUTPUT_H
-#define VTSLINK_DXGIOUTPUT_H
+#ifndef VTSLINK_DXGIDIALOG_H
+#define VTSLINK_DXGIDIALOG_H
 
-#include <QMainWindow>
-
+#include <QDialog>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class DxgiOutput; }
+namespace Ui { class dxgioutput; }
 QT_END_NAMESPACE
 
-class DxgiOutput : public QMainWindow {
+class DxgiOutput : public QDialog {
 Q_OBJECT
 
     HWND _hwnd;
 
 public:
     explicit DxgiOutput(QWidget *parent = nullptr);
-
     ~DxgiOutput() override;
 
     static HWND getHwnd();
@@ -28,8 +26,7 @@ public:
     void setSize(int width, int height);
 
 private:
-    Ui::DxgiOutput *ui;
+    Ui::dxgioutput *ui;
 };
 
-
-#endif //VTSLINK_DXGIOUTPUT_H
+#endif //VTSLINK_DXGIDIALOG_H

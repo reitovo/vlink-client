@@ -78,8 +78,8 @@ set(PROJECT_SOURCES
         ui/windows/collabroom.h ui/windows/collabroom.cpp ui/windows/collabroom.ui
         ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
         ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
+	    ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
         ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
-        ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
         ui/windows/framequality.cpp ui/windows/framequality.h ui/windows/framequality.ui
         ${SHADER_FILES}
         ${CODEC_FILES}
