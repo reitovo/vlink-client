@@ -195,9 +195,9 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     roomOpenWaiting->setWindowTitle(tr("提示"));
     roomServer = std::make_unique<RoomServer>(this);
     if (isServer) {
-        auto _frameWidth = settings.value("frameWidth", 1280).toInt();
-        auto _frameHeight = settings.value("frameHeight", 720).toInt();
-        auto _frameRate = settings.value("frameRate", 60).toInt();
+        auto _frameWidth = settings.value("frameWidth", 1600).toInt();
+        auto _frameHeight = settings.value("frameHeight", 900).toInt();
+        auto _frameRate = settings.value("frameRate", 30).toInt();
         auto _frameQuality = settings.value("frameQualityIdx", 1).toInt();
 
         vts::server::ReqCreateRoom req;

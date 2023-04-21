@@ -252,7 +252,7 @@ retryNextFrame:
         }
 
         // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > 30) {
+        if (frameQueue.size() > 45) {
             while (!frameQueue.empty()) {
                 delete frameQueue.top();
                 frameQueue.pop();
