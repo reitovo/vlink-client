@@ -29,7 +29,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QWidget" name="verticalLayoutWidget">
@@ -274,12 +274,15 @@
            </font>
           </property>
           <property name="text">
-           <string/>
+           <string>无需设置</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="setFrameFormat">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="maximumSize">
            <size>
             <width>50</width>
