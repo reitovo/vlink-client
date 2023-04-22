@@ -1070,6 +1070,7 @@ void CollabRoom::toggleKeepTop() {
 
     ui->keepTop->setPalette(palette);
     setWindowFlag(Qt::WindowStaysOnTopHint, keepTop);
+    show();
     activateWindow();
 }
 
