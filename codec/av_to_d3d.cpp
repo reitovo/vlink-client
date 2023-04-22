@@ -6,6 +6,7 @@
 #include <d3d11.h>
 #include <QThread>
 #include <QSettings>
+#include "ui/windows/collabroom.h"
 
 extern "C" {
 #include "libavutil/error.h"
@@ -252,13 +253,17 @@ retryNextFrame:
         }
 
         // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > 45) {
+        if (frameQueue.size() > (enableBuffering ? 30 : 10)) {
             while (!frameQueue.empty()) {
                 delete frameQueue.top();
                 frameQueue.pop();
             }
             pts = 0;
             frameDelay.reset();
+
+            if (CollabRoom::instance())
+                CollabRoom::instance()->requestIdr();
+
             return "resetting";
         }
 

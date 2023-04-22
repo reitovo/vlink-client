@@ -428,6 +428,8 @@ void CollabRoom::fatalError(const QString &reason) {
                        "点击「更新」前往官网驱动下载页面"));
         auto open = box.addButton(tr("更新"), QMessageBox::NoRole);
         auto ok = box.addButton(tr("关闭"), QMessageBox::NoRole);
+        box.setWindowState(Qt::WindowState::WindowActive);
+        box.activateWindow();
         box.exec();
         auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
         if (ret == open) {
@@ -450,6 +452,8 @@ void CollabRoom::fatalError(const QString &reason) {
         box.setWindowTitle(tr("错误"));
         box.setText(errorToReadable(error));
         box.addButton(tr("关闭"), QMessageBox::NoRole);
+        box.setWindowState(Qt::WindowState::WindowActive);
+        box.activateWindow();
         box.exec();
     }
 
