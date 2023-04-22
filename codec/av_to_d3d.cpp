@@ -161,12 +161,21 @@ void AvToDx::process(std::unique_ptr<vts::VtsMsg> m)
 {
     auto packet_pts = m->avframe().pts();
 
+    auto isKey = false;
+    for (auto& p : m->avframe().packets()) {
+        if (p.flags() & AV_PKT_FLAG_KEY) {
+            isKey = true;
+            break;
+        }
+    }
+
     ScopedQMutex _(&frameQueueLock);
 
     // enqueue for reordering
     auto f = new UnorderedFrame;
     f->pts = packet_pts;
     f->data = std::move(m);
+    f->isKey = isKey;
     frameQueue.push(f);
 }
 
@@ -253,33 +262,33 @@ retryNextFrame:
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
 
-        // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > (enableBuffering ? 60 : 30)) {
+        dd = frameQueue.top();
+        if (pts == 0 && !dd->isKey) {
+            frameQueue.pop();
+            delete dd;
+            goto retryNextFrame;
+        } else if (pts == 0 && dd->isKey) {
+            qDebug() << "got key frame = " << dd->pts << frameQueue.size();
+        }
+
+        if (frameQueue.size() > (enableBuffering ? 55 : 5)) {
+            CollabRoom::instance()->requestIdr();
+        }
+
+        if (frameQueue.size() > (enableBuffering ? 60 : 10)) {
             while (!frameQueue.empty()) {
                 delete frameQueue.top();
                 frameQueue.pop();
             }
             pts = 0;
             frameDelay.reset();
-            CollabRoom::instance()->requestIdr();
             return "resetting";
         }
 
-        dd = frameQueue.top();
-
-        static int waitSeqCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
-            waitSeqCount++;
-            if (waitSeqCount > 5) {
-                qDebug() << "skip latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
-                pts++;
-                waitSeqCount = 0;
-            } else {
-                frameDelay.failed();
-                qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
-                CollabRoom::instance()->requestIdr();
-                return "misordered";
-            }
+            frameDelay.failed();
+            qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+            return "misordered";
         }
 
         if (pts != 0 && dd->pts < pts + 1) {

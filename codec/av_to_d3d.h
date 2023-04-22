@@ -24,6 +24,7 @@ extern "C" {
 #include <queue>
 
 struct UnorderedFrame {
+    bool isKey;
     int64_t pts;
     std::unique_ptr<vts::VtsMsg> data;
 };
