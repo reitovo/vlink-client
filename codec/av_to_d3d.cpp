@@ -1,3 +1,5 @@
+
+#include "ui/windows/collabroom.h"
 #include "av_to_d3d.h"
 #include "d3d_to_frame.h"
 #include "qdebug.h"
@@ -6,7 +8,6 @@
 #include <d3d11.h>
 #include <QThread>
 #include <QSettings>
-#include "ui/windows/collabroom.h"
 
 extern "C" {
 #include "libavutil/error.h"

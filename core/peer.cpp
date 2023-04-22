@@ -1,5 +1,4 @@
 #include "peer.h"
-#include "ui/windows/collabroom.h"
 #include <QTimer>
 #include <utility>
 #include "util.h"
