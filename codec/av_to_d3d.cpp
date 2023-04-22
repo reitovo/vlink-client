@@ -254,7 +254,7 @@ retryNextFrame:
         }
 
         // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > 5) {
+        if (frameQueue.size() > (enableBuffering ? 30 : 5)) {
             delete frameQueue.top();
             frameQueue.pop();
             pts = 0;
