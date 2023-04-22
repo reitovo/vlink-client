@@ -253,7 +253,7 @@ retryNextFrame:
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
 
-        if (frameQueue.size() > (enableBuffering ? 30 : 5)) {
+        if (frameQueue.size() > (enableBuffering ? 30 : 15)) {
             delete frameQueue.top();
             frameQueue.pop();
             pts = 0;
