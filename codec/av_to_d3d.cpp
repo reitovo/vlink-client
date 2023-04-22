@@ -253,7 +253,6 @@ retryNextFrame:
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
 
-        // We can't wait for an ordered frame in 1 seconds.
         if (frameQueue.size() > (enableBuffering ? 30 : 5)) {
             delete frameQueue.top();
             frameQueue.pop();
