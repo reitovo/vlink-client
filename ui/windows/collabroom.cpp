@@ -119,11 +119,11 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onDowngradedToSharedMemory, this, &CollabRoom::downgradedToSharedMemory);
     connect(this, &CollabRoom::onDxgiCaptureStatus, this, &CollabRoom::dxgiCaptureStatus);
     connect(this, &CollabRoom::onNeedElevate, this, &CollabRoom::dxgiNeedElevate);
-    connect(this, &CollabRoom::onNewFrameFormat, this, &CollabRoom::newFrameFormat);
     connect(this, &CollabRoom::onSpoutOpenSharedFailed, this, &CollabRoom::spoutOpenSharedFailed);
     connect(this, &CollabRoom::onRoomServerError, this, &CollabRoom::roomServerError);
     connect(this, &CollabRoom::onRoomInfoSucceed, this, &CollabRoom::roomInfoSucceed);
     connect(this, &CollabRoom::onRoomInfoFailed, this, &CollabRoom::roomInfoFailed);
+    connect(this, &CollabRoom::emitNotifyFrameFormat, this, &CollabRoom::notifyFrameFormat);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -274,9 +274,6 @@ CollabRoom::~CollabRoom() {
     usageStat.reset();
     heartbeat.reset();
 
-    dxgiOutputWindow->close();
-    delete dxgiOutputWindow;
-
     stopShareWorker();
 
     terminateQThread(frameSendThread, __FUNCTION__);
@@ -298,6 +295,9 @@ CollabRoom::~CollabRoom() {
             serverPeer->close();
         serverPeer = nullptr;
     }
+
+    dxgiOutputWindow->close();
+    delete dxgiOutputWindow;
 
     delete ui;
     qWarning() << "room exit";
@@ -1189,6 +1189,10 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
 }
 
 void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
+    emit emitNotifyFrameFormat(frame);
+}
+
+void CollabRoom::notifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
     qDebug() << "received new frame setting";
 
     stopShareWorker();
@@ -1216,8 +1220,19 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     updateFrameQualityText();
     qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
 
+    dxgiOutputWindow->close();
+    delete dxgiOutputWindow;
+
     qDebug() << "d3d use count" << d3d.use_count();
     d3d.reset();
+
+    QSettings settings;
+    dxgiOutputWindow = new DxgiOutput();
+    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+    if (settings.value("showDxgiWindow").toBool()) {
+        dxgiOutputWindow->move(0, 0);
+        dxgiOutputWindow->show();
+    }
 
     d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
     d3d->init();
@@ -1239,7 +1254,7 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
         }
     }
 
-    emit onNewFrameFormat();
+    newFrameFormat();
     qDebug() << "done set new frame format";
 }
 

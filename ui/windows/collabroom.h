@@ -47,7 +47,6 @@ signals:
     void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
     void onShareError(QString);
     void onFatalError(QString);
-    void onNewFrameFormat();
     void onRtcFailed(Peer*);
     void onRoomServerError(QString, QString);
 
@@ -58,6 +57,7 @@ signals:
 
     void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
     void onRoomInfoFailed(const std::string &error);
+    void emitNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
 
 private slots:
     void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
@@ -113,6 +113,8 @@ private:
     void onNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
     void onNotifyDestroy();
     void onNotifyForceIdr();
+
+    void notifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
 
     void roomInfoSucceed(const vts::server::RspRoomInfo& info);
     void roomInfoFailed(const std::string &error);

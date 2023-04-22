@@ -20,6 +20,8 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
 }
 
 DxgiOutput::~DxgiOutput() {
+    qDebug() << "dxgi output exit";
+
     instance = nullptr;
     delete ui;
 }
