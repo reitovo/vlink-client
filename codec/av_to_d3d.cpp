@@ -259,7 +259,6 @@ retryNextFrame:
             frameQueue.pop();
             pts = 0;
             CollabRoom::instance()->requestIdr();
-            return "resetting";
         }
 
         dd = frameQueue.top();
