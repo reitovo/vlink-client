@@ -188,27 +188,10 @@ bool DxToFrame::init()
     pAdapter->GetDesc(&descAdapter);
     qDebug() << "using device" << QString::fromWCharArray(descAdapter.Description);
 
-    auto hwnd = DxgiOutput::getHwnd();
-    DXGI_SWAP_CHAIN_DESC desc1 = {};
-    desc1.BufferDesc.Width = _width;
-    desc1.BufferDesc.Height = _height;
-    desc1.BufferDesc.Scaling = DXGI_MODE_SCALING_STRETCHED;
-    desc1.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    desc1.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-    desc1.BufferDesc.RefreshRate.Numerator = 60;
-    desc1.BufferDesc.RefreshRate.Denominator = 1;
-    desc1.SampleDesc.Quality = 0;
-    desc1.SampleDesc.Count = 1;
-    desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-    desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    desc1.BufferCount = 2;
-    desc1.OutputWindow = hwnd;
-    desc1.Windowed = TRUE;
-
     for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
     {
-        hr = D3D11CreateDeviceAndSwapChain(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
-                               D3D11_SDK_VERSION, &desc1, this->_swap_chain.GetAddressOf(), this->_d3d11_device.GetAddressOf(), &FeatureLevel,
+        hr = D3D11CreateDevice(pAdapter, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
+                               D3D11_SDK_VERSION, this->_d3d11_device.GetAddressOf(), &FeatureLevel,
                                this->_d3d11_deviceCtx.GetAddressOf());
         if (SUCCEEDED(hr))
         {
@@ -220,12 +203,44 @@ bool DxToFrame::init()
     if (FAILED(hr))
         return false;
 
+    auto hwnd = DxgiOutput::getHwnd();
+
+    DXGI_SWAP_CHAIN_DESC1 desc1 = {};
+    desc1.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    desc1.Scaling = DXGI_SCALING_STRETCH;
+    desc1.Height = _height;
+    desc1.Width = _width;
+    desc1.BufferCount = 2;
+    desc1.SampleDesc.Quality = 0;
+    desc1.SampleDesc.Count = 1;
+    desc1.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+    desc1.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc1.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
+    ComPtr<IDXGISwapChain1> sw1;
+    hr = pDXGIFactory->CreateSwapChainForHwnd(_d3d11_device.Get(), hwnd, &desc1, nullptr, nullptr, sw1.GetAddressOf());
+    if (FAILED(hr)) {
+        qDebug() << "failed to create swapchain1";
+        return false;
+    }
+
+    hr = pDXGIFactory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
+    if (FAILED(hr)) {
+        qDebug() << "failed to no alt enter";
+        return false;
+    }
+
+    hr = sw1->QueryInterface(__uuidof(IDXGISwapChain2), (void**) _swap_chain.GetAddressOf());
+    if (FAILED(hr)) {
+        qDebug() << "failed to create swapchain2";
+        return false;
+    }
+
     hr = _swap_chain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)_swap_chain_back_buffer.GetAddressOf());
     if (FAILED(hr)) {
         qDebug() << "failed to get swapchain backbuffer";
         return false;
     }
-    setDxDebugName(this->_swap_chain_back_buffer.Get(), "dx2frame swapchain buffer");
 
     pDXGIFactory->Release();
     pAdapter->Release();

@@ -13,8 +13,8 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
         QDialog(parent), ui(new Ui::dxgioutput) {
     instance = this;
     _hwnd = (HWND)instance->winId();
-    //setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
-    //setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
+    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     ui->setupUi(this);
 }

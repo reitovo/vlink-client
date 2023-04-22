@@ -38,7 +38,7 @@ class DxToFrame : public IDxCopyable, public IDebugCollectable {
     ComPtr<ID3DBlob> _vertex_shader = nullptr;
     ComPtr<ID3DBlob> _pixel_shader = nullptr;
 
-    ComPtr<IDXGISwapChain> _swap_chain = nullptr;
+    ComPtr<IDXGISwapChain2> _swap_chain = nullptr;
     ComPtr<ID3D11Texture2D> _swap_chain_back_buffer = nullptr;
 
     HANDLE _texture_rgba_target_shared_handle;
