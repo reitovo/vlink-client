@@ -307,7 +307,7 @@ retryNextFrame:
     auto mem = std::move(dd->data);
     pts = dd->pts;
 
-    qDebug() << "pts = " << dd->pts << " queue = " << frameQueue.size();
+    //qDebug() << "pts = " << dd->pts << " queue = " << frameQueue.size();
 
     delete dd;
 
