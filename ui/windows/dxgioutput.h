@@ -8,7 +8,7 @@
 #include <QDialog>
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class dxgioutput; }
+namespace Ui { class DxgiOutput; }
 QT_END_NAMESPACE
 
 class DxgiOutput : public QDialog {
@@ -26,7 +26,7 @@ public:
     void setSize(int width, int height);
 
 private:
-    Ui::dxgioutput *ui;
+    Ui::DxgiOutput *ui;
 };
 
 #endif //VTSLINK_DXGIDIALOG_H

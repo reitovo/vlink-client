@@ -10,7 +10,7 @@
 static DxgiOutput* instance;
 
 DxgiOutput::DxgiOutput(QWidget *parent) :
-        QDialog(parent), ui(new Ui::dxgioutput) {
+        QDialog(parent), ui(new Ui::DxgiOutput) {
     instance = this;
     _hwnd = (HWND)instance->winId();
     setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
