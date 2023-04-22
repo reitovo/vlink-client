@@ -262,8 +262,7 @@ retryNextFrame:
             pts = 0;
             frameDelay.reset();
 
-            if (CollabRoom::instance())
-                CollabRoom::instance()->requestIdr();
+            CollabRoom::instance()->requestIdr();
 
             return "resetting";
         }
@@ -331,6 +330,7 @@ retryNextFrame:
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
         errList.append("receive frame");
+        CollabRoom::instance()->requestIdr();
     }
     else if (ret < 0){
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
