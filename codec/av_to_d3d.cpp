@@ -254,16 +254,11 @@ retryNextFrame:
         }
 
         // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > (enableBuffering ? 30 : 15)) {
-            while (!frameQueue.empty()) {
-                delete frameQueue.top();
-                frameQueue.pop();
-            }
+        if (frameQueue.size() > 5) {
+            delete frameQueue.top();
+            frameQueue.pop();
             pts = 0;
-            frameDelay.reset();
-
             CollabRoom::instance()->requestIdr();
-
             return "resetting";
         }
 
