@@ -1179,6 +1179,7 @@ void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
 
 void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers &peers) {
     updatePeers(peers.peers());
+    requestIdr();
 }
 
 void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {

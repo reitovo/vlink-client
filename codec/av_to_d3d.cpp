@@ -264,6 +264,7 @@ retryNextFrame:
 
         dd = frameQueue.top();
         if (pts == 0 && !dd->isKey) {
+            CollabRoom::instance()->requestIdr();
             frameQueue.pop();
             delete dd;
             goto retryNextFrame;
