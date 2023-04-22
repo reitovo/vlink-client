@@ -18,6 +18,8 @@ class FrameQuality : public QDialog {
 Q_OBJECT
     QSettings settings;
 
+    void updateBandwidthEstimate();
+
 public:
     explicit FrameQuality(CollabRoom *parent = nullptr);
     ~FrameQuality() override;

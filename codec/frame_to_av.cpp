@@ -348,10 +348,10 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
             cqp = 28;
             break;
         case 2:
-            cqp = 20;
+            cqp = 22;
             break;
         case 3:
-            cqp = 12;
+            cqp = 16;
             break;
     }
 

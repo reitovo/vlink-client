@@ -1,0 +1,1 @@
+extern const char * ISRG_Root_X1;

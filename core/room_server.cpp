@@ -8,7 +8,7 @@
 #include "ui/windows/collabroom.h"
 #include "NatTypeProbe/NatProb.h"
 #include <QDebug>
-#include "room_server_cert.h"
+#include "grpc_cert.h"
 
 RoomServer::RoomServer(CollabRoom* room) {
     this->room = room;

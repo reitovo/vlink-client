@@ -7,6 +7,7 @@
 #include "framequality.h"
 #include "ui_FrameQuality.h"
 #include "collabroom.h"
+#include "math.h"
 
 FrameQuality::FrameQuality(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::FrameQuality) {
@@ -21,6 +22,8 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
     ui->frameRate->setCurrentIndex(settings.value("frameRateIdx", 1).toInt());
     ui->frameSize->setCurrentIndex(settings.value("frameSizeIdx", 2).toInt());
 
+    updateBandwidthEstimate();
+
     connect(ui->frameQuality, &QComboBox::currentIndexChanged, this, [=, this](int v) {
         changed = true;
         settings.setValue("frameQualityIdx", v);
@@ -29,6 +32,8 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
 
         settings.sync();
         qDebug() << "frameQualityIdx" << v;
+
+        updateBandwidthEstimate();
     });
 
     connect(ui->frameRate, &QComboBox::currentIndexChanged, this, [=, this](int v) {
@@ -47,6 +52,8 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
         settings.setValue("frameRate", frameRate);
         settings.sync();
         qDebug() << "frameRateIdx" << v;
+
+        updateBandwidthEstimate();
     });
 
     connect(ui->frameSize, &QComboBox::currentIndexChanged, this, [=, this](int v) {
@@ -72,9 +79,22 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
         settings.setValue("frameHeight", frameHeight);
         settings.sync();
         qDebug() << "frameSizeIdx" << v;
+
+        updateBandwidthEstimate();
     });
 }
 
 FrameQuality::~FrameQuality() {
     delete ui;
+}
+
+void FrameQuality::updateBandwidthEstimate() {
+    double pixelFactor = frameWidth * frameHeight / 1920.0 / 1080.0;
+    double fpsFactor = sin(M_PI_2 * frameRate / 60);
+    double qualityFactor = pow(2, frameQuality) * 4;
+    double maxBandwidth = qualityFactor * fpsFactor * pixelFactor;
+    double constBandwidth = maxBandwidth * 0.45;
+
+    ui->constBandwidth->setText(QString::number(constBandwidth, 'f', 2) + " Mbps");
+    ui->maxBandwidth->setText(QString::number(maxBandwidth, 'f', 2) + " Mbps");
 }

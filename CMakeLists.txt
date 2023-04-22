@@ -72,6 +72,7 @@ set(PROJECT_SOURCES
         core/speed.h core/speed.cpp
         core/usage.h core/usage.cpp
         core/room_server.h core/room_server.cpp
+        core/grpc_cert.cpp core/grpc_cert.h
         ui/windows/mainwindow.cpp
         ui/windows/mainwindow.h
         ui/windows/mainwindow.ui
@@ -123,6 +124,7 @@ find_package(gRPC CONFIG REQUIRED)
 set(PROTO_FILES
     proto/vts.proto
     proto/vts_server.proto
+    proto/relay.proto
     )
 add_library(VTSLinkProto ${PROTO_FILES})
 target_link_libraries(VTSLinkProto PUBLIC protobuf::libprotobuf gRPC::grpc gRPC::grpc++)

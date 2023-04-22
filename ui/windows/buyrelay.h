@@ -10,15 +10,21 @@
 #include "QPointer"
 #include "QTimer"
 
+#include "proto/relay.pb.h"
+#include "proto/relay.grpc.pb.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class BuyRelay; }
 QT_END_NAMESPACE
 
+class CollabRoom;
 class BuyRelay : public QDialog {
 Q_OBJECT
+    std::shared_ptr<grpc::Channel> channel;
+    std::unique_ptr<vts::relay::RelayService::Stub> service;
 
 public:
-    explicit BuyRelay(QWidget *parent = nullptr);
+    explicit BuyRelay(CollabRoom *parent = nullptr);
 
     ~BuyRelay() override;
 
@@ -31,8 +37,8 @@ public:
     }
 
 private:
+    CollabRoom* room;
     Ui::BuyRelay *ui;
-    QPointer<QNetworkAccessManager> manager;
     QPointer<QMovie> loadingGif;
 
     QString code;

@@ -9,6 +9,8 @@
 #include "QThread"
 #include "QMutex"
 
+#include <functional>
+
 #define FORCE_COM_RESET(x) { int remain = x.Reset(); while (remain != 0) { remain = x.Reset();} }
 #define COM_RESET(x) { int remain = x.Reset(); if (remain != 0) {qDebug() << __FUNCTION__ << "reset " #x " ret" << remain;} }
 #define COM_RESET_TO_SINGLE(x) { x->AddRef(); while(true) { int remain = x->Release(); if (remain == 1) break; } }
@@ -51,6 +53,28 @@ inline bool requestOk(const QJsonObject& json) {
 
 inline QString requestErrorMessage(const QJsonObject& json) {
     return json["msg"].toString();
+}
+
+inline void runDetached(const std::function<void()>& run, QObject* receiver, const std::function<void()>& onFinished = nullptr) {
+    QThread* t = QThread::create([=]() {
+        run();
+    });
+    QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+    if (onFinished != nullptr) {
+        QObject::connect(t, &QThread::finished, receiver, onFinished);
+    }
+    t->start();
+}
+
+inline QString getFrameFormatDesc(int frameRate, int frameWidth, int frameHeight, int frameQuality) {
+    QString qua;
+    switch (frameQuality) {
+        case 0: qua = "一般"; break;
+        case 1: qua = "良好"; break;
+        case 2: qua = "优秀"; break;
+        case 3: qua = "极致"; break;
+    }
+    return QString("%1×%2 %3FPS %4").arg(frameWidth).arg(frameHeight).arg(frameRate).arg(qua);
 }
 
 inline QString humanizeBytes(uint64_t bytes) {

@@ -270,7 +270,6 @@ void CollabRoom::roomInfoFailed(const string &error) {
 }
 
 CollabRoom::~CollabRoom() {
-    roomInstance = nullptr;
     exiting = true;
 
     spoutDiscovery.reset();
@@ -305,6 +304,7 @@ CollabRoom::~CollabRoom() {
     }
 
     delete ui;
+    roomInstance = nullptr;
     qWarning() << "room exit";
 }
 
@@ -469,7 +469,10 @@ void CollabRoom::roomServerError(const QString& func, const QString &reason) {
     box.setIcon(QMessageBox::Critical);
     box.setWindowTitle(tr("房间服务器错误"));
     box.setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
-        tr("\n可能是由于远程房间服务器更新时发生重启，请重新创建房间，抱歉！已购买的中转服务器将不受影响。"));
+        tr("\n"
+           "可能是由于房间被关闭，或远程房间服务器发生异常\n"
+           "请重新创建房间，抱歉！\n"
+           "已购买的中转服务器将不受影响。"));
     box.addButton(tr("关闭"), QMessageBox::NoRole);
     box.exec();
 
@@ -1179,7 +1182,6 @@ void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
 
 void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers &peers) {
     updatePeers(peers.peers());
-    requestIdr();
 }
 
 void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
@@ -1288,13 +1290,5 @@ void CollabRoom::onNotifyForceIdr() {
 }
 
 void CollabRoom::updateFrameQualityText() {
-    QString qua;
-    switch (frameQuality) {
-        case 0: qua = "一般"; break;
-        case 1: qua = "良好"; break;
-        case 2: qua = "优秀"; break;
-        case 3: qua = "极致"; break;
-    }
-    ui->frameFormatHint->setText(QString("%1×%2 %3FPS %4")
-                                         .arg(frameWidth).arg(frameHeight).arg(frameRate).arg(qua));
+    ui->frameFormatHint->setText(getFrameFormatDesc(frameRate, frameWidth, frameHeight,  frameQuality));
 }
