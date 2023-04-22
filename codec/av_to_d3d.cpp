@@ -269,16 +269,11 @@ retryNextFrame:
 
         dd = frameQueue.top();
 
-        static int waitForSequenceCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
-            if (waitForSequenceCount++ < 3) {
-                frameDelay.failed();
-                qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
-                CollabRoom::instance()->requestIdr();
-                return "misordered";
-            } else {
-                waitForSequenceCount = 0;
-            }
+            frameDelay.failed();
+            qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+            CollabRoom::instance()->requestIdr();
+            return "misordered";
         }
 
         if (pts != 0 && dd->pts < pts + 1) {
