@@ -82,6 +82,8 @@ bool Peer::usingTurn() {
     return remote.type() == rtc::Candidate::Type::Relayed || local.type() == rtc::Candidate::Type::Relayed;
 }
 
+#define FORCE_RELAY 0
+
 void Peer::startServer() {
     sdpTime = QDateTime::currentDateTimeUtc();
 
@@ -92,7 +94,9 @@ void Peer::startServer() {
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     if (!room->turnServer.isEmpty()) {
-        //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+#if FORCE_RELAY
+        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+#endif
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
     }
 
@@ -171,7 +175,9 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     auto turnServer = serverSdp.turn();
     if (!turnServer.empty()) {
-        //config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+#if FORCE_RELAY
+        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+#endif
         config.iceServers.emplace_back("turn:" + turnServer);
     }
 

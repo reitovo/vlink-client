@@ -226,7 +226,7 @@ void AvToDx::processWorker() {
         if (!err.has_value()) {
             if (!enableBuffering) {
                 if (frameQueueSize() > 0) {
-                    startTime -= 1000;
+                    startTime -= 4000;
                 }
             }
         }
@@ -255,10 +255,6 @@ std::optional<QString> AvToDx::processFrame() {
 
 retryNextFrame:
         if (frameQueue.size() <= delay) {
-            if (delay == 0) {
-                pts = 0;
-                frameDelay.failed();
-            }
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
 
@@ -272,18 +268,23 @@ retryNextFrame:
             qDebug() << "got key frame = " << dd->pts << frameQueue.size();
         }
 
-        if (frameQueue.size() > (enableBuffering ? 60 : 10)) {
-            while (!frameQueue.empty()) {
-                delete frameQueue.top();
-                frameQueue.pop();
-            }
-            pts = 0;
-            frameDelay.reset();
-            CollabRoom::instance()->requestIdr();
-            return "resetting";
-        }
-
+        // Wait for next frame
+        static int waitForNextFrameCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
+            // But not too long
+            if (waitForNextFrameCount > (enableBuffering ? 30 : 15)) {
+                waitForNextFrameCount = 0;
+                while (!frameQueue.empty()) {
+                    delete frameQueue.top();
+                    frameQueue.pop();
+                }
+                pts = 0;
+                frameDelay.reset();
+                CollabRoom::instance()->requestIdr();
+                return "resetting";
+            }
+
+            waitForNextFrameCount++;
             frameDelay.failed();
             qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
             return "misordered";
@@ -305,6 +306,8 @@ retryNextFrame:
 
     auto mem = std::move(dd->data);
     pts = dd->pts;
+
+    qDebug() << "pts = " << dd->pts << " queue = " << frameQueue.size();
 
     delete dd;
 
