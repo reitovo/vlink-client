@@ -253,20 +253,32 @@ retryNextFrame:
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
 
-        if (frameQueue.size() > (enableBuffering ? 30 : 15)) {
-            delete frameQueue.top();
-            frameQueue.pop();
+        // We can't wait for an ordered frame in 1 seconds.
+        if (frameQueue.size() > (enableBuffering ? 60 : 30)) {
+            while (!frameQueue.empty()) {
+                delete frameQueue.top();
+                frameQueue.pop();
+            }
             pts = 0;
+            frameDelay.reset();
             CollabRoom::instance()->requestIdr();
+            return "resetting";
         }
 
         dd = frameQueue.top();
 
+        static int waitSeqCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
-            frameDelay.failed();
-            qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
-            CollabRoom::instance()->requestIdr();
-            return "misordered";
+            waitSeqCount++;
+            if (waitSeqCount > 10) {
+                qDebug() << "skip latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+                pts++;
+            } else {
+                frameDelay.failed();
+                qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+                CollabRoom::instance()->requestIdr();
+                return "misordered";
+            }
         }
 
         if (pts != 0 && dd->pts < pts + 1) {
