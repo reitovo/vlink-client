@@ -272,10 +272,6 @@ retryNextFrame:
             qDebug() << "got key frame = " << dd->pts << frameQueue.size();
         }
 
-        if (frameQueue.size() > (enableBuffering ? 55 : 5)) {
-            CollabRoom::instance()->requestIdr();
-        }
-
         if (frameQueue.size() > (enableBuffering ? 60 : 10)) {
             while (!frameQueue.empty()) {
                 delete frameQueue.top();
@@ -283,6 +279,7 @@ retryNextFrame:
             }
             pts = 0;
             frameDelay.reset();
+            CollabRoom::instance()->requestIdr();
             return "resetting";
         }
 
