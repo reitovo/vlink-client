@@ -225,6 +225,7 @@ void writeQtLogThread() {
     while (!QCoreApplication::closingDown()) {
         if (logQueue.try_dequeue(txt)) {
             textStream << txt << "\r\n";
+            textStream.flush();
         } else {
             QThread::sleep(1);
         }
