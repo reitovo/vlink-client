@@ -270,9 +270,10 @@ retryNextFrame:
         static int waitSeqCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
             waitSeqCount++;
-            if (waitSeqCount > 10) {
+            if (waitSeqCount > 5) {
                 qDebug() << "skip latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
                 pts++;
+                waitSeqCount = 0;
             } else {
                 frameDelay.failed();
                 qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
