@@ -15,6 +15,8 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
     _hwnd = (HWND)instance->winId();
     setWindowFlags( Qt::CustomizeWindowHint | Qt::WindowTitleHint);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    setModal(false);
+    setWindowModality(Qt::NonModal);
 
     ui->setupUi(this);
 }

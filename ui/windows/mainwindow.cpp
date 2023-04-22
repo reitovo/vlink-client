@@ -128,13 +128,14 @@ void MainWindow::joinRoom() {
 
     hide();
     auto c = new CollabRoom(false, roomId);
-    c->show();
-    connect(c, &CollabRoom::destroyed, this, [this] {
-        qDebug() << "CollabRoom destroyed";
+    connect(c, &CollabRoom::finished, this, [=, this] {
+        qDebug() << "CollabRoom finished";
+        delete c;
         show();
         setWindowState(Qt::WindowState::WindowActive);
         activateWindow();
     });
+    c->show();
 }
 
 void MainWindow::createRoom() {
@@ -142,13 +143,14 @@ void MainWindow::createRoom() {
 
     hide();
     auto c = new CollabRoom(true);
-    c->show();
-    connect(c, &CollabRoom::destroyed, this, [this] {
-        qDebug() << "CollabRoom destroyed";
+    connect(c, &CollabRoom::finished, this, [=, this] {
+        qDebug() << "CollabRoom finished";
+        delete c;
         show();
         setWindowState(Qt::WindowState::WindowActive);
         activateWindow();
     });
+    c->show();
 }
 
 void MainWindow::actionSetLang(QString code) {

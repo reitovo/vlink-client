@@ -254,7 +254,7 @@ retryNextFrame:
         }
 
         // We can't wait for an ordered frame in 1 seconds.
-        if (frameQueue.size() > (enableBuffering ? 30 : 10)) {
+        if (frameQueue.size() > (enableBuffering ? 30 : 15)) {
             while (!frameQueue.empty()) {
                 delete frameQueue.top();
                 frameQueue.pop();
@@ -269,10 +269,16 @@ retryNextFrame:
 
         dd = frameQueue.top();
 
+        static int waitForSequenceCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
-            frameDelay.failed();
-            qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
-            return "misordered";
+            if (waitForSequenceCount++ < 3) {
+                frameDelay.failed();
+                qDebug() << "misordered latest = " << dd->pts << " expect = " << (pts + 1) << frameQueue.size();
+                CollabRoom::instance()->requestIdr();
+                return "misordered";
+            } else {
+                waitForSequenceCount = 0;
+            }
         }
 
         if (pts != 0 && dd->pts < pts + 1) {

@@ -42,7 +42,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         ui(new Ui::CollabRoom) {
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
-    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowModality(Qt::WindowModality::NonModal);
+    setModal(false);
 
     // Workaround for color
     QPalette palette;
@@ -254,6 +255,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     roomOpenWaiting = nullptr;
 
     show();
+    activateWindow();
 }
 
 void CollabRoom::roomInfoFailed(const string &error) {
@@ -262,6 +264,7 @@ void CollabRoom::roomInfoFailed(const string &error) {
     roomOpenWaiting = nullptr;
 
     show();
+    activateWindow();
 
     emit fatalError(QString::fromStdString(error));
 }
@@ -296,8 +299,10 @@ CollabRoom::~CollabRoom() {
         serverPeer = nullptr;
     }
 
-    dxgiOutputWindow->close();
-    delete dxgiOutputWindow;
+    if (dxgiOutputWindow != nullptr) {
+        dxgiOutputWindow->close();
+        delete dxgiOutputWindow;
+    }
 
     delete ui;
     qWarning() << "room exit";
@@ -456,7 +461,7 @@ void CollabRoom::fatalError(const QString &reason) {
         box.exec();
     }
 
-    close();
+    finished(0);
 }
 
 void CollabRoom::roomServerError(const QString& func, const QString &reason) {
@@ -468,7 +473,7 @@ void CollabRoom::roomServerError(const QString& func, const QString &reason) {
     box.addButton(tr("关闭"), QMessageBox::NoRole);
     box.exec();
 
-    close();
+    finished(0);
 }
 
 void CollabRoom::openSetting() {
@@ -1065,7 +1070,7 @@ void CollabRoom::toggleKeepTop() {
 
     ui->keepTop->setPalette(palette);
     setWindowFlag(Qt::WindowStaysOnTopHint, keepTop);
-    show();
+    activateWindow();
 }
 
 void CollabRoom::downgradedToSharedMemory() {
