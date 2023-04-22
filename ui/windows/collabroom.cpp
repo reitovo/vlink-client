@@ -123,7 +123,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(this, &CollabRoom::onRoomServerError, this, &CollabRoom::roomServerError);
     connect(this, &CollabRoom::onRoomInfoSucceed, this, &CollabRoom::roomInfoSucceed);
     connect(this, &CollabRoom::onRoomInfoFailed, this, &CollabRoom::roomInfoFailed);
-    connect(this, &CollabRoom::emitNotifyFrameFormat, this, &CollabRoom::notifyFrameFormat);
+    connect(this, &CollabRoom::emitNotifyFrameFormat, this, &CollabRoom::applyNewFrameFormat);
 
     connect(ui->btnSharingStatus, &QPushButton::clicked, this, &CollabRoom::toggleShare);
     connect(ui->btnSetNick, &QPushButton::clicked, this, &CollabRoom::setNick);
@@ -402,12 +402,11 @@ void CollabRoom::toggleTurnVisible() {
     }
 }
 
-void CollabRoom::newFrameFormat() {
+void CollabRoom::showNewFrameFormat() {
     QMessageBox::information(this, tr("新的画面设置"), tr("调整了新的画面设置，请重新开始分享"));
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
     ui->btnSharingStatus->setEnabled(true);
     ui->btnFixRatio->setEnabled(false);
-    dxgiOutputWindow->setSize(frameWidth, frameHeight);
 }
 
 void CollabRoom::shareError(const QString &reason) {
@@ -1196,9 +1195,10 @@ void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &fram
     emit emitNotifyFrameFormat(frame);
 }
 
-void CollabRoom::notifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
+void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &frame) {
     qDebug() << "received new frame setting";
 
+    bool shareWasRunning = shareRunning;
     stopShareWorker();
 
     {
@@ -1258,7 +1258,11 @@ void CollabRoom::notifyFrameFormat(const vts::server::FrameFormatSetting &frame)
         }
     }
 
-    newFrameFormat();
+    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+
+    if (shareWasRunning)
+        startShare();
+
     qDebug() << "done set new frame format";
 }
 

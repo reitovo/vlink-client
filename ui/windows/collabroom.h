@@ -74,7 +74,7 @@ private slots:
     void roomServerError(const QString& func, const QString& reason);
     void shareError(const QString& reason);
     void fatalError(const QString& reason);
-    void newFrameFormat();
+    void showNewFrameFormat();
     void rtcFailed(Peer* peer);
 
     void downgradedToSharedMemory();
@@ -114,7 +114,7 @@ private:
     void onNotifyDestroy();
     void onNotifyForceIdr();
 
-    void notifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
+    void applyNewFrameFormat(const vts::server::FrameFormatSetting& frame);
 
     void roomInfoSucceed(const vts::server::RspRoomInfo& info);
     void roomInfoFailed(const std::string &error);
