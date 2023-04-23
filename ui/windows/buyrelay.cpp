@@ -24,7 +24,6 @@
 BuyRelay::BuyRelay(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::BuyRelay) {
     ui->setupUi(this);
-    setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
     channel = grpc::CreateChannel(VTSLINK_GRPC_RELAY_ENDPOINT, grpc::SslCredentials(

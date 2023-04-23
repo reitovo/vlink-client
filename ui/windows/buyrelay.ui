@@ -3,7 +3,7 @@
  <class>BuyRelay</class>
  <widget class="QDialog" name="BuyRelay">
   <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
+   <enum>Qt::ApplicationModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -17,7 +17,7 @@
    <string>购买中转服务器</string>
   </property>
   <property name="modal">
-   <bool>true</bool>
+   <bool>false</bool>
   </property>
   <widget class="QStackedWidget" name="stacked">
    <property name="geometry">

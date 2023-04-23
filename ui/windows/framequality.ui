@@ -2,12 +2,15 @@
 <ui version="4.0">
  <class>FrameQuality</class>
  <widget class="QDialog" name="FrameQuality">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>301</width>
-    <height>261</height>
+    <height>250</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -217,7 +220,7 @@
      <x>10</x>
      <y>130</y>
      <width>281</width>
-     <height>121</height>
+     <height>111</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -274,22 +277,6 @@
        <bool>true</bool>
       </property>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>5</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
