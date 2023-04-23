@@ -77,20 +77,26 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto ignoreFirstTimeHint = settings.value("ignoreFirstTimeHint", false).toBool();
     if (!ignoreFirstTimeHint) {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Information);
-        box.setWindowTitle(tr("新手教程"));
-        box.setText(tr("欢迎使用本软件进行 VTube Studio 联动！\n\n首次使用？别担心，点击「进入」阅读使用教程。\n\n提示：后续也可以在主界面打开「使用教程 / 常见问题」进行阅读"));
-        auto ok = box.addButton(tr("进入"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
-        box.exec();
-        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-        if (ret == ign) {
-            settings.setValue("ignoreFirstTimeHint", true);
-            settings.sync();
-        } else if (ret == ok) {
-            QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
-        }
+        auto* box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Information);
+        box->setWindowTitle(tr("新手教程"));
+        box->setText(tr("欢迎使用本软件进行 VTube Studio 联动！\n\n首次使用？别担心，点击「使用说明」阅读详细教程。\n\n提示：后续也可以在主界面打开「使用教程 / 常见问题」进行阅读"));
+        auto ok = box->addButton(tr("使用说明"), QMessageBox::NoRole);
+        auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+        connect(box, &QMessageBox::finished, this, [=](int) {
+            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            if (ret == ign) {
+                QSettings s;
+                s.setValue("ignoreFirstTimeHint", true);
+                s.sync();
+            } else if (ret == ok) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V"));
+            }
+            box->deleteLater();
+        });
+
+        box->show();
     }
 
     auto lastJoinRoomId = settings.value("lastJoinRoomId", "").toString();
@@ -129,11 +135,14 @@ void MainWindow::joinRoom() {
     hide();
     auto c = new CollabRoom(false, roomId);
     connect(c, &CollabRoom::finished, this, [=, this] {
+        c->deleteLater();
+    });
+    connect(c, &CollabRoom::destroyed, this, [=, this] {
         qDebug() << "CollabRoom finished";
-        delete c;
         show();
         setWindowState(Qt::WindowState::WindowActive);
         activateWindow();
+        c->deleteLater();
     });
     c->show();
 }
@@ -144,11 +153,14 @@ void MainWindow::createRoom() {
     hide();
     auto c = new CollabRoom(true);
     connect(c, &CollabRoom::finished, this, [=, this] {
+        c->deleteLater();
+    });
+    connect(c, &CollabRoom::destroyed, this, [=, this] {
         qDebug() << "CollabRoom finished";
-        delete c;
         show();
         setWindowState(Qt::WindowState::WindowActive);
         activateWindow();
+        c->deleteLater();
     });
     c->show();
 }

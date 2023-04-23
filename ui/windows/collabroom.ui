@@ -888,7 +888,7 @@
        </font>
       </property>
       <property name="text">
-       <string>连接中转服务器</string>
+       <string>应用中转服务器</string>
       </property>
      </widget>
     </item>

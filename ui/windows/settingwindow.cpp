@@ -126,16 +126,18 @@ void SettingWindow::init() {
             } else {
                 box->setText(tr("上传成功"));
             }
+            reply->deleteLater();
         });
 
-        box->exec();
-        auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
-        if (ret == cancel) {
-            reply->abort();
-        }
+        connect(box, &QMessageBox::finished, this, [=]() {
+            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            if (ret == cancel) {
+                reply->abort();
+            }
+            box->deleteLater();
+        });
 
-        delete reply;
-        delete box;
+        box->show();
     });
 
     connect(ui->actionCrash, &QAction::triggered, this, [=]() {

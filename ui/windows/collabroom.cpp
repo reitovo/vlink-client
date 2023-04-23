@@ -77,42 +77,6 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     auto role = isServer ? "Server" : "Client";
     qDebug() << "Role is" << (role) << localPeerId;
 
-    if (isServer) {
-        turnServer = settings.value("turnServer", QString()).toString();
-        ui->relayInput->setText(turnServer);
-        qDebug() << "Turn server" << turnServer;
-
-        auto expires = settings.value("turnServerExpiresAt", QDateTime()).toDateTime();
-        auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
-        if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
-            qDebug() << "Turn server still alive";
-            QMessageBox box(this);
-            box.setIcon(QMessageBox::Information);
-            box.setWindowTitle(tr("中转服务器仍然可用！"));
-            box.setText(tr("您上次购买的的中转服务器仍然可用，已为您自动恢复，无需重新购买哦！\n"
-                           "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
-            auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-            auto ign = box.addButton(tr("下次购买前不再提示"), QMessageBox::NoRole);
-            box.exec();
-            auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-            if (ret == ign) {
-                settings.setValue("ignoreTurnServerNotExpire", true);
-                settings.sync();
-            }
-        } else if (expires < QDateTime::currentDateTime() && expires != QDateTime()) {
-            qDebug() << "Turn server dead, cleaning";
-            QMessageBox box(this);
-            box.setIcon(QMessageBox::Information);
-            box.setWindowTitle(tr("中转服务器已过期"));
-            box.setText(tr("您上次购买的的中转服务器已过期，已为您自动清除中转服务器"));
-            box.addButton(tr("我知道了"), QMessageBox::NoRole);
-            box.exec();
-            settings.setValue("turnServer", QString());
-            settings.setValue("turnServerExpiresAt", QDateTime());
-            settings.sync();
-        }
-    }
-
     connect(this, &CollabRoom::onUpdatePeersUi, this, &CollabRoom::updatePeersUi);
     connect(this, &CollabRoom::onShareError, this, &CollabRoom::shareError);
     connect(this, &CollabRoom::onFatalError, this, &CollabRoom::fatalError);
@@ -194,7 +158,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     roomOpenWaiting = new QMessageBox(this);
     roomOpenWaiting->setIcon(QMessageBox::Information);
-    roomOpenWaiting->setWindowTitle(tr("提示"));
+    roomOpenWaiting->setWindowTitle(tr("请稍后"));
+    roomOpenWaiting->setStandardButtons(QMessageBox::NoButton);
     roomServer = std::make_unique<RoomServer>(this);
     if (isServer) {
         auto _frameWidth = settings.value("frameWidth", 1600).toInt();
@@ -223,7 +188,59 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 }
 
 void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
+    roomOpenWaiting->close();
+    delete roomOpenWaiting;
+    roomOpenWaiting = nullptr;
+
     QSettings settings;
+
+    if (isServer) {
+        turnServer = settings.value("turnServer", QString()).toString();
+        ui->relayInput->setText(turnServer);
+        qDebug() << "Turn server" << turnServer;
+
+        auto expires = settings.value("turnServerExpiresAt", QDateTime()).toDateTime();
+        auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
+        if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
+            qDebug() << "Turn server still alive";
+            auto* box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Information);
+            box->setWindowTitle(tr("中转服务器仍然可用！"));
+            box->setText(tr("您上次购买的的中转服务器仍然可用，已为您自动恢复，无需重新购买哦！\n"
+                            "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
+            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto ign = box->addButton(tr("下次购买前不再提示"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=](int) {
+                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreTurnServerNotExpire", true);
+                    s.sync();
+                }
+                box->deleteLater();
+            });
+
+            box->show();
+        } else if (expires < QDateTime::currentDateTime() && expires != QDateTime()) {
+            qDebug() << "Turn server dead, cleaning";
+            settings.setValue("turnServer", QString());
+            settings.setValue("turnServerExpiresAt", QDateTime());
+            settings.sync();
+
+            auto* box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Information);
+            box->setWindowTitle(tr("中转服务器已过期"));
+            box->setText(tr("您上次购买的的中转服务器已过期，已为您自动清除中转服务器"));
+            box->addButton(tr("我知道了"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=](int) {
+                box->deleteLater();
+            });
+
+            box->show();
+        }
+    }
 
     this->roomId = QString::fromStdString(info.roomid());
     frameWidth = info.format().framewidth();
@@ -249,10 +266,6 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
         dxgiSendWorker();
     }));
     frameSendThread->start();
-
-    roomOpenWaiting->close();
-    delete roomOpenWaiting;
-    roomOpenWaiting = nullptr;
 
     show();
     activateWindow();
@@ -318,23 +331,26 @@ void CollabRoom::spoutDiscoveryUpdate() {
     if (senders.empty()) {
         emptyCount++;
         if (emptyCount == 3 && !ignoreSpoutOpenHint) {
-            QMessageBox box(this);
-            box.setIcon(QMessageBox::Information);
-            box.setWindowTitle(tr("提示"));
-            box.setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
+            auto* box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Information);
+            box->setWindowTitle(tr("提示"));
+            box->setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
                            "请点击「查看详情」了解如何开启"));
-            auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-            auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
-            auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
-            box.exec();
-            auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-            if (ret == ign) {
-                QSettings s;
-                s.setValue("ignoreSpoutOpenHint", true);
-                s.sync();
-            } else if (ret == open) {
-                QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
-            }
+            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
+            auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=]() {
+                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreSpoutOpenHint", true);
+                    s.sync();
+                } else if (ret == open) {
+                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
+                }
+                box->deleteLater();
+            });
         }
         ui->spoutSourceSelect->clear();
     } else {
@@ -425,20 +441,27 @@ void CollabRoom::shareError(const QString &reason) {
 
 void CollabRoom::fatalError(const QString &reason) {
     if (reason == "nv driver old") {
-        QMessageBox box(nullptr);
-        box.setIcon(QMessageBox::Critical);
-        box.setWindowTitle(tr("错误"));
-        box.setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
+
+        auto* box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Critical);
+        box->setWindowTitle(tr("错误"));
+        box->setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
                        "点击「更新」前往官网驱动下载页面"));
-        auto open = box.addButton(tr("更新"), QMessageBox::NoRole);
-        auto ok = box.addButton(tr("关闭"), QMessageBox::NoRole);
-        box.setWindowState(Qt::WindowState::WindowActive);
-        box.activateWindow();
-        box.exec();
-        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-        if (ret == open) {
-            QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
-        }
+        auto open = box->addButton(tr("更新"), QMessageBox::NoRole);
+        auto ok = box->addButton(tr("关闭"), QMessageBox::NoRole);
+        box->setWindowState(Qt::WindowState::WindowActive);
+        box->activateWindow();
+
+        connect(box, &QMessageBox::finished, this, [=, this](int) {
+            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            if (ret == open) {
+                QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
+            }
+            box->deleteLater();
+            this->deleteLater();
+        });
+
+        box->show();
     } else {
         // Show default dialog
         QString error;
@@ -451,32 +474,41 @@ void CollabRoom::fatalError(const QString &reason) {
         } else if (reason == "room init timeout") {
             error = tr("请求房间信息超时，请重试");
         }
-        QMessageBox box(nullptr);
-        box.setIcon(QMessageBox::Critical);
-        box.setWindowTitle(tr("错误"));
-        box.setText(errorToReadable(error));
-        box.addButton(tr("关闭"), QMessageBox::NoRole);
-        box.setWindowState(Qt::WindowState::WindowActive);
-        box.activateWindow();
-        box.exec();
-    }
 
-    finished(0);
+        auto* box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Critical);
+        box->setWindowTitle(tr("错误"));
+        box->setText(errorToReadable(error));
+        box->addButton(tr("关闭"), QMessageBox::NoRole);
+        box->setWindowState(Qt::WindowState::WindowActive);
+        box->activateWindow();
+
+        connect(box, &QMessageBox::finished, this, [=, this](int) {
+            box->deleteLater();
+            this->deleteLater();
+        });
+
+        box->show();
+    }
 }
 
 void CollabRoom::roomServerError(const QString& func, const QString &reason) {
-    QMessageBox box(nullptr);
-    box.setIcon(QMessageBox::Critical);
-    box.setWindowTitle(tr("房间服务器错误"));
-    box.setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
+    auto* box = new QMessageBox(this);
+    box->setIcon(QMessageBox::Critical);
+    box->setWindowTitle(tr("房间服务器错误"));
+    box->setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
         tr("\n"
            "可能是由于房间被关闭，或远程房间服务器发生异常\n"
            "请重新创建房间，抱歉！\n"
            "已购买的中转服务器将不受影响。"));
-    box.addButton(tr("关闭"), QMessageBox::NoRole);
-    box.exec();
+    box->addButton(tr("关闭"), QMessageBox::NoRole);
 
-    finished(0);
+    connect(box, &QMessageBox::finished, this, [=, this](int) {
+        box->deleteLater();
+        finished(0);
+    });
+
+    box->show();
 }
 
 void CollabRoom::openSetting() {
@@ -500,21 +532,25 @@ void CollabRoom::openSetting() {
 }
 
 void CollabRoom::openQualitySetting() {
-    FrameQuality f(this);
-    f.exec();
+    auto* f = new FrameQuality(this);
 
-    if (f.changed) {
-        qDebug() << "resetting frame quality";
-        qDebug() << "frame quality" << f.frameWidth << f.frameHeight << f.frameRate << f.frameQuality;
+    connect(f, &FrameQuality::finished, this, [=, this]() {
+        if (f->changed) {
+            qDebug() << "resetting frame quality";
+            qDebug() << "frame quality" << f->frameWidth << f->frameHeight << f->frameRate << f->frameQuality;
 
-        vts::server::FrameFormatSetting req;
-        req.set_framequality(f.frameQuality);
-        req.set_frameheight(f.frameHeight);
-        req.set_framewidth(f.frameWidth);
-        req.set_framerate(f.frameRate);
-        roomServer->setFrameFormat(req);
-        updateFrameQualityText();
-    }
+            vts::server::FrameFormatSetting req;
+            req.set_framequality(f->frameQuality);
+            req.set_frameheight(f->frameHeight);
+            req.set_framewidth(f->frameWidth);
+            req.set_framerate(f->frameRate);
+            roomServer->setFrameFormat(req);
+            updateFrameQualityText();
+        }
+        f->deleteLater();
+    });
+
+    f->show();
 }
 
 void CollabRoom::toggleShare() {
@@ -1026,26 +1062,28 @@ void CollabRoom::dxgiSendWorker() {
 
 void CollabRoom::openBuyRelay() {
     auto buy = new BuyRelay(this);
-    buy->exec();
-    auto turn = buy->getTurnServer();
-    if (turn.has_value()) {
-        turnServer = turn.value();
-        ui->relayInput->setText(turnServer);
-        qDebug() << "bought relay" << turnServer;
+    connect(buy, &BuyRelay::finished, this, [=, this](int) {
+        auto turn = buy->getTurnServer();
+        if (turn.has_value()) {
+            turnServer = turn.value();
+            ui->relayInput->setText(turnServer);
+            qDebug() << "bought relay" << turnServer;
 
-        auto hours = buy->getTurnHours();
-        auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
+            auto hours = buy->getTurnHours();
+            auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
 
-        QSettings settings;
-        settings.setValue("turnServerExpiresAt", expires);
-        settings.setValue("turnServerMembers", buy->getTurnMembers());
-        settings.setValue("ignoreTurnServerNotExpire", false);
-        settings.sync();
-        qDebug() << "update turn server" << turnServer;
+            QSettings settings;
+            settings.setValue("turnServerExpiresAt", expires);
+            settings.setValue("turnServerMembers", buy->getTurnMembers());
+            settings.setValue("ignoreTurnServerNotExpire", false);
+            settings.sync();
+            qDebug() << "update turn server" << turnServer;
 
-        updateTurnServer();
-    }
-    buy->deleteLater();
+            updateTurnServer();
+        }
+        buy->deleteLater();
+    });
+    buy->show();
 }
 
 void CollabRoom::rtcFailed(Peer *peer) {
@@ -1081,51 +1119,60 @@ void CollabRoom::downgradedToSharedMemory() {
     QSettings s;
     auto ig = s.value("ignoreDowngradedToSharedMemory", false).toBool();
     if (!ig) {
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Information);
-        box.setWindowTitle(tr("哎呀"));
-        box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
+        auto* box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Information);
+        box->setWindowTitle(tr("哎呀"));
+        box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
                        "可选的解决方案：\n"
                        "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
                        "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
-        auto open = box.addButton(tr("查看教程"), QMessageBox::NoRole);
-        auto ok = box.addButton(tr("忽略"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("不再显示"), QMessageBox::NoRole);
-        box.exec();
-        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-        if (ret == ign) {
-            s.setValue("ignoreDowngradedToSharedMemory", true);
-            s.sync();
-        } else if (ret == open) {
-            QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
-        }
+        auto open = box->addButton(tr("查看教程"), QMessageBox::NoRole);
+        auto ok = box->addButton(tr("忽略"), QMessageBox::NoRole);
+        auto ign = box->addButton(tr("不再显示"), QMessageBox::NoRole);
+
+        connect(box, &QMessageBox::finished, this, [=]() {
+            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            if (ret == ign) {
+                QSettings s;
+                s.setValue("ignoreDowngradedToSharedMemory", true);
+                s.sync();
+            } else if (ret == open) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
+            }
+            box->deleteLater();
+        });
+
+        box->show();
     }
 }
 
 void CollabRoom::spoutOpenSharedFailed() {
     stopShare();
 
-    QMessageBox box(this);
-    box.setIcon(QMessageBox::Warning);
-    box.setWindowTitle(tr("哎呀"));
-    box.setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
+    auto* box = new QMessageBox(this);
+    box->setIcon(QMessageBox::Warning);
+    box->setWindowTitle(tr("哎呀"));
+    box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
                    "可选的解决方案：\n"
                    "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
                    "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
-    auto ok = box.addButton(tr("查看教程"), QMessageBox::NoRole);
-    auto open = box.addButton(tr("  使用备用捕获方式  "), QMessageBox::NoRole);
-    box.exec();
-    auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-    if (ret == ok) {
-        QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
-    } else if (ret == open) {
-        QSettings settings;
-        settings.setValue("useDxCapture", true);
-        dxgiCaptureStatus("idle");
-        ui->shareMethods->setCurrentIndex(1);
-        useDxCapture = true;
-        startShare();
-    }
+    auto ok = box->addButton(tr("查看教程"), QMessageBox::NoRole);
+    auto open = box->addButton(tr("  使用备用捕获方式  "), QMessageBox::NoRole);
+    connect(box, &QMessageBox::finished, this, [=, this]() {
+        auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+        if (ret == ok) {
+            QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
+        } else if (ret == open) {
+            QSettings settings;
+            settings.setValue("useDxCapture", true);
+            dxgiCaptureStatus("idle");
+            ui->shareMethods->setCurrentIndex(1);
+            useDxCapture = true;
+            startShare();
+        }
+        box->deleteLater();
+    });
+    box->show();
 }
 
 void CollabRoom::dxgiCaptureStatus(QString text) {
@@ -1152,24 +1199,29 @@ void CollabRoom::dxgiNeedElevate() {
     auto ig = s.value("ignoreNeedElevate", false).toBool();
     if (!ig) {
         stopShareWorker();
-        QMessageBox box(this);
-        box.setIcon(QMessageBox::Information);
-        box.setWindowTitle(tr("捕获失败"));
-        box.setText(tr("捕获 VTube Studio 画面失败\n"
+        auto* box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Information);
+        box->setWindowTitle(tr("捕获失败"));
+        box->setText(tr("捕获 VTube Studio 画面失败\n"
                        "可能的解决方案：\n"
                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
                        "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享"));
-        auto ok = box.addButton(tr("我知道了"), QMessageBox::NoRole);
-        auto open = box.addButton(tr("查看详情"), QMessageBox::NoRole);
-        auto ign = box.addButton(tr("不再提示"), QMessageBox::NoRole);
-        box.exec();
-        auto ret = dynamic_cast<QPushButton *>(box.clickedButton());
-        if (ret == ign) {
-            s.setValue("ignoreNeedElevate", true);
-            s.sync();
-        } else if (ret == open) {
-            QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/okrsy7aW8QM6EfTp35hVxs"));
-        }
+        auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+        auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
+        auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+        connect(box, &QMessageBox::finished, this, [=]() {
+            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            if (ret == ign) {
+                QSettings s;
+                s.setValue("ignoreNeedElevate", true);
+                s.sync();
+            } else if (ret == open) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/okrsy7aW8QM6EfTp35hVxs"));
+            }
+            box->deleteLater();
+        });
+        box->show();
     }
 }
 
