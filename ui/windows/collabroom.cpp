@@ -433,15 +433,7 @@ void CollabRoom::showNewFrameFormat() {
 void CollabRoom::shareError(const QString &reason) {
     stopShareWorker();
 
-    QMessageBox::critical(this, tr("分享错误"), errorToReadable(reason));
-
-    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(true);
-}
-
-void CollabRoom::fatalError(const QString &reason) {
     if (reason == "nv driver old") {
-
         auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Critical);
         box->setWindowTitle(tr("错误"));
@@ -458,38 +450,44 @@ void CollabRoom::fatalError(const QString &reason) {
                 QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
             }
             box->deleteLater();
-            this->deleteLater();
         });
 
         box->show();
     } else {
-        // Show default dialog
-        QString error;
-        if (reason == "host leave") {
-            error = tr("房主已离开");
-        } else if (reason == "room not found") {
-            error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
-        } else if (reason == "init room req failed") {
-            error = tr("请求房间信息失败");
-        } else if (reason == "room init timeout") {
-            error = tr("请求房间信息超时，请重试");
-        }
-
-        auto *box = new QMessageBox(this);
-        box->setIcon(QMessageBox::Critical);
-        box->setWindowTitle(tr("错误"));
-        box->setText(errorToReadable(error));
-        box->addButton(tr("关闭"), QMessageBox::NoRole);
-        box->setWindowState(Qt::WindowState::WindowActive);
-        box->activateWindow();
-
-        connect(box, &QMessageBox::finished, this, [=, this](int) {
-            box->deleteLater();
-            this->deleteLater();
-        });
-
-        box->show();
+        QMessageBox::critical(this, tr("分享错误"), errorToReadable(reason));
     }
+
+    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
+    ui->btnSharingStatus->setEnabled(true);
+}
+
+void CollabRoom::fatalError(const QString &reason) {
+    // Show default dialog
+    QString error;
+    if (reason == "host leave") {
+        error = tr("房主已离开");
+    } else if (reason == "room not found") {
+        error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
+    } else if (reason == "init room req failed") {
+        error = tr("请求房间信息失败");
+    } else if (reason == "room init timeout") {
+        error = tr("请求房间信息超时，请重试");
+    }
+
+    auto *box = new QMessageBox(this);
+    box->setIcon(QMessageBox::Critical);
+    box->setWindowTitle(tr("错误"));
+    box->setText(errorToReadable(error));
+    box->addButton(tr("关闭"), QMessageBox::NoRole);
+    box->setWindowState(Qt::WindowState::WindowActive);
+    box->activateWindow();
+
+    connect(box, &QMessageBox::finished, this, [=, this](int) {
+        box->deleteLater();
+        this->deleteLater();
+    });
+
+    box->show();
 }
 
 void CollabRoom::roomServerError(const QString &func, const QString &reason) {
