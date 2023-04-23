@@ -195,10 +195,6 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     QSettings settings;
 
     if (isServer) {
-        turnServer = settings.value("turnServer", QString()).toString();
-        ui->relayInput->setText(turnServer);
-        qDebug() << "Turn server" << turnServer;
-
         auto expires = settings.value("turnServerExpiresAt", QDateTime()).toDateTime();
         auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
         if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
@@ -240,6 +236,10 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
 
             box->show();
         }
+
+        turnServer = settings.value("turnServer", QString()).toString();
+        ui->relayInput->setText(turnServer);
+        qDebug() << "Turn server" << turnServer;
     }
 
     this->roomId = QString::fromStdString(info.roomid());

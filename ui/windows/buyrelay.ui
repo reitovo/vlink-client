@@ -1,503 +1,500 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-    <class>BuyRelay</class>
-    <widget class="QDialog" name="BuyRelay">
-        <property name="windowModality">
-            <enum>Qt::WindowModal</enum>
+ <class>BuyRelay</class>
+ <widget class="QDialog" name="BuyRelay">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>188</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>购买中转服务器</string>
+  </property>
+  <property name="modal">
+   <bool>true</bool>
+  </property>
+  <widget class="QStackedWidget" name="stacked">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>401</width>
+     <height>191</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="page">
+    <widget class="QWidget" name="verticalLayoutWidget">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>381</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>MiSans</family>
+      </font>
+     </property>
+     <layout class="QVBoxLayout" name="orderFrame">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>联动时长（小时）</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="hoursSpin">
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>24</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>联动人数</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="personSpin">
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="minimum">
+           <number>2</number>
+          </property>
+          <property name="maximum">
+           <number>20</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>价格</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="priceText">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>0￥</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_6">
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>150</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>画面质量上限</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="frameFormat">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>20</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>无需设置</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="setFrameFormat">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>设置</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_6">
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+         </font>
         </property>
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>400</width>
-                <height>188</height>
-            </rect>
+        <property name="text">
+         <string>推荐画质「900P 60帧 良好」，画面质量与价格有关，更高的画质意味着更大的带宽及流量消耗，购买后生效期内无法设置更高画质</string>
         </property>
-        <property name="windowTitle">
-            <string>购买中转服务器</string>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
-        <property name="modal">
-            <bool>true</bool>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="startWx">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
         </property>
-        <widget class="QStackedWidget" name="stacked">
-            <property name="geometry">
-                <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>401</width>
-                    <height>191</height>
-                </rect>
-            </property>
-            <property name="currentIndex">
-                <number>0</number>
-            </property>
-            <widget class="QWidget" name="page">
-                <widget class="QWidget" name="verticalLayoutWidget">
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>10</y>
-                            <width>381</width>
-                            <height>171</height>
-                        </rect>
-                    </property>
-                    <property name="font">
-                        <font>
-                            <family>MiSans</family>
-                        </font>
-                    </property>
-                    <layout class="QVBoxLayout" name="orderFrame">
-                        <property name="spacing">
-                            <number>2</number>
-                        </property>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout_2">
-                                <item>
-                                    <widget class="QLabel" name="label_2">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>0</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>16777215</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                                <pointsize>10</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>联动时长（小时）</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                                <item>
-                                    <widget class="QSpinBox" name="hoursSpin">
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                            </font>
-                                        </property>
-                                        <property name="minimum">
-                                            <number>1</number>
-                                        </property>
-                                        <property name="maximum">
-                                            <number>24</number>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout">
-                                <item>
-                                    <widget class="QLabel" name="label">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>0</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>16777215</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                                <pointsize>10</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>联动人数</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                                <item>
-                                    <widget class="QSpinBox" name="personSpin">
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                            </font>
-                                        </property>
-                                        <property name="minimum">
-                                            <number>2</number>
-                                        </property>
-                                        <property name="maximum">
-                                            <number>20</number>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout_3">
-                                <item>
-                                    <widget class="QLabel" name="label_3">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                                <pointsize>10</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>价格</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                                <item>
-                                    <widget class="QLabel" name="priceText">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>0</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>16777215</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>0￥</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout_6">
-                                <item>
-                                    <widget class="QLabel" name="label_7">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>150</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                                <pointsize>10</pointsize>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>画面质量上限</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                                <item>
-                                    <widget class="QLabel" name="frameFormat">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="minimumSize">
-                                            <size>
-                                                <width>0</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>16777215</width>
-                                                <height>20</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>无需设置</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                                <item>
-                                    <widget class="QPushButton" name="setFrameFormat">
-                                        <property name="enabled">
-                                            <bool>false</bool>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>50</width>
-                                                <height>16777215</height>
-                                            </size>
-                                        </property>
-                                        <property name="font">
-                                            <font>
-                                                <family>Microsoft YaHei UI</family>
-                                            </font>
-                                        </property>
-                                        <property name="text">
-                                            <string>设置</string>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <widget class="QLabel" name="label_6">
-                                <property name="font">
-                                    <font>
-                                        <family>Microsoft YaHei UI</family>
-                                    </font>
-                                </property>
-                                <property name="text">
-                                    <string>推荐画质「900P 60帧
-                                        良好」，画面质量与价格有关，更高的画质意味着更大的带宽及流量消耗，生效期内无法设置超过上限的画质
-                                    </string>
-                                </property>
-                                <property name="wordWrap">
-                                    <bool>true</bool>
-                                </property>
-                            </widget>
-                        </item>
-                        <item>
-                            <widget class="QPushButton" name="startWx">
-                                <property name="minimumSize">
-                                    <size>
-                                        <width>0</width>
-                                        <height>30</height>
-                                    </size>
-                                </property>
-                                <property name="font">
-                                    <font>
-                                        <family>Microsoft YaHei UI</family>
-                                        <pointsize>11</pointsize>
-                                    </font>
-                                </property>
-                                <property name="text">
-                                    <string>微信支付</string>
-                                </property>
-                            </widget>
-                        </item>
-                    </layout>
-                </widget>
-            </widget>
-            <widget class="QWidget" name="page_2">
-                <widget class="QWidget" name="verticalLayoutWidget_2">
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>10</y>
-                            <width>381</width>
-                            <height>171</height>
-                        </rect>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout">
-                        <property name="spacing">
-                            <number>0</number>
-                        </property>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout_5">
-                                <property name="spacing">
-                                    <number>0</number>
-                                </property>
-                                <item>
-                                    <widget class="QLabel" name="qrCode">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>130</width>
-                                                <height>130</height>
-                                            </size>
-                                        </property>
-                                        <property name="text">
-                                            <string/>
-                                        </property>
-                                        <property name="scaledContents">
-                                            <bool>true</bool>
-                                        </property>
-                                        <property name="alignment">
-                                            <set>Qt::AlignCenter</set>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <widget class="QLabel" name="label_4">
-                                <property name="sizePolicy">
-                                    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                        <horstretch>0</horstretch>
-                                        <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                </property>
-                                <property name="minimumSize">
-                                    <size>
-                                        <width>0</width>
-                                        <height>0</height>
-                                    </size>
-                                </property>
-                                <property name="maximumSize">
-                                    <size>
-                                        <width>16777215</width>
-                                        <height>20</height>
-                                    </size>
-                                </property>
-                                <property name="text">
-                                    <string>请使用微信扫码支付</string>
-                                </property>
-                                <property name="alignment">
-                                    <set>Qt::AlignCenter</set>
-                                </property>
-                            </widget>
-                        </item>
-                    </layout>
-                </widget>
-            </widget>
-            <widget class="QWidget" name="page_3">
-                <widget class="QWidget" name="verticalLayoutWidget_3">
-                    <property name="geometry">
-                        <rect>
-                            <x>10</x>
-                            <y>10</y>
-                            <width>381</width>
-                            <height>171</height>
-                        </rect>
-                    </property>
-                    <layout class="QVBoxLayout" name="verticalLayout_2">
-                        <property name="spacing">
-                            <number>0</number>
-                        </property>
-                        <item>
-                            <layout class="QHBoxLayout" name="horizontalLayout_4">
-                                <property name="spacing">
-                                    <number>0</number>
-                                </property>
-                                <item>
-                                    <widget class="QLabel" name="gif">
-                                        <property name="sizePolicy">
-                                            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                                                <horstretch>0</horstretch>
-                                                <verstretch>0</verstretch>
-                                            </sizepolicy>
-                                        </property>
-                                        <property name="maximumSize">
-                                            <size>
-                                                <width>313</width>
-                                                <height>125</height>
-                                            </size>
-                                        </property>
-                                        <property name="text">
-                                            <string/>
-                                        </property>
-                                        <property name="scaledContents">
-                                            <bool>true</bool>
-                                        </property>
-                                    </widget>
-                                </item>
-                            </layout>
-                        </item>
-                        <item>
-                            <widget class="QLabel" name="label_5">
-                                <property name="sizePolicy">
-                                    <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-                                        <horstretch>0</horstretch>
-                                        <verstretch>0</verstretch>
-                                    </sizepolicy>
-                                </property>
-                                <property name="minimumSize">
-                                    <size>
-                                        <width>0</width>
-                                        <height>0</height>
-                                    </size>
-                                </property>
-                                <property name="maximumSize">
-                                    <size>
-                                        <width>16777215</width>
-                                        <height>35</height>
-                                    </size>
-                                </property>
-                                <property name="text">
-                                    <string>请稍后，正在创建中转服务器（需要2-3分钟）
-                                        注: 在有效期内重新创建房间，中转服务器将继续保留
-                                    </string>
-                                </property>
-                                <property name="alignment">
-                                    <set>Qt::AlignCenter</set>
-                                </property>
-                                <property name="wordWrap">
-                                    <bool>true</bool>
-                                </property>
-                            </widget>
-                        </item>
-                    </layout>
-                </widget>
-            </widget>
-        </widget>
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>微信支付</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
-    <resources/>
-    <connections/>
+   </widget>
+   <widget class="QWidget" name="page_2">
+    <widget class="QWidget" name="verticalLayoutWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>381</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="qrCode">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>130</width>
+            <height>130</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>请使用微信扫码支付</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="page_3">
+    <widget class="QWidget" name="verticalLayoutWidget_3">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>10</y>
+       <width>381</width>
+       <height>171</height>
+      </rect>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QLabel" name="gif">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>313</width>
+            <height>125</height>
+           </size>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>35</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>请稍后，正在创建中转服务器（需要2-3分钟）
+注: 在有效期内重新创建房间，中转服务器将继续保留</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
 </ui>

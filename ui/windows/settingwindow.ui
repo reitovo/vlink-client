@@ -1,383 +1,383 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-    <class>SettingWindow</class>
-    <widget class="QMainWindow" name="SettingWindow">
-        <property name="windowModality">
-            <enum>Qt::ApplicationModal</enum>
-        </property>
-        <property name="geometry">
-            <rect>
-                <x>0</x>
-                <y>0</y>
-                <width>481</width>
-                <height>363</height>
-            </rect>
-        </property>
-        <property name="windowTitle">
-            <string>设置</string>
-        </property>
-        <widget class="QWidget" name="centralwidget">
-            <widget class="QTabWidget" name="tabWidget">
-                <property name="geometry">
-                    <rect>
-                        <x>0</x>
-                        <y>0</y>
-                        <width>481</width>
-                        <height>341</height>
-                    </rect>
-                </property>
-                <property name="font">
-                    <font>
-                        <family>Microsoft YaHei UI</family>
-                    </font>
-                </property>
-                <property name="tabPosition">
-                    <enum>QTabWidget::South</enum>
-                </property>
-                <property name="tabShape">
-                    <enum>QTabWidget::Rounded</enum>
-                </property>
-                <property name="currentIndex">
-                    <number>0</number>
-                </property>
-                <property name="elideMode">
-                    <enum>Qt::ElideNone</enum>
-                </property>
-                <widget class="QWidget" name="tab">
-                    <attribute name="title">
-                        <string>高级</string>
-                    </attribute>
-                    <widget class="QWidget" name="verticalLayoutWidget">
-                        <property name="geometry">
-                            <rect>
-                                <x>2</x>
-                                <y>0</y>
-                                <width>471</width>
-                                <height>311</height>
-                            </rect>
-                        </property>
-                        <layout class="QVBoxLayout" name="verticalLayout">
-                            <property name="spacing">
-                                <number>0</number>
-                            </property>
-                            <item>
-                                <layout class="QHBoxLayout" name="horizontalLayout_2">
-                                    <item>
-                                        <widget class="QLabel" name="label_2">
-                                            <property name="font">
-                                                <font>
-                                                    <family>Microsoft YaHei UI</family>
-                                                    <bold>false</bold>
-                                                </font>
-                                            </property>
-                                            <property name="text">
-                                                <string>恢复所有忽略的提示</string>
-                                            </property>
-                                        </widget>
-                                    </item>
-                                    <item>
-                                        <spacer name="horizontalSpacer_3">
-                                            <property name="orientation">
-                                                <enum>Qt::Horizontal</enum>
-                                            </property>
-                                            <property name="sizeHint" stdset="0">
-                                                <size>
-                                                    <width>40</width>
-                                                    <height>20</height>
-                                                </size>
-                                            </property>
-                                        </spacer>
-                                    </item>
-                                    <item>
-                                        <widget class="QPushButton" name="restoreIgnored">
-                                            <property name="sizePolicy">
-                                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                                    <horstretch>0</horstretch>
-                                                    <verstretch>0</verstretch>
-                                                </sizepolicy>
-                                            </property>
-                                            <property name="minimumSize">
-                                                <size>
-                                                    <width>250</width>
-                                                    <height>0</height>
-                                                </size>
-                                            </property>
-                                            <property name="font">
-                                                <font>
-                                                    <family>Microsoft YaHei UI</family>
-                                                    <bold>false</bold>
-                                                </font>
-                                            </property>
-                                            <property name="text">
-                                                <string>恢复</string>
-                                            </property>
-                                        </widget>
-                                    </item>
-                                </layout>
-                            </item>
-                            <item>
-                                <spacer name="verticalSpacer_2">
-                                    <property name="orientation">
-                                        <enum>Qt::Vertical</enum>
-                                    </property>
-                                    <property name="sizeType">
-                                        <enum>QSizePolicy::Fixed</enum>
-                                    </property>
-                                    <property name="sizeHint" stdset="0">
-                                        <size>
-                                            <width>20</width>
-                                            <height>5</height>
-                                        </size>
-                                    </property>
-                                </spacer>
-                            </item>
-                            <item>
-                                <widget class="QLabel" name="label">
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>★ 以下设置需要重新打开房间才能生效</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <widget class="QCheckBox" name="showDxgiWindow">
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>显示联动画面窗口（调试）</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <widget class="QCheckBox" name="enableBuffering">
-                                    <property name="enabled">
-                                        <bool>true</bool>
-                                    </property>
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>启用缓冲（网络环境差时使用，增加稳定性，增加延迟）</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <layout class="QHBoxLayout" name="horizontalLayout">
-                                    <item>
-                                        <widget class="QCheckBox" name="shouldForceEncoder">
-                                            <property name="font">
-                                                <font>
-                                                    <family>Microsoft YaHei UI</family>
-                                                    <bold>false</bold>
-                                                </font>
-                                            </property>
-                                            <property name="text">
-                                                <string>强制使用编码器</string>
-                                            </property>
-                                        </widget>
-                                    </item>
-                                    <item>
-                                        <spacer name="horizontalSpacer_2">
-                                            <property name="orientation">
-                                                <enum>Qt::Horizontal</enum>
-                                            </property>
-                                            <property name="sizeHint" stdset="0">
-                                                <size>
-                                                    <width>40</width>
-                                                    <height>20</height>
-                                                </size>
-                                            </property>
-                                        </spacer>
-                                    </item>
-                                    <item>
-                                        <widget class="QComboBox" name="encoders">
-                                            <property name="sizePolicy">
-                                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                                                    <horstretch>0</horstretch>
-                                                    <verstretch>0</verstretch>
-                                                </sizepolicy>
-                                            </property>
-                                            <property name="minimumSize">
-                                                <size>
-                                                    <width>250</width>
-                                                    <height>0</height>
-                                                </size>
-                                            </property>
-                                        </widget>
-                                    </item>
-                                </layout>
-                            </item>
-                            <item>
-                                <widget class="QCheckBox" name="disableIntraRefresh">
-                                    <property name="enabled">
-                                        <bool>true</bool>
-                                    </property>
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>关闭帧内刷新机制（仅出现码率过大问题时使用）</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <spacer name="verticalSpacer_3">
-                                    <property name="orientation">
-                                        <enum>Qt::Vertical</enum>
-                                    </property>
-                                    <property name="sizeType">
-                                        <enum>QSizePolicy::Fixed</enum>
-                                    </property>
-                                    <property name="sizeHint" stdset="0">
-                                        <size>
-                                            <width>20</width>
-                                            <height>5</height>
-                                        </size>
-                                    </property>
-                                </spacer>
-                            </item>
-                            <item>
-                                <widget class="QLabel" name="label_4">
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>★ 以下设置需要重新分享画面才能生效</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <widget class="QCheckBox" name="useDxCapture">
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>使用 D3D11 捕获（仅当 VTube Studio 无法被 Spout 捕获时使用）</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <widget class="QCheckBox" name="forceShmem">
-                                    <property name="font">
-                                        <font>
-                                            <family>Microsoft YaHei UI</family>
-                                            <bold>false</bold>
-                                        </font>
-                                    </property>
-                                    <property name="text">
-                                        <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
-                                    </property>
-                                </widget>
-                            </item>
-                            <item>
-                                <spacer name="verticalSpacer">
-                                    <property name="orientation">
-                                        <enum>Qt::Vertical</enum>
-                                    </property>
-                                    <property name="sizeHint" stdset="0">
-                                        <size>
-                                            <width>20</width>
-                                            <height>40</height>
-                                        </size>
-                                    </property>
-                                </spacer>
-                            </item>
-                        </layout>
-                    </widget>
-                </widget>
-                <widget class="QWidget" name="widget">
-                    <attribute name="title">
-                        <string>调试</string>
-                    </attribute>
-                    <widget class="QLabel" name="debugInfo">
-                        <property name="geometry">
-                            <rect>
-                                <x>3</x>
-                                <y>1</y>
-                                <width>531</width>
-                                <height>311</height>
-                            </rect>
-                        </property>
-                        <property name="text">
-                            <string notr="true"/>
-                        </property>
-                        <property name="alignment">
-                            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-                        </property>
-                    </widget>
-                </widget>
-            </widget>
+ <class>SettingWindow</class>
+ <widget class="QMainWindow" name="SettingWindow">
+  <property name="windowModality">
+   <enum>Qt::ApplicationModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>481</width>
+    <height>363</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>设置</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTabWidget" name="tabWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>481</width>
+      <height>341</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei UI</family>
+     </font>
+    </property>
+    <property name="tabPosition">
+     <enum>QTabWidget::South</enum>
+    </property>
+    <property name="tabShape">
+     <enum>QTabWidget::Rounded</enum>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <property name="elideMode">
+     <enum>Qt::ElideNone</enum>
+    </property>
+    <widget class="QWidget" name="tab">
+     <attribute name="title">
+      <string>高级</string>
+     </attribute>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>2</x>
+        <y>0</y>
+        <width>471</width>
+        <height>311</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>恢复所有忽略的提示</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="restoreIgnored">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>恢复</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>★ 以下设置需要重新打开房间才能生效</string>
+         </property>
         </widget>
-        <widget class="QMenuBar" name="menubar">
-            <property name="enabled">
-                <bool>true</bool>
-            </property>
-            <property name="geometry">
-                <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>481</width>
-                    <height>22</height>
-                </rect>
-            </property>
-            <property name="font">
-                <font>
-                    <family>Microsoft YaHei UI</family>
-                </font>
-            </property>
-            <widget class="QMenu" name="menu">
-                <property name="font">
-                    <font>
-                        <family>Microsoft YaHei UI</family>
-                        <pointsize>9</pointsize>
-                    </font>
-                </property>
-                <property name="title">
-                    <string>调试</string>
-                </property>
-                <addaction name="actionSendLog"/>
-                <addaction name="actionCrash"/>
-            </widget>
-            <addaction name="menu"/>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="showDxgiWindow">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>显示联动画面窗口（调试）</string>
+         </property>
         </widget>
-        <action name="actionSendLog">
-            <property name="text">
-                <string>上传日志</string>
-            </property>
-            <property name="font">
-                <font/>
-            </property>
-        </action>
-        <action name="actionCrash">
-            <property name="text">
-                <string>崩溃</string>
-            </property>
-            <property name="font">
-                <font/>
-            </property>
-        </action>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="enableBuffering">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>启用缓冲（网络环境差时使用，增加稳定性，增加延迟）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QCheckBox" name="shouldForceEncoder">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>强制使用编码器</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QComboBox" name="encoders">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="disableIntraRefresh">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>关闭帧内刷新机制（仅出现码率过大问题时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_3">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>★ 以下设置需要重新分享画面才能生效</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="useDxCapture">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>使用 D3D11 捕获（仅当 VTube Studio 无法被 Spout 捕获时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="forceShmem">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
-    <resources/>
-    <connections/>
+    <widget class="QWidget" name="widget">
+     <attribute name="title">
+      <string>调试</string>
+     </attribute>
+     <widget class="QLabel" name="debugInfo">
+      <property name="geometry">
+       <rect>
+        <x>3</x>
+        <y>1</y>
+        <width>531</width>
+        <height>311</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string notr="true"/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>481</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+    </font>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="font">
+     <font>
+      <family>Microsoft YaHei UI</family>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
+    <property name="title">
+     <string>调试</string>
+    </property>
+    <addaction name="actionSendLog"/>
+    <addaction name="actionCrash"/>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <action name="actionSendLog">
+   <property name="text">
+    <string>上传日志</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionCrash">
+   <property name="text">
+    <string>崩溃</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
 </ui>

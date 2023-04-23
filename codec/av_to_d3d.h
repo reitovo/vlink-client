@@ -107,6 +107,7 @@ private:
     std::atomic_bool processThreadRunning = false;
     std::unique_ptr<QThread> processThread;
     std::priority_queue<UnorderedFrame *, std::vector<UnorderedFrame *>, FrameReorderer> frameQueue;
+    std::atomic_int queueSize = 0;
     QMutex frameQueueLock;
     FrameDelay frameDelay;
 

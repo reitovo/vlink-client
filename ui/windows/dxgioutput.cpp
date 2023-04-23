@@ -5,6 +5,8 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_dxgidialog.h" resolved
 
 #include "dxgioutput.h"
+
+#include <memory>
 #include "ui_dxgioutput.h"
 
 static DxgiOutput *instance;
@@ -19,6 +21,13 @@ DxgiOutput::DxgiOutput(QWidget *parent) :
     setWindowModality(Qt::NonModal);
 
     ui->setupUi(this);
+
+    timer = std::make_unique<QTimer>(this);
+    connect(timer.get(), &QTimer::timeout, this, [=, this]() {
+        setWindowTitle(tr("调试输出窗口"));
+    });
+    timer->setInterval(500);
+    timer->start();
 }
 
 DxgiOutput::~DxgiOutput() {
@@ -39,4 +48,3 @@ HWND DxgiOutput::getHwnd() {
 void DxgiOutput::setSize(int width, int height) {
     resize(width * 3 / 10, height * 3 / 10);
 }
-

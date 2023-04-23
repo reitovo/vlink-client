@@ -205,7 +205,7 @@ void AvToDx::stop()
 
 QString AvToDx::debugInfo()
 {
-    return QString("Av->Dx (Stream Decoder) %1").arg(fps.stat());
+    return QString("Av->Dx (Stream Decoder) %1 Queue: %2").arg(fps.stat()).arg(queueSize);
 }
 
 bool AvToDx::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest)
@@ -248,6 +248,8 @@ std::optional<QString> AvToDx::processFrame() {
 
     {
         ScopedQMutex _(&frameQueueLock);
+
+        queueSize = frameQueue.size();
 
         auto delay = frameDelay.delay();
         if (!enableBuffering)

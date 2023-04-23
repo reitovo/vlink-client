@@ -6,6 +6,7 @@
 #define VTSLINK_DXGIDIALOG_H
 
 #include <QDialog>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class DxgiOutput; }
@@ -17,6 +18,8 @@ Q_OBJECT
     HWND _hwnd;
 
     int queueSize = 0;
+
+    std::unique_ptr<QTimer> timer;
 
 public:
     explicit DxgiOutput(QWidget *parent = nullptr);
