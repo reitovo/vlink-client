@@ -16,6 +16,8 @@ Q_OBJECT
 
     HWND _hwnd;
 
+    int queueSize = 0;
+
 public:
     explicit DxgiOutput(QWidget *parent = nullptr);
     ~DxgiOutput() override;

@@ -89,6 +89,17 @@ inline QString humanizeBytes(uint64_t bytes) {
     }
 }
 
+inline QString humanizeBps(uint64_t bytes) {
+    bytes *= 8;
+    if (bytes > 1024 * 1024 * 1024) {
+        return QString("%1 Gbps").arg(1.0 * bytes / (1024 * 1024 * 1024), 0, 'f', 2);
+    } else if (bytes > 1024 * 1024) {
+        return QString("%1 Mbps").arg(1.0 * bytes / (1024 * 1024), 0, 'f', 2);
+    } else {
+        return QString("%1 Kbps").arg(1.0 * bytes / (1024), 0, 'f', 2);
+    }
+}
+
 class ID3D11DeviceChild;
 void setDxDebugName(ID3D11DeviceChild* child, const std::string& name);
 
