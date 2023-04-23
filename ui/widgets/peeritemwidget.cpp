@@ -5,10 +5,9 @@
 #include "ui_peeritemwidget.h"
 #include "ui/windows/collabroom.h"
 
-PeerItemWidget::PeerItemWidget(CollabRoom* room) :
-    QWidget(room),
-    ui(new Ui::PeerItemWidget)
-{
+PeerItemWidget::PeerItemWidget(CollabRoom *room) :
+        QWidget(room),
+        ui(new Ui::PeerItemWidget) {
     ui->setupUi(this);
     this->room = room;
 
@@ -17,14 +16,12 @@ PeerItemWidget::PeerItemWidget(CollabRoom* room) :
     refreshTimer->start(200);
 }
 
-PeerItemWidget::~PeerItemWidget()
-{
+PeerItemWidget::~PeerItemWidget() {
     delete ui;
 }
 
-void PeerItemWidget::updatePeer(const vts::server::Peer& p)
-{
-    ui->natType->setText(getNatTypeString((NatType)p.nattype()));
+void PeerItemWidget::updatePeer(const vts::server::Peer &p) {
+    ui->natType->setText(getNatTypeString((NatType) p.nattype()));
 
     auto self = p.peerid() == room->localPeerId.toStdString();
     auto qPeerId = QString::fromStdString(p.peerid());
@@ -44,11 +41,10 @@ void PeerItemWidget::updatePeer(const vts::server::Peer& p)
     peerId = qPeerId;
 }
 
-void PeerItemWidget::updateStats()
-{
+void PeerItemWidget::updateStats() {
     auto self = peerId == room->localPeerId;
 
-    Peer* peer = nullptr;
+    Peer *peer = nullptr;
     ScopedQMutex _(&room->peersLock);
     if (room->isServer && room->clientPeers.contains(peerId)) {
         peer = room->clientPeers[peerId].get();

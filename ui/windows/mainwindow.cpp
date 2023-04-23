@@ -77,7 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto ignoreFirstTimeHint = settings.value("ignoreFirstTimeHint", false).toBool();
     if (!ignoreFirstTimeHint) {
-        auto* box = new QMessageBox(this);
+        auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("新手教程"));
         box->setText(tr("欢迎使用本软件进行 VTube Studio 联动！\n\n首次使用？别担心，点击「使用说明」阅读详细教程。\n\n提示：后续也可以在主界面打开「使用教程 / 常见问题」进行阅读"));
@@ -148,7 +148,7 @@ void MainWindow::joinRoom() {
 }
 
 void MainWindow::createRoom() {
-    qDebug() << "Create room" ;
+    qDebug() << "Create room";
 
     hide();
     auto c = new CollabRoom(true);
@@ -237,16 +237,16 @@ void MainWindow::openSetting() {
 
 void MainWindow::debugVideoAdapters() {
     // We need dxgi to share texture
-    IDXGIFactory2* pDXGIFactory;
-    IDXGIAdapter* pAdapter = NULL;
-    HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory2, (void**)&pDXGIFactory);
+    IDXGIFactory2 *pDXGIFactory;
+    IDXGIAdapter *pAdapter = NULL;
+    HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory2, (void **) &pDXGIFactory);
     if (FAILED(hr)) {
         qDebug() << "failed to create dxgi factory";
         return;
     }
 
     int count = 0;
-    while (true){
+    while (true) {
         hr = pDXGIFactory->EnumAdapters(count, &pAdapter);
         if (FAILED(hr)) {
             break;

@@ -10,9 +10,8 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 // Main window, do initializations and go to collab.
-class MainWindow : public QMainWindow
-{
-    Q_OBJECT
+class MainWindow : public QMainWindow {
+Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -38,4 +37,5 @@ private slots:
     void createRoom();
     void openSetting();
 };
+
 #endif // MAINWINDOW_H

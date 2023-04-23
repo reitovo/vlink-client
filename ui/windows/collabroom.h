@@ -20,23 +20,27 @@ extern "C" {
 }
 
 namespace Ui {
-class CollabRoom;
+    class CollabRoom;
 }
 
 class DxCapture;
+
 class DxgiOutput;
 
 // This is the collab main logic
-class CollabRoom : public QDialog, public IDebugCollectable
-{
-    Q_OBJECT
+class CollabRoom : public QDialog, public IDebugCollectable {
+Q_OBJECT
+
     friend class Peer;
+
     friend class PeerItemWidget;
+
     friend class RoomServer;
+
     friend class FrameQuality;
 
 public:
-    static CollabRoom* instance();
+    static CollabRoom *instance();
 
     explicit CollabRoom(bool isServer, QString roomId = QString(), QWidget *parent = nullptr);
     ~CollabRoom() override;
@@ -44,10 +48,10 @@ public:
     QString debugInfo() override;
 
 signals:
-    void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
+    void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers);
     void onShareError(QString);
     void onFatalError(QString);
-    void onRtcFailed(Peer*);
+    void onRtcFailed(Peer *);
     void onRoomServerError(QString, QString);
 
     void onNeedElevate();
@@ -55,12 +59,12 @@ signals:
     void onDowngradedToSharedMemory();
     void onSpoutOpenSharedFailed();
 
-    void onRoomInfoSucceed(const vts::server::RspRoomInfo& info);
+    void onRoomInfoSucceed(const vts::server::RspRoomInfo &info);
     void onRoomInfoFailed(const std::string &error);
-    void emitNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
+    void emitNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp);
 
 private slots:
-    void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers);
+    void updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers);
 
     void copyRoomId();
     void setNick();
@@ -71,11 +75,11 @@ private slots:
     void toggleShare();
     void startShare();
     void stopShare();
-    void roomServerError(const QString& func, const QString& reason);
-    void shareError(const QString& reason);
-    void fatalError(const QString& reason);
+    void roomServerError(const QString &func, const QString &reason);
+    void shareError(const QString &reason);
+    void fatalError(const QString &reason);
     void showNewFrameFormat();
-    void rtcFailed(Peer* peer);
+    void rtcFailed(Peer *peer);
 
     void downgradedToSharedMemory();
     void dxgiCaptureStatus(QString text);
@@ -88,7 +92,7 @@ private slots:
     void toggleKeepTop();
 
 private:
-    static QString errorToReadable(const QString& e);
+    static QString errorToReadable(const QString &e);
 
     void spoutShareWorkerClient();
     void spoutShareWorkerServer();
@@ -104,22 +108,22 @@ private:
     void usageStatUpdate();
 
     std::atomic_bool needFixVtsRatio = false;
-    void tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap);
+    void tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap);
 
     std::unique_ptr<RoomServer> roomServer;
     // Callback From RoomServer
-    void onNotifyPeers(const vts::server::NotifyPeers& peers);
-    void onNotifySdp(const vts::server::Sdp& sdp);
-    void onNotifyFrameFormat(const vts::server::FrameFormatSetting& sdp);
+    void onNotifyPeers(const vts::server::NotifyPeers &peers);
+    void onNotifySdp(const vts::server::Sdp &sdp);
+    void onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp);
     void onNotifyDestroy();
     void onNotifyForceIdr();
 
-    void applyNewFrameFormat(const vts::server::FrameFormatSetting& frame);
+    void applyNewFrameFormat(const vts::server::FrameFormatSetting &frame);
 
-    void roomInfoSucceed(const vts::server::RspRoomInfo& info);
+    void roomInfoSucceed(const vts::server::RspRoomInfo &info);
     void roomInfoFailed(const std::string &error);
 
-    void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> & peers);
+    void updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers);
 
     std::atomic_bool notifiedForceIdr = false;
 public:
@@ -140,8 +144,8 @@ private:
     int frameHeight = 1080;
     int frameQuality = 0;
 
-    DxgiOutput* dxgiOutputWindow = nullptr;
-    QMessageBox* roomOpenWaiting = nullptr;
+    DxgiOutput *dxgiOutputWindow = nullptr;
+    QMessageBox *roomOpenWaiting = nullptr;
 
     FpsCounter outputFps;
     FpsCounter sendProcessFps;

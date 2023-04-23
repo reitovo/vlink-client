@@ -18,6 +18,7 @@ namespace Ui { class BuyRelay; }
 QT_END_NAMESPACE
 
 class CollabRoom;
+
 class BuyRelay : public QDialog {
 Q_OBJECT
     std::shared_ptr<grpc::Channel> channel;
@@ -29,15 +30,17 @@ public:
     ~BuyRelay() override;
 
     std::optional<QString> getTurnServer();
+
     inline int getTurnHours() {
         return purchasedHours;
     }
+
     inline int getTurnMembers() {
         return purchasedMembers;
     }
 
 private:
-    CollabRoom* room;
+    CollabRoom *room;
     Ui::BuyRelay *ui;
     QPointer<QMovie> loadingGif;
 
@@ -53,6 +56,5 @@ private:
     void startWxPurchase();
     void queryStatus();
 };
-
 
 #endif //VTSLINK_BUYRELAY_H

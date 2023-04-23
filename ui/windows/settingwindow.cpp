@@ -52,8 +52,8 @@ void SettingWindow::init() {
     ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
 
     connect(ui->disableIntraRefresh, &QCheckBox::clicked, this, [=, this](bool v) {
-       settings.setValue("disableIntraRefresh", v);
-       settings.sync();
+        settings.setValue("disableIntraRefresh", v);
+        settings.sync();
 
         qDebug() << "disableIntraRefresh" << v;
     });
@@ -86,7 +86,7 @@ void SettingWindow::init() {
     });
 
     connect(ui->restoreIgnored, &QCheckBox::clicked, this, [=, this](bool v) {
-        for (auto& i : settings.allKeys()) {
+        for (auto &i: settings.allKeys()) {
             if (i.startsWith("ignore"))
                 settings.setValue(i, false);
         }
@@ -103,9 +103,9 @@ void SettingWindow::init() {
         outFile.open(QIODevice::ReadOnly);
         auto arr = outFile.readAll();
 
-        QNetworkReply* reply = networkAccessManager.post(req, arr);
+        QNetworkReply *reply = networkAccessManager.post(req, arr);
 
-        auto* box = new QMessageBox;
+        auto *box = new QMessageBox;
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("正在上传"));
         box->setText(tr("请稍后"));
@@ -141,7 +141,7 @@ void SettingWindow::init() {
     });
 
     connect(ui->actionCrash, &QAction::triggered, this, [=]() {
-       throw std::exception("active crashed");
+        throw std::exception("active crashed");
     });
 
     connect(ui->enableBuffering, &QCheckBox::clicked, this, [=, this](bool v) {

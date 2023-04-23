@@ -21,7 +21,7 @@ public:
     ~DxgiOutput() override;
 
     static HWND getHwnd();
-    static DxgiOutput* getWindow();
+    static DxgiOutput *getWindow();
 
     void setSize(int width, int height);
 

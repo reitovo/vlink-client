@@ -5,20 +5,20 @@
 #include "ui/windows/collabroom.h"
 
 namespace Ui {
-class PeerItemWidget;
+    class PeerItemWidget;
 }
 
 class CollabRoom;
-class PeerItemWidget : public QWidget
-{
-    Q_OBJECT
+
+class PeerItemWidget : public QWidget {
+Q_OBJECT
     QString peerId;
 
 public:
-    explicit PeerItemWidget(CollabRoom* room);
+    explicit PeerItemWidget(CollabRoom *room);
     ~PeerItemWidget() override;
 
-    void updatePeer(const vts::server::Peer& p);
+    void updatePeer(const vts::server::Peer &p);
     static QString getNatTypeString(NatType type);
 
 private slots:
@@ -26,7 +26,7 @@ private slots:
 
 private:
     Ui::PeerItemWidget *ui;
-    CollabRoom* room;
+    CollabRoom *room;
     std::unique_ptr<QTimer> refreshTimer;
 };
 

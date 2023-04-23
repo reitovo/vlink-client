@@ -203,7 +203,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
         auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
         if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
             qDebug() << "Turn server still alive";
-            auto* box = new QMessageBox(this);
+            auto *box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("中转服务器仍然可用！"));
             box->setText(tr("您上次购买的的中转服务器仍然可用，已为您自动恢复，无需重新购买哦！\n"
@@ -228,7 +228,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
             settings.setValue("turnServerExpiresAt", QDateTime());
             settings.sync();
 
-            auto* box = new QMessageBox(this);
+            auto *box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("中转服务器已过期"));
             box->setText(tr("您上次购买的的中转服务器已过期，已为您自动清除中转服务器"));
@@ -331,11 +331,11 @@ void CollabRoom::spoutDiscoveryUpdate() {
     if (senders.empty()) {
         emptyCount++;
         if (emptyCount == 3 && !ignoreSpoutOpenHint) {
-            auto* box = new QMessageBox(this);
+            auto *box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("提示"));
             box->setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
-                           "请点击「查看详情」了解如何开启"));
+                            "请点击「查看详情」了解如何开启"));
             auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
             auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
             auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
@@ -442,11 +442,11 @@ void CollabRoom::shareError(const QString &reason) {
 void CollabRoom::fatalError(const QString &reason) {
     if (reason == "nv driver old") {
 
-        auto* box = new QMessageBox(this);
+        auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Critical);
         box->setWindowTitle(tr("错误"));
         box->setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
-                       "点击「更新」前往官网驱动下载页面"));
+                        "点击「更新」前往官网驱动下载页面"));
         auto open = box->addButton(tr("更新"), QMessageBox::NoRole);
         auto ok = box->addButton(tr("关闭"), QMessageBox::NoRole);
         box->setWindowState(Qt::WindowState::WindowActive);
@@ -475,7 +475,7 @@ void CollabRoom::fatalError(const QString &reason) {
             error = tr("请求房间信息超时，请重试");
         }
 
-        auto* box = new QMessageBox(this);
+        auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Critical);
         box->setWindowTitle(tr("错误"));
         box->setText(errorToReadable(error));
@@ -492,15 +492,15 @@ void CollabRoom::fatalError(const QString &reason) {
     }
 }
 
-void CollabRoom::roomServerError(const QString& func, const QString &reason) {
-    auto* box = new QMessageBox(this);
+void CollabRoom::roomServerError(const QString &func, const QString &reason) {
+    auto *box = new QMessageBox(this);
     box->setIcon(QMessageBox::Critical);
     box->setWindowTitle(tr("房间服务器错误"));
     box->setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
-        tr("\n"
-           "可能是由于房间被关闭，或远程房间服务器发生异常\n"
-           "请重新创建房间，抱歉！\n"
-           "已购买的中转服务器将不受影响。"));
+                 tr("\n"
+                    "可能是由于房间被关闭，或远程房间服务器发生异常\n"
+                    "请重新创建房间，抱歉！\n"
+                    "已购买的中转服务器将不受影响。"));
     box->addButton(tr("关闭"), QMessageBox::NoRole);
 
     connect(box, &QMessageBox::finished, this, [=, this](int) {
@@ -532,7 +532,7 @@ void CollabRoom::openSetting() {
 }
 
 void CollabRoom::openQualitySetting() {
-    auto* f = new FrameQuality(this);
+    auto *f = new FrameQuality(this);
 
     connect(f, &FrameQuality::finished, this, [=, this]() {
         if (f->changed) {
@@ -1119,13 +1119,13 @@ void CollabRoom::downgradedToSharedMemory() {
     QSettings s;
     auto ig = s.value("ignoreDowngradedToSharedMemory", false).toBool();
     if (!ig) {
-        auto* box = new QMessageBox(this);
+        auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("哎呀"));
         box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
-                       "可选的解决方案：\n"
-                       "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
-                       "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
+                        "可选的解决方案：\n"
+                        "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+                        "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
         auto open = box->addButton(tr("查看教程"), QMessageBox::NoRole);
         auto ok = box->addButton(tr("忽略"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再显示"), QMessageBox::NoRole);
@@ -1149,13 +1149,13 @@ void CollabRoom::downgradedToSharedMemory() {
 void CollabRoom::spoutOpenSharedFailed() {
     stopShare();
 
-    auto* box = new QMessageBox(this);
+    auto *box = new QMessageBox(this);
     box->setIcon(QMessageBox::Warning);
     box->setWindowTitle(tr("哎呀"));
     box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
-                   "可选的解决方案：\n"
-                   "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
-                   "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
+                    "可选的解决方案：\n"
+                    "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+                    "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
     auto ok = box->addButton(tr("查看教程"), QMessageBox::NoRole);
     auto open = box->addButton(tr("  使用备用捕获方式  "), QMessageBox::NoRole);
     connect(box, &QMessageBox::finished, this, [=, this]() {
@@ -1199,13 +1199,13 @@ void CollabRoom::dxgiNeedElevate() {
     auto ig = s.value("ignoreNeedElevate", false).toBool();
     if (!ig) {
         stopShareWorker();
-        auto* box = new QMessageBox(this);
+        auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("捕获失败"));
         box->setText(tr("捕获 VTube Studio 画面失败\n"
-                       "可能的解决方案：\n"
-                       "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
-                       "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享"));
+                        "可能的解决方案：\n"
+                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
+                        "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享"));
         auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
@@ -1342,5 +1342,5 @@ void CollabRoom::onNotifyForceIdr() {
 }
 
 void CollabRoom::updateFrameQualityText() {
-    ui->frameFormatHint->setText(getFrameFormatDesc(frameRate, frameWidth, frameHeight,  frameQuality));
+    ui->frameFormatHint->setText(getFrameFormatDesc(frameRate, frameWidth, frameHeight, frameQuality));
 }

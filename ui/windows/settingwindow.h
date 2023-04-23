@@ -7,21 +7,21 @@
 #include <QMainWindow>
 
 namespace Ui {
-class SettingWindow;
+    class SettingWindow;
 }
 
 class CollabRoom;
-class SettingWindow : public QMainWindow
-{
-    Q_OBJECT
+
+class SettingWindow : public QMainWindow {
+Q_OBJECT
 
     QTimer debugGather;
-    CollabRoom* room;
+    CollabRoom *room;
     QSettings settings;
     QNetworkAccessManager networkAccessManager;
 
 public:
-    explicit SettingWindow(QWidget* parent);
+    explicit SettingWindow(QWidget *parent);
     explicit SettingWindow(CollabRoom *parent);
     ~SettingWindow();
 

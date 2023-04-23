@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Linguist tools for Qt
-find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(QT NAMES Qt6 REQUIRED)
 
 if(${QT_VERSION_MAJOR} LESS 6)
     message(FATAL_ERROR "Needs Qt6")
