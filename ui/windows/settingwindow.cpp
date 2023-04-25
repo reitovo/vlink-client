@@ -6,6 +6,7 @@
 #include "QFile"
 #include "QNetworkReply"
 #include "QMessageBox"
+#include "QPushButton"
 
 SettingWindow::SettingWindow(QWidget *parent) :
         QMainWindow(parent),
@@ -85,16 +86,18 @@ void SettingWindow::init() {
         qDebug() << "show dxgi window" << v;
     });
 
-    connect(ui->restoreIgnored, &QCheckBox::clicked, this, [=, this](bool v) {
+    connect(ui->restoreIgnored, &QPushButton::clicked, this, [=, this](bool v) {
         for (auto &i: settings.allKeys()) {
             if (i.startsWith("ignore"))
                 settings.setValue(i, false);
         }
         settings.sync();
         qDebug() << "restore ignored";
+
+        QMessageBox::information(this, tr("提示"), tr("已恢复所有忽略项"));
     });
 
-    connect(ui->actionSendLog, &QAction::triggered, this, [=, this]() {
+    connect(ui->buttonSendLog, &QPushButton::clicked, this, [=, this]() {
         QNetworkRequest req;
         req.setUrl(QUrl("https://misc.reito.fun/report"));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "plain/text");
