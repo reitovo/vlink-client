@@ -344,7 +344,7 @@ void Peer::sendHeartbeat() {
     qDebug() << "send dc heartbeat to" << remotePeerId;
     std::unique_ptr<vts::VtsMsg> hb = std::make_unique<vts::VtsMsg>();
     hb->set_type(vts::VTS_MSG_HEARTBEAT);
-    sendQueue.enqueue(std::move(hb));
+    sendAsync(std::move(hb));
 }
 
 long Peer::rtt() {
