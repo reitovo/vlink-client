@@ -55,7 +55,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     ui->copyRoomId->setPalette(palette);
     ui->btnSharingStatus->setPalette(palette);
 
-    this->setWindowTitle(tr("联动 VTube Studio Link"));
+    this->setWindowTitle(tr("VLink 联动"));
 
     this->isServer = isServer;
 

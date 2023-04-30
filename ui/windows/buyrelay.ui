@@ -29,7 +29,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="page">
     <widget class="QWidget" name="verticalLayoutWidget">
@@ -401,11 +401,12 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>20</height>
+          <height>30</height>
          </size>
         </property>
         <property name="text">
-         <string>请使用微信扫码支付</string>
+         <string>请使用微信扫码支付
+如购买后仍然无法正常联动，请加入反馈群联系售后处理</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -475,7 +476,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>35</height>
+          <height>30</height>
          </size>
         </property>
         <property name="text">
