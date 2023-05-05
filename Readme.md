@@ -1,5 +1,6 @@
 ## VLink 联动！
- 
+<img style="width: 128px" src="images/icon.png" alt="JetBrains Logo (Main) logo.">
+
 ![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
 [English](Readme.en.md)
@@ -50,4 +51,4 @@
 
 此项目受 [JetBrain Open Source Development License](https://www.jetbrains.com/community/opensource/?utm_campaign=opensource&utm_content=approved&utm_medium=email&utm_source=newsletter&utm_term=jblogo#support) 支持
 
-<img style="width: 200px" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo.">
+<img style="width: 128px" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo.">

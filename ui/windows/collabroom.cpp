@@ -47,7 +47,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     // Workaround for color
     QPalette palette;
-    QBrush brush(QColor(255, 124, 159));
+    QBrush brush(QColor::fromString("#ff6f65"));
     brush.setStyle(Qt::SolidPattern);
     palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
     palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);

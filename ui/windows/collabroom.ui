@@ -50,59 +50,6 @@
     <string>房主控制</string>
    </property>
   </widget>
-  <widget class="QLabel" name="collabLabel">
-   <property name="geometry">
-    <rect>
-     <x>292</x>
-     <y>13</y>
-     <width>131</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Smiley Sans</family>
-     <pointsize>25</pointsize>
-     <italic>true</italic>
-     <stylestrategy>PreferAntialias</stylestrategy>
-    </font>
-   </property>
-   <property name="autoFillBackground">
-    <bool>false</bool>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QLabel { color: #FF8CBE; }</string>
-   </property>
-   <property name="text">
-    <string>联动！</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>281</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <family>Microsoft YaHei UI</family>
-     <pointsize>8</pointsize>
-     <stylestrategy>PreferAntialias</stylestrategy>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="pixmap">
-    <pixmap resource="../../resources.qrc">:/images/vts_logo_with_name.png</pixmap>
-   </property>
-   <property name="scaledContents">
-    <bool>true</bool>
-   </property>
-  </widget>
   <widget class="QListWidget" name="peerList">
    <property name="geometry">
     <rect>
@@ -455,8 +402,8 @@
           <brush brushstyle="SolidPattern">
            <color alpha="255">
             <red>255</red>
-            <green>124</green>
-            <blue>159</blue>
+            <green>111</green>
+            <blue>101</blue>
            </color>
           </brush>
          </colorrole>
@@ -1402,6 +1349,58 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QLabel" name="collabLabel_2">
+   <property name="geometry">
+    <rect>
+     <x>66</x>
+     <y>6</y>
+     <width>171</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>Smiley Sans</family>
+     <pointsize>25</pointsize>
+     <italic>true</italic>
+     <stylestrategy>PreferAntialias</stylestrategy>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLabel { color: #ff6f65; }</string>
+   </property>
+   <property name="text">
+    <string>VLink 联动！</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>6</y>
+     <width>51</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <stylestrategy>PreferAntialias</stylestrategy>
+    </font>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="../../resources.qrc">:/images/icon.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
   </widget>
  </widget>
  <resources>

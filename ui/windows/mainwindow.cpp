@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     tray = std::make_unique<QSystemTrayIcon>(this);
     QIcon icon;
-    icon.addFile(QString::fromUtf8(":/images/icon.ico"), QSize(), QIcon::Normal, QIcon::Off);
+    icon.addFile(QString::fromUtf8(":/images/icon32.ico"), QSize(), QIcon::Normal, QIcon::Off);
     tray->setIcon(icon);
     tray->show();
 
@@ -80,7 +80,7 @@ MainWindow::MainWindow(QWidget *parent)
         auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("新手教程"));
-        box->setText(tr("欢迎使用本软件进行 VTube Studio 联动！\n\n首次使用？别担心，点击「使用说明」阅读详细教程。\n\n提示：后续也可以在主界面打开「使用教程 / 常见问题」进行阅读"));
+        box->setText(tr("欢迎使用 VLink 联动！\n\n首次使用？别担心，点击「使用说明」阅读详细教程。\n\n提示：后续也可以在主界面打开「使用教程 / 常见问题」进行阅读"));
         auto ok = box->addButton(tr("使用说明"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
 

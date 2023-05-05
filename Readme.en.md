@@ -1,10 +1,10 @@
-## VTube Studio Link!
+## VLink! Collab
 
 ![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
 ### Introduction
 
-`VTube Studio Link!` can help v-tubers who use `VTube Studio` to host a collaborative event, featuring:
+`VLink! Collab` can help v-tubers who use `VTube Studio` to host a collaborative event, featuring:
 
 1. No need to share models, no copyright worries from software that is based on model sharing like `PrprLive`.
 2. Support native transparency.
