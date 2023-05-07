@@ -1,6 +1,6 @@
 ## VLink! Collab
 
-![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
+![build](https://github.com/reitovo/vlink-client/actions/workflows/cmake.yml/badge.svg)
 
 ### Introduction
 

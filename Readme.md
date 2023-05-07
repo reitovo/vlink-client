@@ -1,7 +1,7 @@
 ## VLink 联动！
 <img style="width: 64px" src="images/icon.png" alt="JetBrains Logo (Main) logo.">
 
-![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
+![build](https://github.com/reitovo/vlink-client/actions/workflows/cmake.yml/badge.svg)
 
 [English](Readme.en.md)
 
