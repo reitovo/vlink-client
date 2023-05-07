@@ -1,5 +1,5 @@
 ## VLink 联动！
-<img style="width: 128px" src="images/icon.png" alt="JetBrains Logo (Main) logo.">
+<img style="width: 64px" src="images/icon.png" alt="JetBrains Logo (Main) logo.">
 
 ![build](https://github.com/reitovo/vtslink-client/actions/workflows/cmake.yml/badge.svg)
 
@@ -19,7 +19,7 @@
 没有模型版权顾虑的主播（如朋友之间联动娱乐）推荐您使用软件内自带的如`VNet`功能进行联动！基于模型分享的方式对网络要求更低哦！但由于会多渲染几个模型所以可能会占用额外的渲染资源，与本软件相比对性能有更高要求，请根据自身情况选择合适的方案。
  
 [前往详情介绍页](https://www.wolai.com/reito/dGzCn2JJCB8tnZwWd6wcRN)
- 
+  
 ### TODO
 
 - [x] 使用 Grpc 重构信号服务器
@@ -51,4 +51,4 @@
 
 此项目受 [JetBrain Open Source Development License](https://www.jetbrains.com/community/opensource/?utm_campaign=opensource&utm_content=approved&utm_medium=email&utm_source=newsletter&utm_term=jblogo#support) 支持
 
-<img style="width: 128px" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo.">
+<img style="width: 64px" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.png" alt="JetBrains Logo (Main) logo.">
