@@ -1,4 +1,4 @@
-## VLink 联动！
+<h1 style="color: #ff6f65"> VLink 联动！</h1>
 <img style="width: 64px" src="images/icon.png" alt="JetBrains Logo (Main) logo.">
 
 ![build](https://github.com/reitovo/vlink-client/actions/workflows/cmake.yml/badge.svg)
