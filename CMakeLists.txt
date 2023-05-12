@@ -125,14 +125,23 @@ set(PROTO_FILES
     proto/vts.proto
     proto/vts_server.proto
     proto/relay.proto
+    proto/common.proto
     )
 add_library(VTSLinkProto ${PROTO_FILES})
 target_link_libraries(VTSLinkProto PUBLIC protobuf::libprotobuf gRPC::grpc gRPC::grpc++)
 target_include_directories(VTSLinkProto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
-protobuf_generate(TARGET VTSLinkProto LANGUAGE cpp)
-protobuf_generate(TARGET VTSLinkProto LANGUAGE grpc GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
+protobuf_generate(TARGET VTSLinkProto
+    LANGUAGE cpp
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto
+    IMPORT_DIRS proto)
+protobuf_generate(TARGET VTSLinkProto
+    LANGUAGE grpc
+    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc
+    IMPORT_DIRS proto
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto
+    PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
 
 target_link_libraries(VTSLink PUBLIC VTSLinkProto)
 

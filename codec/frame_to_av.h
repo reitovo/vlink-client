@@ -90,7 +90,7 @@ private:
     std::optional<QString> processInternal();
 
 public:
-    FrameToAv(int width, int height, float fps, int quality, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb);
+    FrameToAv(FrameQualityDesc q, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb);
     ~FrameToAv();
 
     QString debugInfo();

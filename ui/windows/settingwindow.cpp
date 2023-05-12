@@ -7,6 +7,7 @@
 #include "QNetworkReply"
 #include "QMessageBox"
 #include "QPushButton"
+#include "QLineEdit"
 
 SettingWindow::SettingWindow(QWidget *parent) :
         QMainWindow(parent),
@@ -51,6 +52,7 @@ void SettingWindow::init() {
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
     ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
+    ui->privateRoomServer->setText(settings.value("privateRoomServer").toString());
 
     connect(ui->disableIntraRefresh, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("disableIntraRefresh", v);
@@ -95,6 +97,20 @@ void SettingWindow::init() {
         qDebug() << "restore ignored";
 
         QMessageBox::information(this, tr("提示"), tr("已恢复所有忽略项"));
+    });
+
+    connect(ui->setPrivateServer, &QPushButton::clicked, this, [=, this](bool v) {
+        auto a = ui->privateRoomServer->text();
+
+        settings.setValue("privateRoomServer", a);
+        settings.sync();
+        qDebug() << "private room server" << a;
+
+        if (a.isEmpty()) {
+            QMessageBox::information(this, tr("提示"), tr("已清空，将使用默认服务器，重新创建房间生效。"));
+        } else {
+            QMessageBox::information(this, tr("提示"), tr("已更新私有服务器地址：%0，重新创建房间生效。").arg(a) );
+        }
     });
 
     connect(ui->buttonSendLog, &QPushButton::clicked, this, [=, this]() {
@@ -158,6 +174,8 @@ void SettingWindow::init() {
         settings.sync();
         qDebug() << "force shmem" << v;
     });
+
+
 
     //TODO: 计算机\HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences
 }

@@ -331,7 +331,7 @@ void Peer::resetDecoder() {
 
 void Peer::startDecoder() {
     ScopedQMutex _(&decoderMutex);
-    dec = std::make_unique<AvToDx>(room->frameWidth, room->frameHeight, room->frameRate, room->d3d);
+    dec = std::make_unique<AvToDx>(room->quality, room->d3d);
 }
 
 void Peer::stopDecoder() {

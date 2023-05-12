@@ -30,7 +30,7 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
     return AV_PIX_FMT_NONE;
 }
 
-AvToDx::AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
+AvToDx::AvToDx(FrameQualityDesc q, std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin d3d2dx";
     d3d->registerSource(this);
@@ -38,9 +38,9 @@ AvToDx::AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame
     QSettings settings;
     enableBuffering = settings.value("enableBuffering", false).toBool();
 
-    _width = width;
-    _height = height;
-    this->frameRate = frameRate;
+    _width = q.frameWidth;
+    _height = q.frameHeight;
+    this->frameRate = q.frameRate;
 
     init();
 }

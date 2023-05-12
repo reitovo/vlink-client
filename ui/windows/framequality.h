@@ -7,6 +7,7 @@
 
 #include <QDialog>
 #include <QSettings>
+#include "core/util.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class FrameQuality; }
@@ -21,14 +22,11 @@ Q_OBJECT
     void updateBandwidthEstimate();
 
 public:
-    explicit FrameQuality(CollabRoom *parent = nullptr);
+    explicit FrameQuality(FrameQualityDesc init, QWidget *parent = nullptr);
     ~FrameQuality() override;
 
     bool changed = false;
-    float frameRate = 60;
-    int frameWidth = 1920;
-    int frameHeight = 1080;
-    int frameQuality = 0;
+    FrameQualityDesc quality;
 
 private:
     Ui::FrameQuality *ui;

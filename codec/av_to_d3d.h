@@ -123,7 +123,7 @@ private:
     std::optional<QString> processFrame();
 
 public:
-    AvToDx(int width, int height, float frameRate, std::shared_ptr<DxToFrame> d3d);
+    AvToDx(FrameQualityDesc q, std::shared_ptr<DxToFrame> d3d);
     ~AvToDx();
 
     std::optional<QString> init();

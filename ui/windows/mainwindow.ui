@@ -87,7 +87,7 @@
         <string/>
        </property>
        <property name="echoMode">
-        <enum>QLineEdit::Normal</enum>
+        <enum>QLineEdit::Password</enum>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -743,6 +743,9 @@
      <family>Microsoft YaHei UI</family>
      <pointsize>9</pointsize>
     </font>
+   </property>
+   <property name="nativeMenuBar">
+    <bool>true</bool>
    </property>
    <widget class="QMenu" name="menu">
     <property name="font">

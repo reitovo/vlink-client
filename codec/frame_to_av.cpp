@@ -31,13 +31,13 @@ static QList<CodecOption> options = {
 //	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
 };
 
-FrameToAv::FrameToAv(int width, int height, float fps, int quality, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
+FrameToAv::FrameToAv(FrameQualityDesc q, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
 	qDebug() << "begin dx2av";
 	onPacketReceived = std::move(cb);
-    this->_width = width;
-    this->_height = height;
-    this->frameRate = fps;
-    this->frameQuality = quality;
+    this->_width = q.frameWidth;
+    this->_height = q.frameHeight;
+    this->frameRate = q.frameRate;
+    this->frameQuality = q.frameQuality;
 }
 
 FrameToAv::~FrameToAv()

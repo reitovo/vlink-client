@@ -12,6 +12,7 @@
 
 #include "proto/relay.pb.h"
 #include "proto/relay.grpc.pb.h"
+#include "core/util.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class BuyRelay; }
@@ -52,9 +53,13 @@ private:
     int purchasedHours;
     int purchasedMembers;
 
+    FrameQualityDesc relayQuality;
+
     void refreshPrice();
     void startWxPurchase();
     void queryStatus();
+    void changeQuality();
+    void refreshQuality();
 };
 
 #endif //VTSLINK_BUYRELAY_H

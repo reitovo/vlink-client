@@ -1,4 +1,5 @@
-syntax = "proto3"; 
+syntax = "proto3";
+import "common.proto";
 
 package vts.server;
  
@@ -7,13 +8,6 @@ message ReqCommon {}
 message RspCommon {}
 
 message NotifyCommon {}
-
-message FrameFormatSetting {
-    int32 frameWidth = 1;
-    int32 frameHeight = 2;
-    int32 frameRate = 3;
-    int32 frameQuality = 4;
-} 
 
 message Peer {
     string peerId = 1;
@@ -70,7 +64,7 @@ message Notify {
         NotifyCommon roomDestroy = 5;
         NotifyCommon forceIdr = 6;
     }
-}
+} 
 
 message NotifyPeers {
     repeated Peer peers = 1;
@@ -93,4 +87,4 @@ service RoomService {
     rpc RequestIdr(ReqCommon) returns (RspCommon);
 
     rpc Exit(ReqCommon) returns (RspCommon);
-}
+} 

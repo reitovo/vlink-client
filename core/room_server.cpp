@@ -9,11 +9,12 @@
 #include "NatTypeProbe/NatProb.h"
 #include <QDebug>
 #include "grpc_cert.h"
+#include "QSettings"
 
 RoomServer::RoomServer(CollabRoom* room) {
     this->room = room;
 
-    channel = grpc::CreateChannel(VTSLINK_GRPC_ENDPOINT, grpc::SslCredentials(
+    channel = grpc::CreateChannel(room->roomEndpoint.toStdString(), grpc::SslCredentials(
             grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")));
     service = vts::server::RoomService::NewStub(channel);
 }
@@ -108,7 +109,7 @@ void RoomServer::createRoom(const vts::server::ReqCreateRoom& req) {
 
         if (!status.ok()) {
             qDebug() << "createRoom failed:" << status.error_message().c_str();
-            emit room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
+            emit room->onRoomInfoFailed("room init error " + std::to_string(status.error_code()));
             return;
         }
 
@@ -140,7 +141,7 @@ void RoomServer::joinRoom(const std::string& peerId, const std::string& roomId, 
 
         if (!status.ok()) {
             qDebug() << "joinRoom failed:" << status.error_message().c_str();
-            emit room->onRoomInfoFailed(status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED ? "room init timeout" : status.error_message());
+            emit room->onRoomInfoFailed(status.error_code() == grpc::NOT_FOUND ? "room not found" : "room init error " + std::to_string(status.error_code()));
             return;
         }
 

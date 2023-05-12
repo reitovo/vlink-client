@@ -9,26 +9,42 @@
 #include "collabroom.h"
 #include "math.h"
 
-FrameQuality::FrameQuality(CollabRoom *parent) :
+FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
         QDialog(parent), ui(new Ui::FrameQuality) {
     ui->setupUi(this);
 
-    frameQuality = parent->frameQuality;
-    frameRate = parent->frameRate;
-    frameWidth = parent->frameWidth;
-    frameHeight = parent->frameHeight;
+    quality = init;
 
-    ui->frameQuality->setCurrentIndex(settings.value("frameQualityIdx", 0).toInt());
-    ui->frameRate->setCurrentIndex(settings.value("frameRateIdx", 1).toInt());
-    ui->frameSize->setCurrentIndex(settings.value("frameSizeIdx", 2).toInt());
+    ui->frameQuality->setCurrentIndex(init.frameQuality);
 
-    updateBandwidthEstimate();
+    switch ((int)init.frameRate) {
+        default:
+        case 30:
+            ui->frameRate->setCurrentIndex(0);
+            break;
+        case 60:
+            ui->frameRate->setCurrentIndex(1);
+            break;
+    }
+
+    switch (init.frameWidth) {
+        case 1280:
+            ui->frameSize->setCurrentIndex(0);
+            break;
+        default:
+        case 1600:
+            ui->frameSize->setCurrentIndex(1);
+            break;
+        case 1920:
+            ui->frameSize->setCurrentIndex(2);
+            break;
+    }
 
     connect(ui->frameQuality, &QComboBox::currentIndexChanged, this, [=, this](int v) {
         changed = true;
         settings.setValue("frameQualityIdx", v);
 
-        frameQuality = v;
+        quality.frameQuality = v;
 
         settings.sync();
         qDebug() << "frameQualityIdx" << v;
@@ -38,18 +54,17 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
 
     connect(ui->frameRate, &QComboBox::currentIndexChanged, this, [=, this](int v) {
         changed = true;
-        settings.setValue("frameRateIdx", v);
 
         switch (v) {
             case 0:
-                frameRate = 30;
+                quality.frameRate = 30;
                 break;
             case 1:
-                frameRate = 60;
+                quality.frameRate = 60;
                 break;
         }
 
-        settings.setValue("frameRate", frameRate);
+        settings.setValue("frameRate", quality.frameRate);
         settings.sync();
         qDebug() << "frameRateIdx" << v;
 
@@ -58,30 +73,31 @@ FrameQuality::FrameQuality(CollabRoom *parent) :
 
     connect(ui->frameSize, &QComboBox::currentIndexChanged, this, [=, this](int v) {
         changed = true;
-        settings.setValue("frameSizeIdx", v);
 
         switch (v) {
             case 0:
-                frameWidth = 1280;
-                frameHeight = 720;
+                quality.frameWidth = 1280;
+                quality.frameHeight = 720;
                 break;
             case 1:
-                frameWidth = 1600;
-                frameHeight = 900;
+                quality.frameWidth = 1600;
+                quality.frameHeight = 900;
                 break;
             case 2:
-                frameWidth = 1920;
-                frameHeight = 1080;
+                quality.frameWidth = 1920;
+                quality.frameHeight = 1080;
                 break;
         }
 
-        settings.setValue("frameWidth", frameWidth);
-        settings.setValue("frameHeight", frameHeight);
+        settings.setValue("frameWidth", quality.frameWidth);
+        settings.setValue("frameHeight", quality.frameHeight);
         settings.sync();
         qDebug() << "frameSizeIdx" << v;
 
         updateBandwidthEstimate();
     });
+
+    updateBandwidthEstimate();
 }
 
 FrameQuality::~FrameQuality() {
@@ -89,9 +105,9 @@ FrameQuality::~FrameQuality() {
 }
 
 void FrameQuality::updateBandwidthEstimate() {
-    double pixelFactor = frameWidth * frameHeight / 1920.0 / 1080.0;
-    double fpsFactor = sin(M_PI_2 * frameRate / 60);
-    double qualityFactor = pow(2, frameQuality) * 4;
+    double pixelFactor = quality.frameWidth * quality.frameHeight / 1920.0 / 1080.0;
+    double fpsFactor = sin(M_PI_2 * quality.frameRate / 60);
+    double qualityFactor = pow(2, quality.frameQuality) * 4;
     double maxBandwidth = qualityFactor * fpsFactor * pixelFactor;
     double constBandwidth = maxBandwidth * 0.45;
 

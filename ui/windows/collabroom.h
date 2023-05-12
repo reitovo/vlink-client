@@ -30,14 +30,11 @@ class DxgiOutput;
 // This is the collab main logic
 class CollabRoom : public QDialog, public IDebugCollectable {
 Q_OBJECT
-
     friend class Peer;
-
     friend class PeerItemWidget;
-
     friend class RoomServer;
-
     friend class FrameQuality;
+    friend class BuyRelay;
 
 public:
     static CollabRoom *instance();
@@ -139,10 +136,7 @@ private:
     QString roomId;
     QString localPeerId;
 
-    float frameRate = 60;
-    int frameWidth = 1920;
-    int frameHeight = 1080;
-    int frameQuality = 0;
+    FrameQualityDesc quality;
 
     DxgiOutput *dxgiOutputWindow = nullptr;
     QMessageBox *roomOpenWaiting = nullptr;
@@ -171,6 +165,9 @@ private:
 
     std::string spoutName = "VTubeStudioSpout";
     spoutSenderNames spoutSender;
+
+    QString roomEndpoint;
+    std::atomic_bool isPrivateRoomEndpoint;
 
     bool keepTop = false;
 };

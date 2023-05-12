@@ -20,11 +20,16 @@
 #include "core/grpc_cert.h"
 #include "core/util.h"
 #include "collabroom.h"
+#include "ui/windows/framequality.h"
 
 BuyRelay::BuyRelay(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::BuyRelay) {
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+
+    room = parent;
+    relayQuality = parent->quality;
+    refreshQuality();
 
     channel = grpc::CreateChannel(VTSLINK_GRPC_RELAY_ENDPOINT, grpc::SslCredentials(
             grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")));
@@ -41,6 +46,9 @@ BuyRelay::BuyRelay(CollabRoom *parent) :
     });
     connect(&queryStatusTimer, &QTimer::timeout, this, [=, this]() {
         queryStatus();
+    });
+    connect(ui->setFrameQualityButton, &QPushButton::clicked, this, [=, this]() {
+        changeQuality();
     });
 
     refreshPrice();
@@ -66,6 +74,13 @@ void BuyRelay::refreshPrice() {
         vts::relay::ReqRelayCreate req;
         req.set_participants(person);
         req.set_hours(hours);
+        auto quality = req.mutable_maxquality();
+        quality->set_framerate(relayQuality.frameRate);
+        quality->set_framequality(relayQuality.frameQuality);
+        quality->set_framewidth(relayQuality.frameWidth);
+        quality->set_frameheight(relayQuality.frameHeight);
+        req.set_roomid(room->roomId.toStdString());
+
         auto status = service->QueryPrice(&ctx, req, price);
 
         if (!status.ok()) {
@@ -89,6 +104,13 @@ void BuyRelay::startWxPurchase() {
         vts::relay::ReqRelayCreate req;
         req.set_participants(person);
         req.set_hours(hours);
+        auto quality = req.mutable_maxquality();
+        quality->set_framerate(relayQuality.frameRate);
+        quality->set_framequality(relayQuality.frameQuality);
+        quality->set_framewidth(relayQuality.frameWidth);
+        quality->set_frameheight(relayQuality.frameHeight);
+        req.set_roomid(room->roomId.toStdString());
+
         auto status = service->StartBuyWeixin(&ctx, req, res);
 
         if (!status.ok()) {
@@ -159,4 +181,25 @@ void BuyRelay::queryStatus() {
 
 std::optional<QString> BuyRelay::getTurnServer() {
     return turn;
+}
+
+void BuyRelay::changeQuality() {
+    auto *f = new FrameQuality(relayQuality, this);
+
+    connect(f, &FrameQuality::finished, this, [=, this]() {
+        if (f->changed) {
+            qDebug() << "relay frame quality" << f->quality;
+
+            relayQuality = f->quality;
+            refreshPrice();
+            refreshQuality();
+        }
+        f->deleteLater();
+    });
+
+    f->show();
+}
+
+void BuyRelay::refreshQuality() {
+    ui->frameFormat->setText(getFrameFormatDesc(relayQuality));
 }

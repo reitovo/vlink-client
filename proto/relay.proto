@@ -1,13 +1,13 @@
 syntax = "proto3";
+import "common.proto";
 
 package vts.relay;
 
 message ReqRelayCreate {
   int32 hours = 1;
   int32 participants = 2;
-  int32 frameRate = 3;
-  int32 frameQuality = 4;
-  int32 frameSize = 5;
+  optional string roomId = 3;
+  vts.server.FrameFormatSetting maxQuality = 4;
 }
 
 message RspPrice {

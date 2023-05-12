@@ -61,6 +61,16 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     QSettings settings;
 
+    roomEndpoint = settings.value("privateRoomServer").toString();
+    if (roomEndpoint.isEmpty()) {
+        roomEndpoint = "vts-grpc.reito.fun";
+        isPrivateRoomEndpoint = false;
+    } else {
+        isPrivateRoomEndpoint = true;
+    }
+
+    qDebug() << "Using Room Endpoint" << roomEndpoint;
+
     this->roomId = roomId;
     localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
@@ -243,22 +253,22 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     }
 
     this->roomId = QString::fromStdString(info.roomid());
-    frameWidth = info.format().framewidth();
-    frameHeight = info.format().frameheight();
-    frameRate = info.format().framerate();
-    frameQuality = info.format().framequality();
+    quality.frameWidth = info.format().framewidth();
+    quality.frameHeight = info.format().frameheight();
+    quality.frameRate = info.format().framerate();
+    quality.frameQuality = info.format().framequality();
     updateFrameQualityText();
 
-    qDebug() << "frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+    qDebug() << "frame quality" << quality;
 
     dxgiOutputWindow = new DxgiOutput();
-    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+    dxgiOutputWindow->setSize(quality.frameWidth, quality.frameHeight);
     if (settings.value("showDxgiWindow").toBool()) {
         dxgiOutputWindow->move(0, 0);
         dxgiOutputWindow->show();
     }
 
-    d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
+    d3d = std::make_shared<DxToFrame>(quality.frameWidth, quality.frameHeight);
     d3d->init();
 
     // Start sending thread
@@ -463,15 +473,20 @@ void CollabRoom::shareError(const QString &reason) {
 
 void CollabRoom::fatalError(const QString &reason) {
     // Show default dialog
-    QString error;
+    QString error = reason;
     if (reason == "host leave") {
         error = tr("房主已离开");
     } else if (reason == "room not found") {
         error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
     } else if (reason == "init room req failed") {
         error = tr("请求房间信息失败");
-    } else if (reason == "room init timeout") {
+    } else if (reason == "room init error 4") {
         error = tr("请求房间信息超时，请重试");
+    }else if (reason == "room init error 14") {
+        error = tr("房间服务器连接错误，请检查网络");
+        if (isPrivateRoomEndpoint) {
+            error = tr("私有房间服务器连接错误，请检查网络与服务器状态\n服务器地址：") + roomEndpoint;
+        }
     }
 
     auto *box = new QMessageBox(this);
@@ -530,18 +545,18 @@ void CollabRoom::openSetting() {
 }
 
 void CollabRoom::openQualitySetting() {
-    auto *f = new FrameQuality(this);
+    auto *f = new FrameQuality(quality, this);
 
     connect(f, &FrameQuality::finished, this, [=, this]() {
         if (f->changed) {
             qDebug() << "resetting frame quality";
-            qDebug() << "frame quality" << f->frameWidth << f->frameHeight << f->frameRate << f->frameQuality;
+            qDebug() << "frame quality" << f->quality;
 
             vts::server::FrameFormatSetting req;
-            req.set_framequality(f->frameQuality);
-            req.set_frameheight(f->frameHeight);
-            req.set_framewidth(f->frameWidth);
-            req.set_framerate(f->frameRate);
+            req.set_framequality(f->quality.frameQuality);
+            req.set_frameheight(f->quality.frameHeight);
+            req.set_framewidth(f->quality.frameWidth);
+            req.set_framerate(f->quality.frameRate);
             roomServer->setFrameFormat(req);
             updateFrameQualityText();
         }
@@ -619,14 +634,14 @@ void CollabRoom::spoutShareWorkerClient() {
     qInfo() << "spout capture client start";
 
     // spout capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(frameWidth, frameHeight, nullptr, spoutName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, nullptr, spoutName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, frameQuality, [=, this](auto av) {
+    FrameToAv cvt(quality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
@@ -649,7 +664,7 @@ void CollabRoom::spoutShareWorkerClient() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-    float frameSeconds = 1.0f / frameRate;
+    float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
         QElapsedTimer t;
@@ -672,7 +687,7 @@ void CollabRoom::spoutShareWorkerClient() {
         shareRecvFps.add(t.nsecsElapsed());
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 / frameRate;
+        int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -692,7 +707,7 @@ void CollabRoom::spoutShareWorkerServer() {
     qInfo() << "spout capture server start";
 
     // dx capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(frameWidth, frameHeight, d3d, spoutName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, d3d, spoutName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
@@ -701,7 +716,7 @@ void CollabRoom::spoutShareWorkerServer() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-    float frameSeconds = 1.0f / frameRate;
+    float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
 
@@ -713,7 +728,7 @@ void CollabRoom::spoutShareWorkerServer() {
         shareRecvFps.add(t.nsecsElapsed());
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 / frameRate;
+        int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -730,14 +745,14 @@ void CollabRoom::dxgiShareWorkerClient() {
     qInfo() << "dx capture client start";
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(frameWidth, frameHeight, nullptr);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(quality.frameWidth, quality.frameHeight, nullptr);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
     }
 
     // ffmpeg coverter
-    FrameToAv cvt(frameWidth, frameHeight, frameRate, frameQuality, [=, this](auto av) {
+    FrameToAv cvt(quality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->sendAsync(std::move(av));
@@ -760,7 +775,7 @@ void CollabRoom::dxgiShareWorkerClient() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-    float frameSeconds = 1.0f / frameRate;
+    float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
         QElapsedTimer t;
@@ -785,7 +800,7 @@ void CollabRoom::dxgiShareWorkerClient() {
         shareRecvFps.add(t.nsecsElapsed());
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 / frameRate;
+        int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -805,7 +820,7 @@ void CollabRoom::dxgiShareWorkerServer() {
     qInfo() << "dx capture server start";
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(frameWidth, frameHeight, d3d);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(quality.frameWidth, quality.frameHeight, d3d);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -814,7 +829,7 @@ void CollabRoom::dxgiShareWorkerServer() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-    float frameSeconds = 1.0f / frameRate;
+    float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
 
@@ -828,7 +843,7 @@ void CollabRoom::dxgiShareWorkerServer() {
         shareRecvFps.add(t.nsecsElapsed());
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 / frameRate;
+        int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -995,7 +1010,7 @@ void CollabRoom::dxgiSendWorker() {
     std::unique_ptr<FrameToAv> cvt = nullptr;
 
     if (isServer) {
-        cvt = std::make_unique<FrameToAv>(frameWidth, frameHeight, frameRate, frameQuality,
+        cvt = std::make_unique<FrameToAv>(quality,
                                           [=, this](auto av) {
                                               ScopedQMutex _(&peersLock);
                                               // This approach is bandwidth consuming, should be replaced by relay approach
@@ -1039,7 +1054,7 @@ void CollabRoom::dxgiSendWorker() {
         }
 
         frameCount++;
-        int64_t frameTime = frameCount * 1000000.0 / frameRate;
+        int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -1059,6 +1074,26 @@ void CollabRoom::dxgiSendWorker() {
 }
 
 void CollabRoom::openBuyRelay() {
+    if (isPrivateRoomEndpoint) {
+        auto *box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Warning);
+        box->setWindowTitle(tr("无法购买"));
+        box->setText(tr("由于使用了私有部署房间服务器，因此无法使用本功能，请按教程自行部署中转服务器，或联系协助部署。"));
+        auto* open = box->addButton(tr("  查看部署教程  "), QMessageBox::NoRole);
+        box->addButton(tr("关闭"), QMessageBox::NoRole);
+
+        connect(box, &QMessageBox::finished, this, [=, this](int) {
+            if (box->clickedButton() == open) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/osFxEHHuiZNF3JMrhS6zV2"));
+            }
+
+            box->deleteLater();
+        });
+
+        box->show();
+        return;
+    }
+
     auto buy = new BuyRelay(this);
     connect(buy, &BuyRelay::finished, this, [=, this](int) {
         auto turn = buy->getTurnServer();
@@ -1275,13 +1310,13 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
     terminateQThread(frameSendThread, __FUNCTION__);
     resettingFrameFormat = false;
 
-    frameWidth = frame.framewidth();
-    frameHeight = frame.frameheight();
-    frameRate = frame.framerate();
-    frameQuality = frame.framequality();
+    quality.frameWidth = frame.framewidth();
+    quality.frameHeight = frame.frameheight();
+    quality.frameRate = frame.framerate();
+    quality.frameQuality = frame.framequality();
 
     updateFrameQualityText();
-    qDebug() << "new frame quality" << frameWidth << frameHeight << frameRate << frameQuality;
+    qDebug() << "new frame quality" << quality;
 
     dxgiOutputWindow->close();
     delete dxgiOutputWindow;
@@ -1291,13 +1326,13 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
 
     QSettings settings;
     dxgiOutputWindow = new DxgiOutput();
-    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+    dxgiOutputWindow->setSize(quality.frameWidth, quality.frameHeight);
     if (settings.value("showDxgiWindow").toBool()) {
         dxgiOutputWindow->move(0, 0);
         dxgiOutputWindow->show();
     }
 
-    d3d = std::make_shared<DxToFrame>(frameWidth, frameHeight);
+    d3d = std::make_shared<DxToFrame>(quality.frameWidth, quality.frameHeight);
     d3d->init();
 
     // Start sending thread
@@ -1317,7 +1352,7 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
         }
     }
 
-    dxgiOutputWindow->setSize(frameWidth, frameHeight);
+    dxgiOutputWindow->setSize(quality.frameWidth, quality.frameHeight);
 
     if (shareWasRunning)
         startShare();
@@ -1340,5 +1375,5 @@ void CollabRoom::onNotifyForceIdr() {
 }
 
 void CollabRoom::updateFrameQualityText() {
-    ui->frameFormatHint->setText(getFrameFormatDesc(frameRate, frameWidth, frameHeight, frameQuality));
+    ui->frameFormatHint->setText(getFrameFormatDesc(quality));
 }
