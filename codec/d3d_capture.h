@@ -17,6 +17,13 @@
 
 using Microsoft::WRL::ComPtr;
 
+struct DxCaptureSource {
+    QString name;
+    QString window;
+};
+
+extern std::vector<DxCaptureSource> dxCaptureSources;
+
 class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
@@ -54,6 +61,8 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
 
     FpsCounter fps;
 
+    std::string _window;
+
     bool _needElevateDisplayed = false;
 
     bool createSharedSurf();
@@ -64,7 +73,7 @@ class DxCapture : public IDxToFrameSrc, public IDebugCollectable {
     void resetDeviceContext();
 
 public:
-    explicit DxCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d);
+    explicit DxCapture(std::string window, int width, int height, const std::shared_ptr<DxToFrame>& d3d);
     ~DxCapture();
 
     QString debugInfo() override;

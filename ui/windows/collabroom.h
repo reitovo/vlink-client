@@ -75,7 +75,7 @@ private slots:
     void roomServerError(const QString &func, const QString &reason);
     void shareError(const QString &reason);
     void fatalError(const QString &reason);
-    void showNewFrameFormat();
+    void resetStartShareText();
     void rtcFailed(Peer *peer);
 
     void downgradedToSharedMemory();

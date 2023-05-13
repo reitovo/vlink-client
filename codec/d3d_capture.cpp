@@ -11,12 +11,20 @@
 #include <DirectXMath.h>
 #include <d3d11.h>
 
+#include <utility>
+
 #pragma comment(lib, "d3dcompiler.lib")
 
 #define NUMVERTICES 6
 
 using DirectX::XMFLOAT3;
 using DirectX::XMFLOAT2;
+
+std::vector<DxCaptureSource> dxCaptureSources = {
+        {.name = "VTube Studio", .window = "VTube Studio:UnityWndClass:VTube Studio.exe"},
+        {.name = "PrprLive", .window = "PrprLive:UnityWndClass:PrprLive.exe"},
+        {.name = "Warudo", .window = "Warudo:UnityWndClass:Warudo.exe"},
+};
 
 typedef struct _VERTEX {
     XMFLOAT3 Pos;
@@ -62,13 +70,14 @@ static void dx_need_elevate(void *user) {
     dx->needElevate();
 }
 
-DxCapture::DxCapture(int width, int height, const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d) {
+DxCapture::DxCapture(std::string window, int width, int height, const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d) {
     qDebug() << "begin d3d capture";
     if (d3d != nullptr) {
         d3d->registerSource(this);
         qDebug() << "running at server mode";
     }
 
+    _window = std::move(window);
     _width = width;
     _height = height;
 }
@@ -388,7 +397,7 @@ void DxCapture::initDxCapture() {
     auto forceShmem = settings.value("forceShmem", false).toBool();
 
     dx_capture_setting_default(&cap->setting);
-    cap->setting.window = "VTube Studio:UnityWndClass:VTube Studio.exe";
+    cap->setting.window = _window.c_str();
     cap->setting.force_shmem = forceShmem || _restartToSharedMemory;
     cap->setting.anticheat_hook = true;
     _isShareMemory = cap->setting.force_shmem;

@@ -15,6 +15,7 @@
 #include <QUuid>
 #include <QMessageBox>
 #include <QClipboard>
+#include <QComboBox>
 #include "mainwindow.h"
 
 extern "C" {
@@ -56,10 +57,25 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     ui->btnSharingStatus->setPalette(palette);
 
     this->setWindowTitle(tr("VLink 联动"));
-
     this->isServer = isServer;
 
     QSettings settings;
+
+    // Dx sources
+    ui->d3d11SourceSelect->clear();
+    for (auto& src : dxCaptureSources) {
+        ui->d3d11SourceSelect->addItem(src.name);
+    }
+
+    connect(ui->d3d11SourceSelect, &QComboBox::currentIndexChanged, this, [=, this](int v) {
+        QSettings s;
+        s.setValue("d3d11SourceIndex", v);
+        s.sync();
+
+        qDebug() << "d3d11 source set" << v << dxCaptureSources[v].name;
+    });
+
+    ui->d3d11SourceSelect->setCurrentIndex(settings.value("d3d11SourceIndex", 0).toInt());
 
     roomEndpoint = settings.value("privateRoomServer").toString();
     if (roomEndpoint.isEmpty()) {
@@ -433,11 +449,16 @@ void CollabRoom::toggleTurnVisible() {
     }
 }
 
-void CollabRoom::showNewFrameFormat() {
-    QMessageBox::information(this, tr("新的画面设置"), tr("调整了新的画面设置，请重新开始分享"));
+void CollabRoom::resetStartShareText() {
     ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(true);
+    ui->btnSharingStatus->setEnabled(false);
     ui->btnFixRatio->setEnabled(false);
+    ui->spoutSourceSelect->setEnabled(true);
+    ui->d3d11SourceSelect->setEnabled(true);
+
+    QTimer::singleShot(500, this, [this]() {
+        ui->btnSharingStatus->setEnabled(true);
+    });
 }
 
 void CollabRoom::shareError(const QString &reason) {
@@ -467,8 +488,7 @@ void CollabRoom::shareError(const QString &reason) {
         QMessageBox::critical(this, tr("分享错误"), errorToReadable(reason));
     }
 
-    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(true);
+    resetStartShareText();
 }
 
 void CollabRoom::fatalError(const QString &reason) {
@@ -595,6 +615,8 @@ void CollabRoom::startShare() {
     QTimer::singleShot(500, this, [this]() {
         ui->btnSharingStatus->setEnabled(true);
     });
+    ui->spoutSourceSelect->setEnabled(false);
+    ui->d3d11SourceSelect->setEnabled(false);
 
     // Start worker
     shareRunning = true;
@@ -619,15 +641,8 @@ void CollabRoom::startShare() {
 }
 
 void CollabRoom::stopShare() {
-    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(false);
-    ui->btnFixRatio->setEnabled(false);
-
+    resetStartShareText();
     stopShareWorker();
-
-    QTimer::singleShot(500, this, [this]() {
-        ui->btnSharingStatus->setEnabled(true);
-    });
 }
 
 void CollabRoom::spoutShareWorkerClient() {
@@ -744,8 +759,10 @@ void CollabRoom::spoutShareWorkerServer() {
 void CollabRoom::dxgiShareWorkerClient() {
     qInfo() << "dx capture client start";
 
+    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window.toStdString();
+
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(quality.frameWidth, quality.frameHeight, nullptr);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow, quality.frameWidth, quality.frameHeight, nullptr);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -819,8 +836,10 @@ void CollabRoom::dxgiShareWorkerClient() {
 void CollabRoom::dxgiShareWorkerServer() {
     qInfo() << "dx capture server start";
 
+    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window.toStdString();
+
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(quality.frameWidth, quality.frameHeight, d3d);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow, quality.frameWidth, quality.frameHeight, d3d);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
