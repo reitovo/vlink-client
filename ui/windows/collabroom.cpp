@@ -1005,11 +1005,12 @@ QString CollabRoom::errorToReadable(const QString &reason) {
 }
 
 void CollabRoom::usageStatUpdate() {
-    ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 ")
+    ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 %5")
                                    .arg(QString::number(usage::getCpuUsage(), 'f', 1))
                                    .arg(QString::number(outputFps.fps(), 'f', 1))
                                    .arg(useDxCapture ? "D3D11" : "Spout")
                                    .arg(vts::info::BuildId)
+                                   .arg(isElevated() ? tr(" 正以管理员身份运行") : "")
     );
 
     // Speed Stat
