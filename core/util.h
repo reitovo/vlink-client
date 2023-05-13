@@ -190,4 +190,6 @@ void showTexture(
 
 void setComboBoxIfChanged(const QStringList& strList, QComboBox* box);
 
+bool isElevated();
+
 #endif // UTIL_H

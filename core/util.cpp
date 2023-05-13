@@ -236,6 +236,36 @@ void setDxDebugName(ID3D11DeviceChild *child, const std::string &name) {
         child->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.c_str());
 }
 
+bool isElevated() {
+    BOOL fIsElevated = FALSE;
+    HANDLE hToken = NULL;
+    TOKEN_ELEVATION elevation;
+    DWORD dwSize;
+
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+    {
+        printf("\n Failed to get Process Token :%d.",GetLastError());
+        goto Cleanup;  // if Failed, we treat as False
+    }
+
+
+    if (!GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize))
+    {
+        printf("\nFailed to get Token Information :%d.", GetLastError());
+        goto Cleanup;// if Failed, we treat as False
+    }
+
+    fIsElevated = elevation.TokenIsElevated;
+
+    Cleanup:
+    if (hToken)
+    {
+        CloseHandle(hToken);
+        hToken = NULL;
+    }
+    return fIsElevated;
+}
+
 void FpsCounter::add(long nsConsumed)
 {
     auto sec = QDateTime::currentSecsSinceEpoch();

@@ -72,7 +72,34 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         s.setValue("d3d11SourceIndex", v);
         s.sync();
 
-        qDebug() << "d3d11 source set" << v << dxCaptureSources[v].name;
+        auto name = dxCaptureSources[v].name;
+        qDebug() << "d3d11 source set" << v << name;
+
+        QList<QString> elevateList = {"PrprLive"};
+        auto ignoreElevate = s.value("ignoreRequireElevate:" + name).toBool();
+        if (!ignoreElevate && !isElevated()) {
+            if (elevateList.contains(name)) {
+                auto *box = new QMessageBox(this);
+                box->setIcon(QMessageBox::Warning);
+                box->setWindowTitle(name + tr(" 需要管理员权限"));
+                box->setText(tr("由于 %1 默认以管理员身份启动，因此 VLink 联动也必须使用管理员身份启动才可对其进行 D3D11 捕获。\n"
+                                "与此同时，OBS 等推流软件也需要以管理员身份启动，请退出并「右键→以管理员身份运行」VLink 启动器与 OBS。").arg(name));
+                auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+                auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+                connect(box, &QMessageBox::finished, this, [=](int) {
+                    auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                    if (ret == ign) {
+                        QSettings s;
+                        s.setValue("ignoreRequireElevate:" + name, true);
+                        s.sync();
+                    }
+                    box->deleteLater();
+                });
+
+                box->show();
+            }
+        }
     });
 
     ui->d3d11SourceSelect->setCurrentIndex(settings.value("d3d11SourceIndex", 0).toInt());
