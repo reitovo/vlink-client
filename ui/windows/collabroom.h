@@ -148,6 +148,7 @@ private:
 
     QMutex peersLock;
 
+    std::atomic_int peerCount;
     // As server
     QString turnServer;
     std::map<QString, std::unique_ptr<Peer>> clientPeers;
@@ -171,6 +172,10 @@ private:
     std::atomic_bool isPrivateRoomEndpoint;
 
     bool keepTop = false;
+
+    // Hint for sharing
+    int notSharingCount = 0;
+    std::unique_ptr<QTimer> hintShare;
 };
 
 #endif // COLLABROOM_H

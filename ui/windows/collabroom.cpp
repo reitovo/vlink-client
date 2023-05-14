@@ -180,6 +180,43 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     });
     spoutDiscovery->start(1000);
 
+    hintShare = std::make_unique<QTimer>(this);
+    connect(hintShare.get(), &QTimer::timeout, this, [=, this]() {
+        if (peerCount > 1) {
+            if (!shareRunning) {
+                notSharingCount++;
+                if (notSharingCount == 10) {
+                    QSettings sets;
+                    auto ignored = sets.value("ignoreNotSharingHint").toBool();
+                    if (!ignored) {
+                        auto *box = new QMessageBox(this);
+                        box->setIcon(QMessageBox::Information);
+                        box->setWindowTitle(tr("是否忘记开始画面分享？"));
+                        box->setText(tr("检测到房间里已有人加入，但您还没有开始分享画面\n"
+                                        "需要您点击「开始画面分享」，您的画面才会出现在联动画面中哦~"));
+                        auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+                        auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+                        connect(box, &QMessageBox::finished, this, [=](int) {
+                            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                            if (ret == ign) {
+                                QSettings s;
+                                s.setValue("ignoreNotSharingHint", true);
+                                s.sync();
+                            }
+                            box->deleteLater();
+                        });
+
+                        box->show();
+                    }
+                }
+            }
+        } else {
+            notSharingCount = 0;
+        }
+    });
+    hintShare->start(1000);
+
     if (!isServer) {
         resize(QSize(381, 360));
     } else {
@@ -1064,6 +1101,8 @@ void CollabRoom::stopShareWorker() {
 }
 
 void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
+    peerCount = peers.size();
+
     if (isServer) {
         ScopedQMutex _(&peersLock);
         QList<QString> alive;
