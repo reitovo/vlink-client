@@ -451,6 +451,10 @@ void CollabRoom::fatalError(const QString &reason) {
         }
     }
 
+    MainWindow::instance()->tray->showMessage(tr("联动发生错误"),
+                                              error,
+                                              MainWindow::instance()->tray->icon());
+
     auto *box = new QMessageBox(this);
     box->setIcon(QMessageBox::Critical);
     box->setWindowTitle(tr("错误"));

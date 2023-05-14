@@ -2,10 +2,14 @@
 #include <QTimer>
 #include <utility>
 #include "util.h"
+#include <QSettings>
 
 Peer::Peer(CollabRoom *room, QString id) {
     this->room = room;
     this->remotePeerId = id;
+
+    QSettings s;
+    forceRelay = s.value("forceRelay").toBool();
 
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
@@ -82,8 +86,6 @@ bool Peer::usingTurn() {
     return remote.type() == rtc::Candidate::Type::Relayed || local.type() == rtc::Candidate::Type::Relayed;
 }
 
-#define FORCE_RELAY 0
-
 void Peer::startServer() {
     sdpTime = QDateTime::currentDateTimeUtc();
 
@@ -94,16 +96,16 @@ void Peer::startServer() {
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     if (!room->turnServer.isEmpty()) {
-#if FORCE_RELAY
-        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
-#endif
+        if (forceRelay) {
+            config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+        }
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
 
     pc->onStateChange([=, this](rtc::PeerConnection::State state) {
-        qDebugStd("Server RtcState: " << state);
+        qDebugStd("Server rtcState: " << state);
         if (state == rtc::PeerConnection::State::Failed) {
             emit room->onRtcFailed(this);
             startServer();
@@ -175,9 +177,9 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
     config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     auto turnServer = serverSdp.turn();
     if (!turnServer.empty()) {
-#if FORCE_RELAY
-        config.iceTransportPolicy = rtc::TransportPolicy::Relay;
-#endif
+        if (forceRelay) {
+            config.iceTransportPolicy = rtc::TransportPolicy::Relay;
+        }
         config.iceServers.emplace_back("turn:" + turnServer);
     }
 
