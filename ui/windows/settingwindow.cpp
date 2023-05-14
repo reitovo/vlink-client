@@ -118,7 +118,7 @@ void SettingWindow::init() {
         req.setUrl(QUrl("https://misc.reito.fun/report"));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "plain/text");
 
-        QFile outFile(VTSLINK_LOG_FILE);
+        QFile outFile(VLINK_LOG_FILE);
         outFile.open(QIODevice::ReadOnly);
         auto arr = outFile.readAll();
 

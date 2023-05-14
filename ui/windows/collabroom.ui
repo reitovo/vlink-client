@@ -1269,14 +1269,14 @@
       <property name="font">
        <font>
         <family>微软雅黑</family>
-        <pointsize>10</pointsize>
+        <pointsize>11</pointsize>
         <italic>false</italic>
         <bold>false</bold>
         <stylestrategy>PreferAntialias</stylestrategy>
        </font>
       </property>
       <property name="text">
-       <string>开始分享 VTube Studio 画面</string>
+       <string>开始分享画面</string>
       </property>
      </widget>
     </item>

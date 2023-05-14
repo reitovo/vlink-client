@@ -31,7 +31,7 @@ BuyRelay::BuyRelay(CollabRoom *parent) :
     relayQuality = parent->quality;
     refreshQuality();
 
-    channel = grpc::CreateChannel(VTSLINK_GRPC_RELAY_ENDPOINT, grpc::SslCredentials(
+    channel = grpc::CreateChannel(VLINK_GRPC_RELAY_ENDPOINT, grpc::SslCredentials(
             grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")));
     service = vts::relay::RelayService::NewStub(channel);
 

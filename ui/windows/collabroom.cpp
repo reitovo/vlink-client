@@ -38,6 +38,10 @@ extern "C" {
 
 static CollabRoom *roomInstance;
 
+CollabRoom *CollabRoom::instance() {
+    return roomInstance;
+}
+
 CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         QDialog(parent),
         ui(new Ui::CollabRoom) {
@@ -48,13 +52,13 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     // Workaround for color
     QPalette palette;
-    QBrush brush(QColor::fromString("#ff6f65"));
+    QBrush brush(QColor::fromString(VLINK_THEME_COLOR));
     brush.setStyle(Qt::SolidPattern);
     palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
     palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
     palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
-    ui->copyRoomId->setPalette(palette);
     ui->btnSharingStatus->setPalette(palette);
+    ui->copyRoomId->setPalette(palette);
 
     this->setWindowTitle(tr("VLink 联动"));
     this->isServer = isServer;
@@ -63,7 +67,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     // Dx sources
     ui->d3d11SourceSelect->clear();
-    for (auto& src : dxCaptureSources) {
+    for (auto &src: dxCaptureSources) {
         ui->d3d11SourceSelect->addItem(src.name);
     }
 
@@ -75,31 +79,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         auto name = dxCaptureSources[v].name;
         qDebug() << "d3d11 source set" << v << name;
 
-        QList<QString> elevateList = {"PrprLive"};
-        auto ignoreElevate = s.value("ignoreRequireElevate:" + name).toBool();
-        if (!ignoreElevate && !isElevated()) {
-            if (elevateList.contains(name)) {
-                auto *box = new QMessageBox(this);
-                box->setIcon(QMessageBox::Warning);
-                box->setWindowTitle(name + tr(" 需要管理员权限"));
-                box->setText(tr("由于 %1 默认以管理员身份启动，因此 VLink 联动也必须使用管理员身份启动才可对其进行 D3D11 捕获。\n"
-                                "与此同时，OBS 等推流软件也需要以管理员身份启动，请退出并「右键→以管理员身份运行」VLink 启动器与 OBS。").arg(name));
-                auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
-                auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
-
-                connect(box, &QMessageBox::finished, this, [=](int) {
-                    auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
-                    if (ret == ign) {
-                        QSettings s;
-                        s.setValue("ignoreRequireElevate:" + name, true);
-                        s.sync();
-                    }
-                    box->deleteLater();
-                });
-
-                box->show();
-            }
-        }
+        checkDxCaptureNeedElevate();
     });
 
     ui->d3d11SourceSelect->setCurrentIndex(settings.value("d3d11SourceIndex", 0).toInt());
@@ -240,6 +220,45 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     roomInstance = this;
 }
 
+CollabRoom::~CollabRoom() {
+    exiting = true;
+
+    spoutDiscovery.reset();
+    usageStat.reset();
+    heartbeat.reset();
+
+    stopShareWorker();
+
+    terminateQThread(frameSendThread, __FUNCTION__);
+
+    roomServer.reset();
+
+    if (isServer) {
+        ScopedQMutex _(&peersLock);
+        for (auto &a: clientPeers) {
+            if (a.second != nullptr) {
+                a.second->close();
+                a.second = nullptr;
+            }
+        }
+        clientPeers.clear();
+    } else {
+        ScopedQMutex _(&peersLock);
+        if (serverPeer != nullptr)
+            serverPeer->close();
+        serverPeer = nullptr;
+    }
+
+    if (dxgiOutputWindow != nullptr) {
+        dxgiOutputWindow->close();
+        delete dxgiOutputWindow;
+    }
+
+    delete ui;
+    roomInstance = nullptr;
+    qWarning() << "room exit";
+}
+
 void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     roomOpenWaiting->close();
     delete roomOpenWaiting;
@@ -335,157 +354,16 @@ void CollabRoom::roomInfoFailed(const string &error) {
     emit fatalError(QString::fromStdString(error));
 }
 
-CollabRoom::~CollabRoom() {
-    exiting = true;
-
-    spoutDiscovery.reset();
-    usageStat.reset();
-    heartbeat.reset();
-
-    stopShareWorker();
-
-    terminateQThread(frameSendThread, __FUNCTION__);
-
-    roomServer.reset();
-
-    if (isServer) {
-        ScopedQMutex _(&peersLock);
-        for (auto &a: clientPeers) {
-            if (a.second != nullptr) {
-                a.second->close();
-                a.second = nullptr;
-            }
-        }
-        clientPeers.clear();
-    } else {
-        ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr)
-            serverPeer->close();
-        serverPeer = nullptr;
+QString CollabRoom::errorToReadable(const QString &reason) {
+    QString err = reason;
+    if (reason == "init error") {
+        err = tr("初始化错误");
+    } else if (reason == "no valid encoder") {
+        err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
+    } else if (reason == "cap no uyva") {
+        err = tr("捕获分享模式无法使用 UYVA 编码器");
     }
-
-    if (dxgiOutputWindow != nullptr) {
-        dxgiOutputWindow->close();
-        delete dxgiOutputWindow;
-    }
-
-    delete ui;
-    roomInstance = nullptr;
-    qWarning() << "room exit";
-}
-
-void CollabRoom::spoutDiscoveryUpdate() {
-    QSettings settings;
-    std::set<std::string> senders;
-    spoutSender.GetSenderNames(&senders);
-    auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
-
-    static int emptyCount = 0;
-    if (senders.empty()) {
-        emptyCount++;
-        if (emptyCount == 3 && !ignoreSpoutOpenHint) {
-            auto *box = new QMessageBox(this);
-            box->setIcon(QMessageBox::Information);
-            box->setWindowTitle(tr("提示"));
-            box->setText(tr("没有发现 Spout 来源，将无法捕获 VTube Studio 画面\n"
-                            "请点击「查看详情」了解如何开启"));
-            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
-            auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
-            auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
-
-            connect(box, &QMessageBox::finished, this, [=]() {
-                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
-                if (ret == ign) {
-                    QSettings s;
-                    s.setValue("ignoreSpoutOpenHint", true);
-                    s.sync();
-                } else if (ret == open) {
-                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
-                }
-                box->deleteLater();
-            });
-        }
-        ui->spoutSourceSelect->clear();
-    } else {
-        emptyCount = 0;
-        QStringList strList;
-        for (const auto &i: senders) {
-            strList.push_back(QString::fromStdString(i));
-        }
-        setComboBoxIfChanged(strList, ui->spoutSourceSelect);
-    }
-}
-
-QString CollabRoom::debugInfo() {
-    auto ret = QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
-            .arg(isServer ? "Server" : "Client").arg(roomId)
-            .arg(localPeerId).arg(ui->nick->text())
-            .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
-            .arg(sendProcessFps.stat())
-            .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
-            .arg(shareRecvFps.stat());
-    return ret;
-}
-
-void CollabRoom::copyRoomId() {
-    auto cb = QApplication::clipboard();
-    cb->setText(roomId);
-    MainWindow::instance()->tray->showMessage(tr("复制成功"),
-                                              tr("请不要在直播画面中展示房间ID！\n已复制到剪贴板，快分享给参加联动的人吧~"),
-                                              MainWindow::instance()->tray->icon());
-}
-
-void CollabRoom::setNick() {
-    auto n = ui->nick->text();
-    if (n.length() > 16) {
-        n = n.left(16);
-        ui->nick->setText(n);
-    }
-    qDebug() << "new nick" << n;
-
-    roomServer->setNick(n.toStdString());
-}
-
-void CollabRoom::updateTurnServer() {
-    auto ipt = ui->relayInput->text();
-    turnServer = ipt;
-
-    QSettings settings;
-    settings.setValue("turnServer", turnServer);
-    settings.sync();
-    qDebug() << "update turn server" << turnServer;
-
-    {
-        ScopedQMutex _(&peersLock);
-        for (auto &peer: clientPeers) {
-            peer.second->startServer();
-        }
-    }
-
-    MainWindow::instance()->tray->showMessage(tr("设置成功"), tr("所有联动人将重新连接，请稍后"),
-                                              MainWindow::instance()->tray->icon());
-}
-
-void CollabRoom::toggleTurnVisible() {
-    if (ui->relayInput->echoMode() == QLineEdit::Normal) {
-        ui->relayInput->setEchoMode(QLineEdit::Password);
-        ui->relayHideShow->setIcon(QIcon(":/images/show.png"));
-    } else if (ui->relayInput->echoMode() == QLineEdit::Password) {
-        ui->relayInput->setEchoMode(QLineEdit::Normal);
-        ui->relayHideShow->setIcon(QIcon(":/images/hide.png"));
-    }
-}
-
-void CollabRoom::resetStartShareText() {
-    ui->btnSharingStatus->setText(tr("开始") + tr("分享 VTube Studio 画面"));
-    ui->btnSharingStatus->setEnabled(false);
-    ui->btnFixRatio->setEnabled(false);
-    ui->spoutSourceSelect->setEnabled(true);
-    ui->d3d11SourceSelect->setEnabled(true);
-
-    QTimer::singleShot(500, this, [this]() {
-        ui->btnSharingStatus->setEnabled(true);
-    });
+    return err;
 }
 
 void CollabRoom::shareError(const QString &reason) {
@@ -529,7 +407,7 @@ void CollabRoom::fatalError(const QString &reason) {
         error = tr("请求房间信息失败");
     } else if (reason == "room init error 4") {
         error = tr("请求房间信息超时，请重试");
-    }else if (reason == "room init error 14") {
+    } else if (reason == "room init error 14") {
         error = tr("房间服务器连接错误，请检查网络");
         if (isPrivateRoomEndpoint) {
             error = tr("私有房间服务器连接错误，请检查网络与服务器状态\n服务器地址：") + roomEndpoint;
@@ -571,6 +449,191 @@ void CollabRoom::roomServerError(const QString &func, const QString &reason) {
     box->show();
 }
 
+QString CollabRoom::debugInfo() {
+    auto ret = QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
+            .arg(isServer ? "Server" : "Client").arg(roomId)
+            .arg(localPeerId).arg(ui->nick->text())
+            .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
+            .arg(sendProcessFps.stat())
+            .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
+            .arg(shareRecvFps.stat());
+    return ret;
+}
+
+void CollabRoom::spoutDiscoveryUpdate() {
+    QSettings settings;
+    std::set<std::string> senders;
+    spoutSender.GetSenderNames(&senders);
+    auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
+
+    static int emptyCount = 0;
+    if (senders.empty()) {
+        emptyCount++;
+        if (emptyCount == 3 && !ignoreSpoutOpenHint) {
+            auto *box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Information);
+            box->setWindowTitle(tr("提示"));
+            box->setText(tr("没有发现 Spout 来源，将无法捕获画面\n"
+                            "请点击「查看详情」了解如何开启"));
+            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
+            auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=]() {
+                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreSpoutOpenHint", true);
+                    s.sync();
+                } else if (ret == open) {
+                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
+                }
+                box->deleteLater();
+            });
+        }
+        ui->spoutSourceSelect->clear();
+    } else {
+        emptyCount = 0;
+        QStringList strList;
+        for (const auto &i: senders) {
+            strList.push_back(QString::fromStdString(i));
+        }
+        setComboBoxIfChanged(strList, ui->spoutSourceSelect);
+    }
+}
+
+void CollabRoom::usageStatUpdate() {
+    ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 %5")
+                                   .arg(QString::number(usage::getCpuUsage(), 'f', 1))
+                                   .arg(QString::number(outputFps.fps(), 'f', 1))
+                                   .arg(useDxCapture ? "D3D11" : "Spout")
+                                   .arg(vts::info::BuildId)
+                                   .arg(isElevated() ? tr(" 正以管理员身份运行") : "")
+    );
+
+    // Speed Stat
+    size_t tx = 0, rx = 0;
+    if (isServer) {
+        ScopedQMutex _(&peersLock);
+        for (auto &s: clientPeers) {
+            if (s.second == nullptr)
+                continue;
+            tx += s.second->txBytes();
+            rx += s.second->rxBytes();
+        }
+    } else {
+        ScopedQMutex _(&peersLock);
+        if (serverPeer != nullptr) {
+            tx += serverPeer->txBytes();
+            rx += serverPeer->rxBytes();
+        }
+    }
+    txSpeed.update(tx);
+    rxSpeed.update(rx);
+    ui->speedStat->setText(QString("%1 ↑↓ %2")
+                                   .arg(txSpeed.speed())
+                                   .arg(rxSpeed.speed()));
+}
+
+void CollabRoom::heartbeatUpdate() {
+    vts::server::ReqRtt rtt;
+    {
+        ScopedQMutex _(&peersLock);
+        for (auto &s: clientPeers) {
+            s.second->sendHeartbeat();
+            rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
+        }
+    }
+    roomServer->setRtt(rtt);
+}
+
+void CollabRoom::copyRoomId() {
+    auto cb = QApplication::clipboard();
+    cb->setText(roomId);
+    MainWindow::instance()->tray->showMessage(tr("复制成功"),
+                                              tr("请不要在直播画面中展示房间ID！\n已复制到剪贴板，快分享给参加联动的人吧~"),
+                                              MainWindow::instance()->tray->icon());
+}
+
+void CollabRoom::setNick() {
+    auto n = ui->nick->text();
+    if (n.length() > 16) {
+        n = n.left(16);
+        ui->nick->setText(n);
+    }
+    qDebug() << "new nick" << n;
+
+    roomServer->setNick(n.toStdString());
+}
+
+void CollabRoom::updateTurnServer() {
+    auto ipt = ui->relayInput->text();
+    turnServer = ipt;
+
+    QSettings settings;
+    settings.setValue("turnServer", turnServer);
+    settings.sync();
+    qDebug() << "update turn server" << turnServer;
+
+    {
+        ScopedQMutex _(&peersLock);
+        for (auto &peer: clientPeers) {
+            peer.second->startServer();
+        }
+    }
+
+    MainWindow::instance()->tray->showMessage(tr("设置成功"), tr("所有联动人将重新连接，请稍后"),
+                                              MainWindow::instance()->tray->icon());
+}
+
+void CollabRoom::updateFrameQualityText() {
+    ui->frameFormatHint->setText(getFrameFormatDesc(quality));
+}
+
+void CollabRoom::checkDxCaptureNeedElevate() {
+    QSettings s;
+    auto name = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name;
+
+    if (!useDxCapture)
+        return;
+
+    QList<QString> elevateList = {"PrprLive"};
+    auto ignoreElevate = s.value("ignoreRequireElevate:" + name).toBool();
+    if (!ignoreElevate && !isElevated()) {
+        if (elevateList.contains(name)) {
+            auto *box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Warning);
+            box->setWindowTitle(name + tr(" 需要管理员权限"));
+            box->setText(tr("由于 %1 默认以管理员身份启动，因此 VLink 联动也必须使用管理员身份启动才可对其进行 D3D11 捕获。\n"
+                            "与此同时，OBS 等推流软件也需要以管理员身份启动，请退出并「右键→以管理员身份运行」VLink 启动器与 OBS。").arg(name));
+            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=](int) {
+                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreRequireElevate:" + name, true);
+                    s.sync();
+                }
+                box->deleteLater();
+            });
+
+            box->show();
+        }
+    }
+}
+
+void CollabRoom::toggleTurnVisible() {
+    if (ui->relayInput->echoMode() == QLineEdit::Normal) {
+        ui->relayInput->setEchoMode(QLineEdit::Password);
+        ui->relayHideShow->setIcon(QIcon(":/images/show.png"));
+    } else if (ui->relayInput->echoMode() == QLineEdit::Password) {
+        ui->relayInput->setEchoMode(QLineEdit::Normal);
+        ui->relayHideShow->setIcon(QIcon(":/images/hide.png"));
+    }
+}
+
 void CollabRoom::openSetting() {
     auto w = new SettingWindow(this);
     w->show();
@@ -587,6 +650,7 @@ void CollabRoom::openSetting() {
             } else {
                 ui->shareMethods->setCurrentIndex(0);
             }
+            checkDxCaptureNeedElevate();
         }
     });
 }
@@ -613,6 +677,68 @@ void CollabRoom::openQualitySetting() {
     f->show();
 }
 
+void CollabRoom::openBuyRelay() {
+    if (isPrivateRoomEndpoint) {
+        auto *box = new QMessageBox(this);
+        box->setIcon(QMessageBox::Warning);
+        box->setWindowTitle(tr("无法购买"));
+        box->setText(tr("由于使用了私有部署房间服务器，因此无法使用本功能，请按教程自行部署中转服务器，或联系协助部署。"));
+        auto *open = box->addButton(tr("  查看部署教程  "), QMessageBox::NoRole);
+        box->addButton(tr("关闭"), QMessageBox::NoRole);
+
+        connect(box, &QMessageBox::finished, this, [=, this](int) {
+            if (box->clickedButton() == open) {
+                QDesktopServices::openUrl(QUrl("https://www.wolai.com/osFxEHHuiZNF3JMrhS6zV2"));
+            }
+
+            box->deleteLater();
+        });
+
+        box->show();
+        return;
+    }
+
+    auto buy = new BuyRelay(this);
+    connect(buy, &BuyRelay::finished, this, [=, this](int) {
+        auto turn = buy->getTurnServer();
+        if (turn.has_value()) {
+            turnServer = turn.value();
+            ui->relayInput->setText(turnServer);
+            qDebug() << "bought relay" << turnServer;
+
+            auto hours = buy->getTurnHours();
+            auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
+
+            QSettings settings;
+            settings.setValue("turnServerExpiresAt", expires);
+            settings.setValue("turnServerMembers", buy->getTurnMembers());
+            settings.setValue("ignoreTurnServerNotExpire", false);
+            settings.sync();
+            qDebug() << "update turn server" << turnServer;
+
+            updateTurnServer();
+        }
+        buy->deleteLater();
+    });
+    buy->show();
+}
+
+void CollabRoom::toggleKeepTop() {
+    keepTop = !keepTop;
+
+    QPalette palette;
+    QBrush brush(keepTop ? QColor::fromRgb(0, 119, 238) : QColor::fromRgb(0, 0, 0));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
+
+    ui->keepTop->setPalette(palette);
+    setWindowFlag(Qt::WindowStaysOnTopHint, keepTop);
+    show();
+    activateWindow();
+}
+
 void CollabRoom::toggleShare() {
     if (!shareRunning) {
         startShare();
@@ -636,7 +762,16 @@ void CollabRoom::startShare() {
         }
     }
 
-    ui->btnSharingStatus->setText(tr("停止") + tr("分享 VTube Studio 画面"));
+    QPalette palette;
+    QBrush brush(QColor::fromString("#ffffff"));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
+    ui->btnSharingStatus->setPalette(palette);
+    ui->btnSharingStatus->setStyleSheet("background-color: " VLINK_THEME_COLOR "; border-radius: 5px; border: inherit; margin: 1px; border-width: 5px;");
+
+    ui->btnSharingStatus->setText(tr("停止") + tr("分享画面"));
     ui->btnSharingStatus->setEnabled(false);
     ui->btnFixRatio->setEnabled(true);
     QTimer::singleShot(500, this, [this]() {
@@ -670,6 +805,27 @@ void CollabRoom::startShare() {
 void CollabRoom::stopShare() {
     resetStartShareText();
     stopShareWorker();
+}
+
+void CollabRoom::resetStartShareText() {
+    ui->btnSharingStatus->setText(tr("开始") + tr("分享画面"));
+    ui->btnSharingStatus->setEnabled(false);
+    ui->btnFixRatio->setEnabled(false);
+    ui->spoutSourceSelect->setEnabled(true);
+    ui->d3d11SourceSelect->setEnabled(true);
+
+    ui->btnSharingStatus->setStyleSheet(QString());
+    QPalette palette;
+    QBrush brush(QColor::fromString(VLINK_THEME_COLOR));
+    brush.setStyle(Qt::SolidPattern);
+    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
+    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
+    ui->btnSharingStatus->setPalette(palette);
+
+    QTimer::singleShot(500, this, [this]() {
+        ui->btnSharingStatus->setEnabled(true);
+    });
 }
 
 void CollabRoom::spoutShareWorkerClient() {
@@ -992,63 +1148,6 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
     }
 }
 
-QString CollabRoom::errorToReadable(const QString &reason) {
-    QString err = reason;
-    if (reason == "init error") {
-        err = tr("初始化错误");
-    } else if (reason == "no valid encoder") {
-        err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
-    } else if (reason == "cap no uyva") {
-        err = tr("捕获分享模式无法使用 UYVA 编码器");
-    }
-    return err;
-}
-
-void CollabRoom::usageStatUpdate() {
-    ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 %5")
-                                   .arg(QString::number(usage::getCpuUsage(), 'f', 1))
-                                   .arg(QString::number(outputFps.fps(), 'f', 1))
-                                   .arg(useDxCapture ? "D3D11" : "Spout")
-                                   .arg(vts::info::BuildId)
-                                   .arg(isElevated() ? tr(" 正以管理员身份运行") : "")
-    );
-
-    // Speed Stat
-    size_t tx = 0, rx = 0;
-    if (isServer) {
-        ScopedQMutex _(&peersLock);
-        for (auto &s: clientPeers) {
-            if (s.second == nullptr)
-                continue;
-            tx += s.second->txBytes();
-            rx += s.second->rxBytes();
-        }
-    } else {
-        ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr) {
-            tx += serverPeer->txBytes();
-            rx += serverPeer->rxBytes();
-        }
-    }
-    txSpeed.update(tx);
-    rxSpeed.update(rx);
-    ui->speedStat->setText(QString("%1 ↑↓ %2")
-                                   .arg(txSpeed.speed())
-                                   .arg(rxSpeed.speed()));
-}
-
-void CollabRoom::heartbeatUpdate() {
-    vts::server::ReqRtt rtt;
-    {
-        ScopedQMutex _(&peersLock);
-        for (auto &s: clientPeers) {
-            s.second->sendHeartbeat();
-            rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
-        }
-    }
-    roomServer->setRtt(rtt);
-}
-
 void CollabRoom::dxgiSendWorker() {
 
     qInfo() << "start dxgi sender";
@@ -1120,53 +1219,7 @@ void CollabRoom::dxgiSendWorker() {
     qInfo() << "end dxgi sender";
 }
 
-void CollabRoom::openBuyRelay() {
-    if (isPrivateRoomEndpoint) {
-        auto *box = new QMessageBox(this);
-        box->setIcon(QMessageBox::Warning);
-        box->setWindowTitle(tr("无法购买"));
-        box->setText(tr("由于使用了私有部署房间服务器，因此无法使用本功能，请按教程自行部署中转服务器，或联系协助部署。"));
-        auto* open = box->addButton(tr("  查看部署教程  "), QMessageBox::NoRole);
-        box->addButton(tr("关闭"), QMessageBox::NoRole);
-
-        connect(box, &QMessageBox::finished, this, [=, this](int) {
-            if (box->clickedButton() == open) {
-                QDesktopServices::openUrl(QUrl("https://www.wolai.com/osFxEHHuiZNF3JMrhS6zV2"));
-            }
-
-            box->deleteLater();
-        });
-
-        box->show();
-        return;
-    }
-
-    auto buy = new BuyRelay(this);
-    connect(buy, &BuyRelay::finished, this, [=, this](int) {
-        auto turn = buy->getTurnServer();
-        if (turn.has_value()) {
-            turnServer = turn.value();
-            ui->relayInput->setText(turnServer);
-            qDebug() << "bought relay" << turnServer;
-
-            auto hours = buy->getTurnHours();
-            auto expires = QDateTime::currentDateTime().addSecs(60 * ((60 * hours) + 10));
-
-            QSettings settings;
-            settings.setValue("turnServerExpiresAt", expires);
-            settings.setValue("turnServerMembers", buy->getTurnMembers());
-            settings.setValue("ignoreTurnServerNotExpire", false);
-            settings.sync();
-            qDebug() << "update turn server" << turnServer;
-
-            updateTurnServer();
-        }
-        buy->deleteLater();
-    });
-    buy->show();
-}
-
-void CollabRoom::rtcFailed(Peer *peer) {
+void CollabRoom::rtcFailed(Peer *peer) const {
     qDebug() << "rtc failed";
     auto nick = peer->nick.isEmpty() ? tr("用户") + peer->remotePeerId.first(4) : peer->nick;
     if (isServer) {
@@ -1179,22 +1232,6 @@ void CollabRoom::rtcFailed(Peer *peer) {
     }
 }
 
-void CollabRoom::toggleKeepTop() {
-    keepTop = !keepTop;
-
-    QPalette palette;
-    QBrush brush(keepTop ? QColor::fromRgb(0, 119, 238) : QColor::fromRgb(0, 0, 0));
-    brush.setStyle(Qt::SolidPattern);
-    palette.setBrush(QPalette::Active, QPalette::ButtonText, brush);
-    palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
-    palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
-
-    ui->keepTop->setPalette(palette);
-    setWindowFlag(Qt::WindowStaysOnTopHint, keepTop);
-    show();
-    activateWindow();
-}
-
 void CollabRoom::downgradedToSharedMemory() {
     QSettings s;
     auto ig = s.value("ignoreDowngradedToSharedMemory", false).toBool();
@@ -1202,7 +1239,7 @@ void CollabRoom::downgradedToSharedMemory() {
         auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("哎呀"));
-        box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
+        box->setText(tr("由于模型渲染软件与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
                         "可选的解决方案：\n"
                         "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
                         "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
@@ -1232,7 +1269,7 @@ void CollabRoom::spoutOpenSharedFailed() {
     auto *box = new QMessageBox(this);
     box->setIcon(QMessageBox::Warning);
     box->setWindowTitle(tr("哎呀"));
-    box->setText(tr("由于 VTube Studio 与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
+    box->setText(tr("由于模型渲染软件与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
                     "可选的解决方案：\n"
                     "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
                     "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
@@ -1270,10 +1307,6 @@ void CollabRoom::dxgiCaptureStatus(QString text) {
     ui->dxgiCaptureStatus->setText(text);
 }
 
-CollabRoom *CollabRoom::instance() {
-    return roomInstance;
-}
-
 void CollabRoom::dxgiNeedElevate() {
     QSettings s;
     auto ig = s.value("ignoreNeedElevate", false).toBool();
@@ -1281,11 +1314,10 @@ void CollabRoom::dxgiNeedElevate() {
         stopShareWorker();
         auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
-        box->setWindowTitle(tr("捕获失败"));
-        box->setText(tr("捕获 VTube Studio 画面失败\n"
-                        "可能的解决方案：\n"
-                        "1. VTube Studio 还在启动中，请等待模型出现后再分享\n"
-                        "2. 重启 Steam 与 VTube Studio，然后再次尝试开始分享"));
+        box->setWindowTitle(tr("D3D11 捕获失败"));
+        box->setText(tr("捕获画面失败！可能的解决方案：\n"
+                        "1. 软件还在启动中，请等待模型出现后再分享\n"
+                        "2. 重启 Steam 与目标软件，然后再次尝试开始分享"));
         auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
@@ -1303,6 +1335,12 @@ void CollabRoom::dxgiNeedElevate() {
         });
         box->show();
     }
+}
+
+void CollabRoom::requestIdr() {
+    if (exiting)
+        return;
+    roomServer->requestIdr();
 }
 
 void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
@@ -1411,16 +1449,6 @@ void CollabRoom::onNotifyDestroy() {
     emit onFatalError("host leave");
 }
 
-void CollabRoom::requestIdr() {
-    if (exiting)
-        return;
-    roomServer->requestIdr();
-}
-
 void CollabRoom::onNotifyForceIdr() {
     notifiedForceIdr = true;
-}
-
-void CollabRoom::updateFrameQualityText() {
-    ui->frameFormatHint->setText(getFrameFormatDesc(quality));
 }

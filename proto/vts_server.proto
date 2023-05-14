@@ -2,12 +2,6 @@ syntax = "proto3";
 import "common.proto";
 
 package vts.server;
- 
-message ReqCommon {}
-
-message RspCommon {}
-
-message NotifyCommon {}
 
 message Peer {
     string peerId = 1;

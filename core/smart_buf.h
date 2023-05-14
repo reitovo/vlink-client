@@ -14,7 +14,7 @@ class smart_buf
     std::function<void (const std::string &)> sender;
     std::function<void (const std::string &)> receiver;
 
-    std::map<int, std::map<int, std::unique_ptr<vts::SmartBuf>>> queue;
+    std::map<uint32_t, std::map<uint32_t, std::unique_ptr<vts::SmartBuf>>> queue;
 
 public:
     smart_buf(int maxSize,

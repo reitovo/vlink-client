@@ -76,7 +76,7 @@ private slots:
     void shareError(const QString &reason);
     void fatalError(const QString &reason);
     void resetStartShareText();
-    void rtcFailed(Peer *peer);
+    void rtcFailed(Peer *peer) const;
 
     void downgradedToSharedMemory();
     void dxgiCaptureStatus(QString text);
@@ -99,6 +99,7 @@ private:
 
     void dxgiSendWorker();
 
+    void checkDxCaptureNeedElevate();
     void spoutOpenSharedFailed();
     void spoutDiscoveryUpdate();
     void heartbeatUpdate();

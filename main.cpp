@@ -70,7 +70,7 @@ namespace {
 }
 
 int main(int argc, char *argv[]) {
-    QFile log(VTSLINK_LOG_FILE);
+    QFile log(VLINK_LOG_FILE);
     if (log.exists() && log.size() > 1024 * 1024 * 4)
         log.remove();
 
@@ -218,7 +218,7 @@ void initializeCrashpad() {
 void writeQtLogThread() {
     std::cout << "writeQtLogThread start" << std::endl;
 
-    QFile outFile(VTSLINK_LOG_FILE);
+    QFile outFile(VLINK_LOG_FILE);
     outFile.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream textStream(&outFile);
     QString txt;
