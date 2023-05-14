@@ -22,6 +22,7 @@ class Peer {
     std::unique_ptr<rtc::PeerConnection> pc;
     std::shared_ptr<rtc::DataChannel> dc;
     QDateTime sdpTime;
+    bool forceRelay;
 
     std::unique_ptr<AvToDx> dec;
 

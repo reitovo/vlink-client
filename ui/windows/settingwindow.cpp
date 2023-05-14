@@ -53,6 +53,14 @@ void SettingWindow::init() {
     ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
     ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
     ui->privateRoomServer->setText(settings.value("privateRoomServer").toString());
+    ui->forceRelay->setChecked(settings.value("forceRelay").toBool());
+
+    connect(ui->forceRelay, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("forceRelay", v);
+        settings.sync();
+
+        qDebug() << "forceRelay" << v;
+    });
 
     connect(ui->disableIntraRefresh, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("disableIntraRefresh", v);
