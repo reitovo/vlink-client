@@ -39,6 +39,9 @@ public:
     void joinRoom(const std::string& peerId, const std::string& roomId, const std::string& nick);
 
     inline std::unique_ptr<grpc::ClientContext> getCtx() {
+        if (peerId.empty() || roomId.empty())
+            return nullptr;
+
         auto ctx = std::make_unique<grpc::ClientContext>();
         ctx->AddMetadata("peerid", peerId);
         ctx->AddMetadata("roomid", roomId);

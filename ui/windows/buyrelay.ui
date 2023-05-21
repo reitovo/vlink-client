@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>188</height>
+    <height>207</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
      <x>0</x>
      <y>0</y>
      <width>401</width>
-     <height>191</height>
+     <height>211</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -38,7 +38,7 @@
        <x>10</x>
        <y>10</y>
        <width>381</width>
-       <height>171</height>
+       <height>191</height>
       </rect>
      </property>
      <property name="font">
@@ -48,7 +48,7 @@
      </property>
      <layout class="QVBoxLayout" name="orderFrame">
       <property name="spacing">
-       <number>2</number>
+       <number>0</number>
       </property>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -89,6 +89,9 @@
            <font>
             <family>Microsoft YaHei UI</family>
            </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
            <number>1</number>
@@ -139,6 +142,9 @@
            <font>
             <family>Microsoft YaHei UI</family>
            </font>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
            <number>2</number>
@@ -297,6 +303,60 @@
           <property name="text">
            <string>0￥</string>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QLabel" name="label_8">
+          <property name="minimumSize">
+           <size>
+            <width>150</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>优惠券</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="coupon">
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="openEvent">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>50</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <family>Microsoft YaHei UI</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>获取</string>
+          </property>
          </widget>
         </item>
        </layout>
@@ -345,7 +405,7 @@
        <x>10</x>
        <y>10</y>
        <width>381</width>
-       <height>171</height>
+       <height>191</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -423,7 +483,7 @@
        <x>10</x>
        <y>10</y>
        <width>381</width>
-       <height>171</height>
+       <height>191</height>
       </rect>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">

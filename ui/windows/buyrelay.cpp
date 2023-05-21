@@ -21,6 +21,7 @@
 #include "core/util.h"
 #include "collabroom.h"
 #include "ui/windows/framequality.h"
+#include "QDesktopServices"
 
 BuyRelay::BuyRelay(CollabRoom *parent) :
         QDialog(parent), ui(new Ui::BuyRelay) {
@@ -49,6 +50,9 @@ BuyRelay::BuyRelay(CollabRoom *parent) :
     });
     connect(ui->setFrameQualityButton, &QPushButton::clicked, this, [=, this]() {
         changeQuality();
+    });
+    connect(ui->openEvent, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
     });
 
     refreshPrice();

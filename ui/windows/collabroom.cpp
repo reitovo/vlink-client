@@ -151,6 +151,9 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(ui->feedQQGuild, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://pd.qq.com/s/3y2gr1nmy"));
     });
+    connect(ui->openEvent, &QPushButton::clicked, this, [=]() {
+        QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
+    });
 
     connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         if (s.isEmpty())
@@ -983,10 +986,11 @@ void CollabRoom::spoutShareWorkerServer() {
 void CollabRoom::dxgiShareWorkerClient() {
     qInfo() << "dx capture client start";
 
-    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window.toStdString();
+    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window;
+    qInfo() << dxWindow;
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow, quality.frameWidth, quality.frameHeight, nullptr);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth, quality.frameHeight, nullptr);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -1060,10 +1064,11 @@ void CollabRoom::dxgiShareWorkerClient() {
 void CollabRoom::dxgiShareWorkerServer() {
     qInfo() << "dx capture server start";
 
-    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window.toStdString();
+    auto dxWindow = dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].window;
+    qInfo() << dxWindow;
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow, quality.frameWidth, quality.frameHeight, d3d);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth, quality.frameHeight, d3d);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;

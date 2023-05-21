@@ -1500,6 +1500,59 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="label_11">
+   <property name="geometry">
+    <rect>
+     <x>390</x>
+     <y>250</y>
+     <width>331</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;div&gt;在B站投稿联动视频至话题「&lt;span style=&quot; color:#0099ff;&quot;&gt;一起来用VLink联动！&lt;/span&gt;」&lt;/div&gt;&lt;div&gt;即可参加有奖活动！&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignHCenter|Qt::AlignTop</set>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="openEvent">
+   <property name="geometry">
+    <rect>
+     <x>510</x>
+     <y>285</y>
+     <width>81</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>25</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>16777215</width>
+     <height>25</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <family>Microsoft YaHei UI</family>
+     <pointsize>9</pointsize>
+     <italic>false</italic>
+     <bold>false</bold>
+     <stylestrategy>PreferDefault</stylestrategy>
+    </font>
+   </property>
+   <property name="text">
+    <string>了解详情</string>
+   </property>
+  </widget>
  </widget>
  <resources>
   <include location="../../resources.qrc"/>

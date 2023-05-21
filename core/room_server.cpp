@@ -156,6 +156,9 @@ void RoomServer::joinRoom(const std::string& peerId, const std::string& roomId, 
 
 void RoomServer::setSdp(const vts::server::Sdp &sdp) {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
+
     vts::server::RspCommon rsp;
     auto status = service->SetSdp(context.get(), sdp, &rsp);
     if (!status.ok()) {
@@ -166,6 +169,8 @@ void RoomServer::setSdp(const vts::server::Sdp &sdp) {
 
 void RoomServer::setNat(int type) {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
 
     vts::server::ReqNatType req;
     req.set_nattype(type);
@@ -180,6 +185,9 @@ void RoomServer::setNat(int type) {
 
 void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
+
     vts::server::RspCommon rsp;
     auto status = service->SetRtt(context.get(), rtt, &rsp);
     if (!status.ok()) {
@@ -190,6 +198,8 @@ void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
 
 void RoomServer::setNick(const string &nick) {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
 
     vts::server::ReqNickname req;
     req.set_nick(nick);
@@ -204,6 +214,9 @@ void RoomServer::setNick(const string &nick) {
 
 void RoomServer::setFrameFormat(const vts::server::FrameFormatSetting &format) {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
+
     vts::server::RspCommon rsp;
     auto status = service->SetFrameFormat(context.get(), format, &rsp);
     if (!status.ok()) {
@@ -214,6 +227,9 @@ void RoomServer::setFrameFormat(const vts::server::FrameFormatSetting &format) {
 
 void RoomServer::exit() {
     auto context = getCtx();
+    if (context == nullptr)
+        return;
+
     vts::server::RspCommon rsp;
     auto status = service->Exit(context.get(), vts::server::ReqCommon(), &rsp);
     if (!status.ok()) {
@@ -230,6 +246,9 @@ void RoomServer::requestIdr() {
     qDebug() << "request idr";
 
     auto context = getCtx();
+    if (context == nullptr)
+        return;
+
     vts::server::RspCommon rsp;
     auto status = service->RequestIdr(context.get(), vts::server::ReqCommon(), &rsp);
     if (!status.ok()) {
