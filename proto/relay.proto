@@ -35,13 +35,9 @@ message ReqRefund {
   string id = 1;
 }
 
-message RspRefund {
-  string code = 1;
-}
-
 service RelayService {
   rpc QueryPrice(ReqRelayCreate) returns (RspPrice);
   rpc StartBuyWeixin(ReqRelayCreate) returns (RspBuyQrCode);
   rpc QueryStatus(ReqBuyStatus) returns (RspBuyStatus);
-  rpc Refund(ReqRefund) returns (RspRefund);
+  rpc Refund(ReqRefund) returns (vts.server.RspCommon);
 }

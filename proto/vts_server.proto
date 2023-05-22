@@ -50,6 +50,12 @@ message RspRoomInfo {
     FrameFormatSetting format = 3; 
 }
 
+message ReqShareInfo {
+    string gpu = 1;
+    string capture = 2;
+    bool start = 3;
+}
+
 message Notify {
     oneof notify {
         NotifyPeers peers = 2;
@@ -77,8 +83,9 @@ service RoomService {
     rpc SetNickName(ReqNickname) returns (RspCommon);
     rpc SetNatType(ReqNatType) returns (RspCommon);
     rpc SetRtt(ReqRtt) returns (RspCommon);
+    rpc SetShareInfo(ReqShareInfo) returns (RspCommon);
     
     rpc RequestIdr(ReqCommon) returns (RspCommon);
 
     rpc Exit(ReqCommon) returns (RspCommon);
-} 
+}
