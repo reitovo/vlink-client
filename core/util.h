@@ -8,6 +8,7 @@
 #include "QComboBox"
 #include "QThread"
 #include "QMutex"
+#include "grpcpp/support/status.h"
 
 #include <functional>
 #include <iostream>
@@ -56,14 +57,38 @@ inline QString requestErrorMessage(const QJsonObject& json) {
     return json["msg"].toString();
 }
 
-inline void runDetached(const std::function<void()>& run, QObject* receiver, const std::function<void()>& onFinished = nullptr) {
+inline void runDetached(const std::function<bool()>& run, QObject* receiver, const std::function<void()>& onFinished = nullptr) {
+    bool* runFinish = new bool;
     QThread* t = QThread::create([=]() {
-        run();
+        *runFinish = run();
     });
     QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-    if (onFinished != nullptr) {
-        QObject::connect(t, &QThread::finished, receiver, onFinished);
-    }
+    QObject::connect(t, &QThread::finished, receiver, [=]() {
+        if (*runFinish && onFinished != nullptr) {
+            onFinished();
+        }
+        delete runFinish;
+    });
+    t->start();
+}
+
+template <class RspType>
+inline void runDetachedThenFinishOnUI(const std::function<void(RspType*, grpc::Status*)>& run,
+                                      QObject* receiver,
+                                      const std::function<void(RspType*, grpc::Status*)>& onFinished = nullptr) {
+    auto* rsp = new RspType();
+    auto* status = new grpc::Status();
+    QThread* t = QThread::create([=]() {
+        run(rsp, status);
+    });
+    QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+    QObject::connect(t, &QThread::finished, receiver, [=]() {
+        if (onFinished != nullptr) {
+            onFinished(rsp, status);
+        }
+        delete rsp;
+        delete status;
+    });
     t->start();
 }
 
@@ -191,5 +216,7 @@ void showTexture(
 void setComboBoxIfChanged(const QStringList& strList, QComboBox* box);
 
 bool isElevated();
+
+std::string getPrimaryGpu();
 
 #endif // UTIL_H

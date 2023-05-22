@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <QString>
+#include <dxgi1_2.h>
 
 namespace vts::info {
     QString BuildId = "debug";
@@ -264,6 +265,32 @@ bool isElevated() {
         hToken = NULL;
     }
     return fIsElevated;
+}
+
+std::string getPrimaryGpu() {
+    // We need dxgi to share texture
+    IDXGIFactory2 *pDXGIFactory;
+    IDXGIAdapter *pAdapter = NULL;
+    HRESULT hr = CreateDXGIFactory(IID_IDXGIFactory2, (void **) &pDXGIFactory);
+    if (FAILED(hr)) {
+        qDebug() << "failed to create dxgi factory";
+        return "Failed To Get GPU";
+    }
+
+    hr = pDXGIFactory->EnumAdapters(0, &pAdapter);
+    if (FAILED(hr)) {
+        return "Failed To Get GPU";
+    }
+
+    DXGI_ADAPTER_DESC descAdapter;
+    hr = pAdapter->GetDesc(&descAdapter);
+    if (FAILED(hr)) {
+        return "Failed To Get GPU";
+    }
+
+    auto name = QString::fromWCharArray(descAdapter.Description);
+    auto vendor = getGpuVendorTypeFromVendorId(descAdapter.VendorId);
+    return getGpuVendorName(vendor).toStdString() + " (" + name.toStdString() + ")";
 }
 
 void FpsCounter::add(long nsConsumed)

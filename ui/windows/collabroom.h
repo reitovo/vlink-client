@@ -117,6 +117,7 @@ private:
     void onNotifyForceIdr();
 
     void applyNewFrameFormat(const vts::server::FrameFormatSetting &frame);
+    void setShareInfo(bool start);
 
     void roomInfoSucceed(const vts::server::RspRoomInfo &info);
     void roomInfoFailed(const std::string &error);

@@ -264,3 +264,5 @@ void MainWindow::debugVideoAdapters() {
         count++;
     }
 }
+
+

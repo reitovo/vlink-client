@@ -225,6 +225,24 @@ void RoomServer::setFrameFormat(const vts::server::FrameFormatSetting &format) {
     }
 }
 
+void RoomServer::setShareInfo(const std::string& gpu, const std::string& capture, bool start) {
+    auto context = getCtx();
+    if (context == nullptr)
+        return;
+
+    vts::server::ReqShareInfo req;
+    req.set_gpu(gpu);
+    req.set_capture(capture);
+    req.set_start(start);
+
+    vts::server::RspCommon rsp;
+    auto status = service->SetShareInfo(context.get(), req, &rsp);
+    if (!status.ok()) {
+        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+    }
+}
+
 void RoomServer::exit() {
     auto context = getCtx();
     if (context == nullptr)
@@ -239,7 +257,7 @@ void RoomServer::exit() {
 
 void RoomServer::requestIdr() {
     auto now = std::chrono::system_clock::now();
-    if (lastRequestIdr + std::chrono::seconds(1) > now) {
+    if (lastRequestIdr + std::chrono::seconds(2) > now) {
         return;
     }
     lastRequestIdr = now;

@@ -54,6 +54,13 @@ BuyRelay::BuyRelay(CollabRoom *parent) :
     connect(ui->openEvent, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
     });
+    connect(ui->refundRelay, &QPushButton::clicked, this, [=, this]() {
+        refundPrevious();
+    });
+
+    QSettings settings;
+    auto previous = settings.value("previousRelayId").toString();
+    ui->refundRelay->setEnabled(!previous.isEmpty());
 
     refreshPrice();
     ui->stacked->setCurrentIndex(0);
@@ -90,6 +97,8 @@ void BuyRelay::refreshPrice() {
         if (!status.ok()) {
             qWarning() << "query price failed" << status.error_message().c_str();
         }
+
+        return true;
     }, this, [=, this]() {
         ui->priceText->setText(QString("%1￥").arg(price->price()));
         delete price;
@@ -102,8 +111,7 @@ void BuyRelay::startWxPurchase() {
 
     ui->startWx->setEnabled(false);
 
-    auto *res = new vts::relay::RspBuyQrCode();
-    runDetached([=, this]() {
+    runDetachedThenFinishOnUI<vts::relay::RspBuyQrCode>([=, this](auto res, auto status) {
         grpc::ClientContext ctx;
         vts::relay::ReqRelayCreate req;
         req.set_participants(person);
@@ -114,14 +122,24 @@ void BuyRelay::startWxPurchase() {
         quality->set_framewidth(relayQuality.frameWidth);
         quality->set_frameheight(relayQuality.frameHeight);
         req.set_roomid(room->roomId.toStdString());
+        req.set_coupon(ui->coupon->text().toStdString());
 
-        auto status = service->StartBuyWeixin(&ctx, req, res);
-
-        if (!status.ok()) {
-            qWarning() << "start purchase failed" << status.error_message().c_str();
-        }
-    }, this, [=, this]() {
+        *status = service->StartBuyWeixin(&ctx, req, res);
+    }, this, [=, this](auto res, auto status) {
         ui->startWx->setEnabled(true);
+
+        if (!status->ok()) {
+            qWarning() << "start purchase failed" << status->error_message().c_str();
+            auto msg = status->error_message();
+            if (msg == "room not found") {
+                onFatalError(tr("购买失败"), tr("房间不存在，不支持在非官方房间服务器上创建中转服务器"));
+            } else if (msg == "coupon not found") {
+                onFatalError(tr("购买失败"), tr("优惠券不存在"));
+            } else if (msg == "coupon no remain") {
+                onFatalError(tr("购买失败"), tr("优惠券已使用完毕"));
+            }
+            return;
+        }
 
         code = QString::fromStdString(res->code());
         id = QString::fromStdString(res->id());
@@ -146,7 +164,9 @@ void BuyRelay::startWxPurchase() {
         ui->stacked->setCurrentIndex(1);
         queryStatusTimer.start();
 
-        delete res;
+        QSettings settings;
+        settings.setValue("previousRelayId", id);
+        settings.sync();
     });
 }
 
@@ -161,6 +181,8 @@ void BuyRelay::queryStatus() {
         if (!status.ok()) {
             qWarning() << "get status failed" << status.error_message().c_str();
         }
+
+        return true;
     }, this, [=, this]() {
         auto status = QString::fromStdString(res->status());
         if (status == "creating" && ui->stacked->currentIndex() != 2) {
@@ -169,6 +191,10 @@ void BuyRelay::queryStatus() {
             queryStatusTimer.stop();
             QMessageBox::critical(this, tr("创建中转服务器失败"), QString("%1\n%2")
                     .arg(tr("很抱歉，创建中转服务器失败，稍后将自动退款。")).arg(id));
+
+            QSettings settings;
+            settings.remove("previousRelayId");
+            settings.sync();
             close();
         } else if (status == "complete") {
             queryStatusTimer.stop();
@@ -206,4 +232,58 @@ void BuyRelay::changeQuality() {
 
 void BuyRelay::refreshQuality() {
     ui->frameFormat->setText(getFrameFormatDesc(relayQuality));
+}
+
+void BuyRelay::refundPrevious() {
+    QSettings settings;
+    auto previous = settings.value("previousRelayId").toString();
+
+    auto *res = new vts::server::RspCommon();
+    grpc::ClientContext ctx;
+    vts::relay::ReqRefund req;
+    req.set_id(previous.toStdString());
+    auto status = service->Refund(&ctx, req, res);
+
+    if (!status.ok()) {
+        qWarning() << "refund failed" << status.error_message().c_str();
+        auto reason = tr("未知错误");
+        switch (status.error_code()) {
+            case grpc::StatusCode::NOT_FOUND:
+                reason = tr("中转服务器不存在或已结束服务");
+                break;
+            case grpc::StatusCode::FAILED_PRECONDITION:
+                reason = tr("已进行退款，请检查交易记录");
+                break;
+            case grpc::StatusCode::ALREADY_EXISTS:
+                reason = tr("正在处理退款，请稍后再试");
+                break;
+            case grpc::StatusCode::OUT_OF_RANGE:
+                reason = tr("很抱歉，已超出可退款期限");
+                break;
+        }
+
+        QMessageBox::critical(this, tr("退款失败"), reason + "\n" + tr("如有疑问，请截图此窗口并加群反馈\n%1\n%2")
+            .arg(previous).arg(status.error_message().c_str()));
+        return;
+    }
+
+    settings.remove("previousRelayId");
+    settings.sync();
+    QMessageBox::information(this, tr("退款成功"), tr("退款成功，请稍后核实您的交易记录，并检查退款已到账"));
+    refunded = true;
+    close();
+}
+
+void BuyRelay::onFatalError(const QString &title, const QString &msg) {
+    auto *box = new QMessageBox(this);
+    box->setIcon(QMessageBox::Critical);
+    box->setWindowTitle(title);
+    box->setText(msg);
+    box->addButton(tr("确定"), QMessageBox::NoRole);
+
+    connect(box, &QMessageBox::finished, this, [=, this]() {
+        box->deleteLater();
+    });
+
+    box->show();
 }

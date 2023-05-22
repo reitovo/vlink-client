@@ -744,6 +744,15 @@ void CollabRoom::openBuyRelay() {
 
     auto buy = new BuyRelay(this);
     connect(buy, &BuyRelay::finished, this, [=, this](int) {
+        if (buy->refunded) {
+            turnServer = QString();
+            ui->relayInput->setText(turnServer);
+            QSettings settings;
+            settings.remove("turnServerExpiresAt");
+            updateTurnServer();
+            return;
+        }
+
         auto turn = buy->getTurnServer();
         if (turn.has_value()) {
             turnServer = turn.value();
@@ -806,6 +815,11 @@ void CollabRoom::startShare() {
         }
     }
 
+    if (!useDxCapture && (spoutName.empty() || ui->spoutSourceSelect->count() == 0)) {
+        emit onShareError(tr("尚未找到 Spout 来源，无法开始分享"));
+        return;
+    }
+
     QPalette palette;
     QBrush brush(QColor::fromString("#ffffff"));
     brush.setStyle(Qt::SolidPattern);
@@ -844,6 +858,8 @@ void CollabRoom::startShare() {
         }));
     }
     shareThread->start();
+
+    setShareInfo(true);
 }
 
 void CollabRoom::stopShare() {
@@ -1104,9 +1120,22 @@ void CollabRoom::dxgiShareWorkerServer() {
     qInfo() << "dx capture server exit";
 }
 
+void CollabRoom::setShareInfo(bool start) {
+    QThread* thread = QThread::create([=, this]() {
+        std::string cap = useDxCapture ? "D3D11 " : "Spout ";
+        cap += useDxCapture ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString() : spoutName;
+        roomServer->setShareInfo(getPrimaryGpu(), cap, start);
+    });
+    thread->start();
+    connect(thread, &QThread::finished, this, [=, this]() {
+        thread->deleteLater();
+    });
+}
+
 void CollabRoom::stopShareWorker() {
     shareRunning = false;
     terminateQThread(shareThread, __FUNCTION__);
+    setShareInfo(false);
 }
 
 void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {

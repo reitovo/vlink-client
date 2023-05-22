@@ -531,7 +531,7 @@ std::optional<QString> FrameToAv::processInternal() {
         regularIdrCount = 0;
     }
 
-    int requestIdrCoolDownLimit = (int)frameRate;
+    int requestIdrCoolDownLimit = (int)frameRate * 2;
 
     if (requestIdr && requestIdrCoolDown >= requestIdrCoolDownLimit) {
         qDebug() << "requested idr";

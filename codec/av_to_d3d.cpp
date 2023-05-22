@@ -274,7 +274,7 @@ retryNextFrame:
         static int waitForNextFrameCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
             // But not too long
-            if (waitForNextFrameCount > (enableBuffering ? 30 : 15)) {
+            if (waitForNextFrameCount > (enableBuffering ? 60 : 30)) {
                 waitForNextFrameCount = 0;
                 while (!frameQueue.empty()) {
                     delete frameQueue.top();
@@ -300,10 +300,6 @@ retryNextFrame:
 
         frameDelay.succeed();
         frameQueue.pop();
-    }
-
-    if (dd == nullptr) {
-        return "no frame";
     }
 
     auto mem = std::move(dd->data);

@@ -56,6 +56,7 @@ public:
     void setSdp(const vts::server::Sdp& sdp);
     void setNat(int type);
     void setFrameFormat(const vts::server::FrameFormatSetting& format);
+    void setShareInfo(const std::string& gpu, const std::string& capture, bool start);
 
     void requestIdr();
 

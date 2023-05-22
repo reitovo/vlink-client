@@ -40,6 +40,8 @@ public:
         return purchasedMembers;
     }
 
+    bool refunded = false;
+
 private:
     CollabRoom *room;
     Ui::BuyRelay *ui;
@@ -60,6 +62,8 @@ private:
     void queryStatus();
     void changeQuality();
     void refreshQuality();
+    void refundPrevious();
+    void onFatalError(const QString& title, const QString& msg);
 };
 
 #endif //VTSLINK_BUYRELAY_H
