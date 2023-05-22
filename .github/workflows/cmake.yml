@@ -27,7 +27,7 @@ jobs:
 
       - name: Update vcpkg
         working-directory: C:/vcpkg
-        run: git fetch reito reito && git reset --hard reito/reito
+        run: git fetch reito reito && git reset --hard reito/reito && git submodule update
 
       - name: Fetch latest vtslink-client
         working-directory: C:/vtslink/client

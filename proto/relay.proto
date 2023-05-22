@@ -8,6 +8,7 @@ message ReqRelayCreate {
   int32 participants = 2;
   optional string roomId = 3;
   vts.server.FrameFormatSetting maxQuality = 4;
+  optional string coupon = 5;
 }
 
 message RspPrice {
@@ -30,8 +31,17 @@ message RspBuyStatus {
   string password = 4;
 }
 
+message ReqRefund {
+  string id = 1;
+}
+
+message RspRefund {
+  string code = 1;
+}
+
 service RelayService {
   rpc QueryPrice(ReqRelayCreate) returns (RspPrice);
   rpc StartBuyWeixin(ReqRelayCreate) returns (RspBuyQrCode);
   rpc QueryStatus(ReqBuyStatus) returns (RspBuyStatus);
+  rpc Refund(ReqRefund) returns (RspRefund);
 }

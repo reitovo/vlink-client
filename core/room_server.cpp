@@ -14,7 +14,7 @@
 RoomServer::RoomServer(CollabRoom* room) {
     this->room = room;
 
-    channel = grpc::CreateChannel(room->roomEndpoint.toStdString(), grpc::SslCredentials(
+    channel = grpc::CreateChannel("dns://119.29.29.29:53/" + room->roomEndpoint.toStdString(), grpc::SslCredentials(
             grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")));
     service = vts::server::RoomService::NewStub(channel);
 }
