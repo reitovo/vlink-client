@@ -820,7 +820,7 @@ void CollabRoom::startShare() {
         return;
     }
 
-    if (spoutName == "PrprCamera") {
+    if (!useDxCapture && spoutName == "PrprCamera") {
         emit onShareError(tr("无法开始分享，因为 PrprLive 的 Spout 来源是虚假的，请点击主界面上的「常见问题」，了解如何捕获 PrprLive"));
         return;
     }
