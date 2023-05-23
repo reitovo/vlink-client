@@ -1390,6 +1390,8 @@ void CollabRoom::dxgiCaptureStatus(QString text) {
 }
 
 void CollabRoom::dxgiNeedElevate() {
+    stopShare();
+
     QSettings s;
     auto ig = s.value("ignoreNeedElevate", false).toBool();
     if (!ig) {
@@ -1397,9 +1399,7 @@ void CollabRoom::dxgiNeedElevate() {
         auto *box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("D3D11 捕获失败"));
-        box->setText(tr("捕获画面失败！可能的解决方案：\n"
-                        "1. 软件还在启动中，请等待模型出现后再分享\n"
-                        "2. 重启 Steam 与目标软件，然后再次尝试开始分享"));
+        box->setText(tr("捕获画面失败！请点击「查看详情」了解解决方案"));
         auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
         auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
