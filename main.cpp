@@ -70,6 +70,8 @@ namespace {
 }
 
 int main(int argc, char *argv[]) {
+    _putenv_s("GRPC_DNS_RESOLVER", "native");
+
     QFile log(VLINK_LOG_FILE);
     if (log.exists() && log.size() > 1024 * 1024 * 4)
         log.remove();
