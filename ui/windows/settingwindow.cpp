@@ -8,6 +8,7 @@
 #include "QMessageBox"
 #include "QPushButton"
 #include "QLineEdit"
+#include "diag/diag.h"
 
 SettingWindow::SettingWindow(QWidget *parent) :
         QMainWindow(parent),
@@ -122,6 +123,8 @@ void SettingWindow::init() {
     });
 
     connect(ui->buttonSendLog, &QPushButton::clicked, this, [=, this]() {
+        diagnoseAll();
+
         QNetworkRequest req;
         req.setUrl(QUrl("https://misc.reito.fun/report"));
         req.setHeader(QNetworkRequest::ContentTypeHeader, "plain/text");

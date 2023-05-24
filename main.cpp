@@ -33,6 +33,7 @@ void initializeCrashpad();
 #endif
 
 void redirectDebugOutput();
+void redirectStandard();
 
 void writeQtLogThread();
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
     if (log.exists() && log.size() > 1024 * 1024 * 4)
         log.remove();
 
+    QThread::create(redirectStandard)->start();
     base_set_log_handler(dxCaptureMessageHandler, nullptr);
     if (!IsDebuggerPresent()) {
         writeLogFileThread = QThread::create(writeQtLogThread);
@@ -323,4 +325,33 @@ void redirectDebugOutput() {
     CloseHandle(hMapping);
     CloseHandle(hReadyEvent);
     CloseHandle(hAckEvent);
+}
+
+void redirectStandard() {
+    std::stringstream coutBuffer, cerrBuffer;
+    std::wstringstream  wcoutBuffer, wcerrBuffer;
+    std::cout.rdbuf(coutBuffer.rdbuf());
+    std::wcout.rdbuf(wcoutBuffer.rdbuf());
+    std::cout.rdbuf(cerrBuffer.rdbuf());
+    std::wcout.rdbuf(wcerrBuffer.rdbuf());
+
+    while (!QCoreApplication::closingDown()) {
+        if (coutBuffer.tellp() != std::stringstream::pos_type(0)) {
+            qDebug() << "[cout]" << coutBuffer.str().c_str();
+            coutBuffer.str("");
+        }
+        if (cerrBuffer.tellp() != std::stringstream::pos_type(0)) {
+            qDebug() << "[cerr]" << cerrBuffer.str().c_str();
+            cerrBuffer.str("");
+        }
+        if (wcoutBuffer.tellp() != std::stringstream::pos_type(0)) {
+            qDebug() << "[wcout]" << QString::fromStdWString(wcoutBuffer.str());
+            wcoutBuffer.str(L"");
+        }
+        if (wcerrBuffer.tellp() != std::stringstream::pos_type(0)) {
+            qDebug() << "[wcerr]" << QString::fromStdWString(wcerrBuffer.str());
+            wcerrBuffer.str(L"");
+        }
+        Sleep(10);
+    }
 }

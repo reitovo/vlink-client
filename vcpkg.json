@@ -17,6 +17,7 @@
       "default-features": true,
       "features": [ "codegen" ]
     },
+    "amd-amf",
     "protobuf",
     "concurrentqueue",
     "crashpad",

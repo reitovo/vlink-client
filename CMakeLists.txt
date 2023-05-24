@@ -60,6 +60,16 @@ set(SHADER_FILES
         shader/bgranv12_downsample_pixel.hlsl
     )
 
+set(DIAGNOSTIC_SOURCES
+        diag/diag.cpp
+        diag/amd/amf_cap.cpp
+        diag/amd/AMFFactory.cpp
+        diag/amd/CmdLogger.cpp
+        diag/amd/DeviceDX11.cpp
+        diag/amd/Thread.cpp
+        diag/amd/ThreadWindows.cpp
+    )
+
 # UI
 set(PROJECT_SOURCES
         main.cpp
@@ -94,6 +104,7 @@ qt_add_executable(VTSLink
     ui/vtslink.rc
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
+    ${DIAGNOSTIC_SOURCES}
 )
 
 # Tokens pass from env
@@ -144,6 +155,9 @@ protobuf_generate(TARGET VTSLinkProto
     PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
 
 target_link_libraries(VTSLink PUBLIC VTSLinkProto)
+
+find_path(AMD_AMF_INCLUDE_DIRS "AMF/components/Ambisonic2SRenderer.h")
+target_include_directories(VTSLink PRIVATE ${AMD_AMF_INCLUDE_DIRS})
 
 # DxCapture
 add_subdirectory(deps/DxCapture)
