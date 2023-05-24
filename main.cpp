@@ -345,11 +345,11 @@ void redirectStandard() {
             cerrBuffer.str("");
         }
         if (wcoutBuffer.tellp() != std::stringstream::pos_type(0)) {
-            qDebug() << "[wcout]" << QString::fromStdWString(wcoutBuffer.str());
+            qDebug().noquote() << "[wcout]" << QString::fromStdWString(wcoutBuffer.str());
             wcoutBuffer.str(L"");
         }
         if (wcerrBuffer.tellp() != std::stringstream::pos_type(0)) {
-            qDebug() << "[wcerr]" << QString::fromStdWString(wcerrBuffer.str());
+            qDebug().noquote() << "[wcerr]" << QString::fromStdWString(wcerrBuffer.str());
             wcerrBuffer.str(L"");
         }
         Sleep(10);
