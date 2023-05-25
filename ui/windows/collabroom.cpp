@@ -37,6 +37,7 @@ extern "C" {
 #include "framequality.h"
 
 static CollabRoom *roomInstance;
+volatile int captureVerticalOffsetRatio = 0;
 
 CollabRoom *CollabRoom::instance() {
     return roomInstance;
@@ -64,6 +65,16 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     this->isServer = isServer;
 
     QSettings settings;
+
+    captureVerticalOffsetRatio = settings.value("captureVerticalOffsetRatio").toInt();
+    connect(ui->verticalOffset, &QSlider::valueChanged, this, [=](int v) {
+        captureVerticalOffsetRatio = v;
+
+        QSettings s;
+        s.setValue("captureVerticalOffsetRatio", v);
+        s.sync();
+    });
+    ui->verticalOffset->setValue(captureVerticalOffsetRatio);
 
     // Dx sources
     ui->d3d11SourceSelect->clear();
@@ -221,9 +232,9 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     hintShare->start(1000);
 
     if (!isServer) {
-        resize(QSize(381, 360));
+        resize(QSize(381, 386));
     } else {
-        resize(QSize(730, 360));
+        resize(QSize(730, 386));
     }
 
     auto nick = settings.value("nick").toString();
@@ -1126,6 +1137,8 @@ void CollabRoom::dxgiShareWorkerServer() {
 }
 
 void CollabRoom::setShareInfo(bool start) {
+    if (exiting || roomServer == nullptr)
+        return;
     QThread* thread = QThread::create([=, this]() {
         std::string cap = useDxCapture ? "D3D11 " : "Spout ";
         cap += useDxCapture ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString() : spoutName;

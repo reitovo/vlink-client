@@ -378,7 +378,7 @@ bool DxToFrame::createSharedSurf()
     texDesc_rgba.Height = _height;
     texDesc_rgba.ArraySize = 1;
     texDesc_rgba.MipLevels = 1;
-    texDesc_rgba.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    texDesc_rgba.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
     texDesc_rgba.Usage = D3D11_USAGE_DEFAULT;
     texDesc_rgba.CPUAccessFlags = 0;
     texDesc_rgba.SampleDesc.Count = 1;
@@ -452,6 +452,13 @@ bool DxToFrame::createSharedSurf()
     qDebug() << "d3d2dx create render target view";
     setDxDebugName(this->_renderTargetView.Get(), "dx2frame create render target view");
 
+    hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_rgba_src.Get(), &rtvDesc, this->_rtv_src.GetAddressOf());
+    if (FAILED(hr))
+        return false;
+
+    qDebug() << "d3d2dx create src render target view";
+    setDxDebugName(this->_renderTargetView.Get(), "dx2frame create src render target view");
+
     return true;
 }
 
@@ -459,6 +466,7 @@ void DxToFrame::releaseSharedSurf()
 {
     COM_RESET(_textureView);
     COM_RESET(_renderTargetView);
+    COM_RESET(_rtv_src);
 
     COM_RESET(_texture_rgba_src);
     COM_RESET(_texture_rgba_target);
@@ -490,6 +498,7 @@ bool DxToFrame::render()
     int renderCount = 0;
     lock.lock();
     for (auto& src : sources) {
+        this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_src.Get(), clearColor);
         if (!src->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_rgba_src.Get())) {
             continue;
         }

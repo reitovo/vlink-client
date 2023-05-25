@@ -67,9 +67,7 @@ BgraToNv12::~BgraToNv12() {
 	COM_RESET(_d3d11_inputLayout);
 	COM_RESET(_d3d11_samplerState);
 
-    COM_RESET_TO_SINGLE(_d3d11_deviceCtx);
     COM_RESET(_d3d11_deviceCtx);
-    COM_RESET_TO_SINGLE(_d3d11_device);
     printDxLiveObjects(_d3d11_device.Get(), __FUNCTION__);
     COM_RESET(_d3d11_device);
 
@@ -131,6 +129,7 @@ void BgraToNv12::releaseSharedSurf()
 	COM_RESET(_bgraView);
 	COM_RESET(_downsampleView);
 
+    COM_RESET(_rtv_bgra);
 	COM_RESET(_rtv_nv12_y);
 	COM_RESET(_rtv_nv12_uv);
 	COM_RESET(_rtv_bgra_uv);
@@ -395,7 +394,7 @@ bool BgraToNv12::createSharedSurf()
 	texDesc_input_bgra.Height = _height;
 	texDesc_input_bgra.ArraySize = 1;
 	texDesc_input_bgra.MipLevels = 1;
-	texDesc_input_bgra.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc_input_bgra.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 	texDesc_input_bgra.Usage = D3D11_USAGE_DEFAULT;
 	texDesc_input_bgra.CPUAccessFlags = 0;
 	texDesc_input_bgra.SampleDesc.Count = 1;
@@ -521,6 +520,15 @@ bool BgraToNv12::createSharedSurf()
 	FLOAT a_uv_color[4] = { 0.501960, 0.501960, 0.501960, 1 };
 	this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_nv12_uv.Get(), a_uv_color);
 
+    // create render target view of source clearing
+    rtvDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+    rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+    rtvDesc.Texture2D.MipSlice = 0;
+    hr = this->_d3d11_device->CreateRenderTargetView(this->_texture_bgra.Get(), &rtvDesc, this->_rtv_bgra.GetAddressOf());
+    if (FAILED(hr))
+        return false;
+    qDebug() << "bgranv12 create bgra";
+
 	qDebug() << "bgranv12 create render target views";
 
 	return true;
@@ -536,6 +544,8 @@ bool BgraToNv12::bgraToNv12Fast(const std::shared_ptr<IDxCopyable>& fast)
 
     //Elapsed e1("update subresource"); //~300000 ns
     if (fast != nullptr) {
+        FLOAT clearColor[4] = { 0, 0, 0, 0 };
+        this->_d3d11_deviceCtx->ClearRenderTargetView(_rtv_bgra.Get(), clearColor);
         fast->copyTo(_d3d11_device.Get(), _d3d11_deviceCtx.Get(), _texture_bgra.Get());
     } else {
         return false;

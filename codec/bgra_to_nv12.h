@@ -53,6 +53,7 @@ class BgraToNv12
     ComPtr<ID3D11ShaderResourceView> _bgraView = nullptr;
     ComPtr<ID3D11ShaderResourceView> _downsampleView = nullptr;
 
+    ComPtr<ID3D11RenderTargetView> _rtv_bgra = nullptr;
     ComPtr<ID3D11RenderTargetView> _rtv_bgra_uv = nullptr;
     ComPtr<ID3D11RenderTargetView> _rtv_nv12_y = nullptr;
     ComPtr<ID3D11RenderTargetView> _rtv_nv12_uv = nullptr;

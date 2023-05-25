@@ -7,7 +7,7 @@
 #include "diag/amd/amf_enc.h"
 #include "QDebug"
 
-extern bool ffmpegLogEnableDebug;
+extern volatile bool ffmpegLogEnableDebug;
 
 void diagnoseAll() {
     ffmpegLogEnableDebug = true;

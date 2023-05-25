@@ -31,6 +31,8 @@ typedef struct _VERTEX {
     XMFLOAT2 TexCoord;
 } VERTEX;
 
+extern volatile int captureVerticalOffsetRatio;
+
 // Vertices for drawing whole texture
 static VERTEX Vertices[NUMVERTICES] =
         {
@@ -363,9 +365,11 @@ bool DxCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textur
     if (src == nullptr)
         return false;
 
-    D3D11_BOX box = {0, 0, 0, _width, _height, 1};
-    ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
-    ctx->Flush();
+    if (captureVerticalOffsetRatio != 100) {
+        D3D11_BOX box = {0, _height * captureVerticalOffsetRatio / 100, 0, _width, _height, 1};
+        ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
+        ctx->Flush();
+    }
 
     src->Release();
 

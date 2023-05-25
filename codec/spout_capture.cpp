@@ -14,6 +14,10 @@
 #include "d3d_to_frame.h"
 #include "dxgidebug.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnreachableCode"
+#pragma ide diagnostic ignored "ConstantConditionsOC"
+
 #pragma comment(lib, "d3dcompiler.lib")
 
 #define NUMVERTICES 6
@@ -25,6 +29,8 @@ typedef struct _VERTEX {
     XMFLOAT3 Pos;
     XMFLOAT2 TexCoord;
 } VERTEX;
+
+extern volatile int captureVerticalOffsetRatio;
 
 // Vertices for drawing whole texture
 static VERTEX Vertices[NUMVERTICES] =
@@ -305,9 +311,11 @@ bool SpoutCapture::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Tex
     if (src == nullptr)
         return false;
 
-    D3D11_BOX box = {0, 0, 0, _width, _height, 1};
-    ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
-    ctx->Flush();
+    if (captureVerticalOffsetRatio != 100) {
+        D3D11_BOX box = {0, _height * captureVerticalOffsetRatio / 100, 0, _width, _height, 1};
+        ctx->CopySubresourceRegion(dest, 0, 0, 0, 0, src, 0, &box);
+        ctx->Flush();
+    }
 
     src->Release();
 
@@ -465,3 +473,5 @@ void SpoutCapture::captureTick(float time) {
         }
     }
 }
+
+#pragma clang diagnostic pop
