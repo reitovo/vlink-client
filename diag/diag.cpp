@@ -35,4 +35,6 @@ void diagnoseAll() {
         t->wait(500);
     }
     delete t;
+
+    QThread::sleep(500);
 }
