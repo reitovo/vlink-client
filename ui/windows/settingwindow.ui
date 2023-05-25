@@ -38,7 +38,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -572,7 +572,7 @@
           </font>
          </property>
          <property name="text">
-          <string>为较早型号AMD显卡启用兼容性编码设置</string>
+          <string>为较早型号AMD显卡启用兼容性编码设置（仅当提示没有可用编码器时使用）</string>
          </property>
         </widget>
        </item>
