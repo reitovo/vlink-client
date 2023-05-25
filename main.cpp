@@ -38,6 +38,8 @@ void redirectStandard();
 void writeQtLogThread();
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
+volatile bool ffmpegLogEnableDebug = false;
+
 static void dxCaptureMessageHandler(int log_level, const char *format, va_list args,
                             void *param)
 {
@@ -93,7 +95,16 @@ int main(int argc, char *argv[]) {
         av_log_format_line2(avcl, level, fmt, vl, buf, 1024, &prefix);
         auto err = QString(buf).trimmed();
         if (level <= AV_LOG_ERROR) {
-            qDebug() << err;
+            qCritical() << err;
+        } else if (level == AV_LOG_WARNING) {
+            qWarning() << err;
+        }
+        if (ffmpegLogEnableDebug) {
+            if (level == AV_LOG_INFO) {
+                qInfo() << err;
+            } else if (level <= AV_LOG_TRACE) {
+                qDebug() << err;
+            }
         }
 
         if (err.contains("The minimum required Nvidia driver for nvenc is")) {
@@ -311,7 +322,7 @@ void redirectDebugOutput() {
         if (WaitForSingleObject(hReadyEvent, INFINITE) == WAIT_OBJECT_0) {
             if (pdbBuffer->dwProcessId == thisProcId) {
                 // 保存信息，这就是我们想要的，有了这个信息，想打log或是输出到控制台就都可以啦
-                qDebug() << QString("%1").arg(QString::fromUtf8(pdbBuffer->data));
+                qDebug().noquote() << QString("%1").arg(QString::fromUtf8(pdbBuffer->data));
             }
         }
     }

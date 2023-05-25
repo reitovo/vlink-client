@@ -7,9 +7,13 @@
 #include "diag/amd/amf_enc.h"
 #include "QDebug"
 
+extern bool ffmpegLogEnableDebug;
+
 void diagnoseAll() {
+    ffmpegLogEnableDebug = true;
     qDebug() << "diagnose AMD AMF Driver";
     diagnoseAmdAmf();
     qDebug() << "diagnose AMF Encoder";
     diagnoseAmfEnc();
+    ffmpegLogEnableDebug = false;
 }
