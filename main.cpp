@@ -240,7 +240,7 @@ void writeQtLogThread() {
             textStream << txt << "\r\n";
             textStream.flush();
         } else {
-            QThread::sleep(1);
+            QThread::msleep(1);
         }
     }
 

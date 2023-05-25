@@ -36,5 +36,5 @@ void diagnoseAll() {
     }
     delete t;
 
-    QThread::sleep(500);
+    QThread::msleep(500);
 }
