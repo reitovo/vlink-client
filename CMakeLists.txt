@@ -25,80 +25,83 @@ qt_standard_project_setup()
 
 # Translation files
 set(TS_FILES
-        translations/VTSLink_zh_CN.ts
-        translations/VTSLink_en_US.ts
-        translations/VTSLink_ja_JP.ts)
+    translations/VTSLink_zh_CN.ts
+    translations/VTSLink_en_US.ts
+    translations/VTSLink_ja_JP.ts
+)
 
 # Codes
 set(CODEC_FILES
-        codec/spout_capture.h
-        codec/spout_capture.cpp
-        codec/d3d_capture.h
-        codec/d3d_capture.cpp
-        codec/frame_to_av.h
-        codec/frame_to_av.cpp
-        codec/bgra_to_nv12.h
-        codec/bgra_to_nv12.cpp
-        codec/av_to_d3d.h
-        codec/av_to_d3d.cpp
-        codec/d3d_to_frame.h
-        codec/d3d_to_frame.cpp
-        codec/nv12_to_bgra.h
-        codec/nv12_to_bgra.cpp
-        codec/i_d3d_src.h
-        codec/i_d3d_src.cpp)
+    codec/spout_capture.h
+    codec/spout_capture.cpp
+    codec/d3d_capture.h
+    codec/d3d_capture.cpp
+    codec/frame_to_av.h
+    codec/frame_to_av.cpp
+    codec/bgra_to_nv12.h
+    codec/bgra_to_nv12.cpp
+    codec/av_to_d3d.h
+    codec/av_to_d3d.cpp
+    codec/d3d_to_frame.h
+    codec/d3d_to_frame.cpp
+    codec/nv12_to_bgra.h
+    codec/nv12_to_bgra.cpp
+    codec/i_d3d_src.h
+    codec/i_d3d_src.cpp
+)
 
 # Shader
 set(SHADER_FILES
-        shader/blend_pixel.hlsl
-        shader/blend_vertex.hlsl
-        shader/nv12bgra_pixel.hlsl
-        shader/nv12bgra_vertex.hlsl
-        shader/bgranv12_pixel.hlsl
-        shader/bgranv12_vertex.hlsl
-        shader/bgranv12_downsample_vertex.hlsl
-        shader/bgranv12_downsample_pixel.hlsl
-    )
+    shader/blend_pixel.hlsl
+    shader/blend_vertex.hlsl
+    shader/nv12bgra_pixel.hlsl
+    shader/nv12bgra_vertex.hlsl
+    shader/bgranv12_pixel.hlsl
+    shader/bgranv12_vertex.hlsl
+    shader/bgranv12_downsample_vertex.hlsl
+    shader/bgranv12_downsample_pixel.hlsl
+)
 
 set(DIAGNOSTIC_SOURCES
-        diag/diag.cpp
-        diag/amd/amf_cap.cpp
-        diag/amd/AMFFactory.cpp
-        diag/amd/CmdLogger.cpp
-        diag/amd/DeviceDX11.cpp
-        diag/amd/Thread.cpp
-        diag/amd/ThreadWindows.cpp
-    )
+    diag/diag.cpp
+    diag/amd/amf_cap.cpp
+    diag/amd/amf_enc.cpp
+    diag/amd/AMFFactory.cpp
+    diag/amd/CmdLogger.cpp
+    diag/amd/DeviceDX11.cpp
+    diag/amd/Thread.cpp
+    diag/amd/ThreadWindows.cpp
+)
 
 # UI
 set(PROJECT_SOURCES
-        main.cpp
-        resources.qrc
-        core/vtslink.h
-        core/util.h core/util.cpp
-        core/peer.h core/peer.cpp
-        core/smart_buf.h core/smart_buf.cpp
-        core/debug_center.h core/debug_center.cpp
-        core/speed.h core/speed.cpp
-        core/usage.h core/usage.cpp
-        core/room_server.h core/room_server.cpp
-        core/grpc_cert.cpp core/grpc_cert.h
-        ui/windows/mainwindow.cpp
-        ui/windows/mainwindow.h
-        ui/windows/mainwindow.ui
-        ui/windows/collabroom.h ui/windows/collabroom.cpp ui/windows/collabroom.ui
-        ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
-        ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
-	    ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
-        ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
-        ui/windows/framequality.cpp ui/windows/framequality.h ui/windows/framequality.ui
-        ${SHADER_FILES}
-        ${CODEC_FILES}
-        ${TS_FILES}
-        ${PROTO_FILES}
-        ${PROTO_SRCS} 
-        ${PROTO_HDRS}
-    )
+    main.cpp
+    resources.qrc
+    core/vtslink.h
+    core/util.h core/util.cpp
+    core/peer.h core/peer.cpp
+    core/smart_buf.h core/smart_buf.cpp
+    core/debug_center.h core/debug_center.cpp
+    core/speed.h core/speed.cpp
+    core/usage.h core/usage.cpp
+    core/room_server.h core/room_server.cpp
+    core/grpc_cert.cpp core/grpc_cert.h
+    ui/windows/mainwindow.cpp
+    ui/windows/mainwindow.h
+    ui/windows/mainwindow.ui
+    ui/windows/collabroom.h ui/windows/collabroom.cpp ui/windows/collabroom.ui
+    ui/widgets/peeritemwidget.h ui/widgets/peeritemwidget.cpp ui/widgets/peeritemwidget.ui
+    ui/windows/settingwindow.h ui/windows/settingwindow.cpp ui/windows/settingwindow.ui
+    ui/windows/buyrelay.cpp ui/windows/buyrelay.h ui/windows/buyrelay.ui
+    ui/windows/dxgioutput.cpp ui/windows/dxgioutput.h ui/windows/dxgioutput.ui
+    ui/windows/framequality.cpp ui/windows/framequality.h ui/windows/framequality.ui
+    ${SHADER_FILES}
+    ${CODEC_FILES}
+    ${TS_FILES}
+    ${PROTO_FILES}
+    ${PROTO_SRCS}
+    ${PROTO_HDRS}
+)
 
 qt_add_executable(VTSLink
     ui/vtslink.rc

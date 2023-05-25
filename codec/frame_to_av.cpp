@@ -237,11 +237,11 @@ std::optional<QString> FrameToAv::initOptimalEncoder(const CodecOption& option, 
 			ctx->hw_device_ctx = av_buffer_ref(hw);
 
 			AVBufferRef* hwf = av_hwframe_ctx_alloc(hw);
-			auto* frame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
-			frame->format = AV_PIX_FMT_D3D11;
-			frame->sw_format = AV_PIX_FMT_NV12;
-			frame->width = ctx->width;
-			frame->height = ctx->height;
+			auto* hwFrame = reinterpret_cast<AVHWFramesContext*>(hwf->data);
+            hwFrame->format = AV_PIX_FMT_D3D11;
+            hwFrame->sw_format = AV_PIX_FMT_NV12;
+            hwFrame->width = ctx->width;
+            hwFrame->height = ctx->height;
 
 			if ((err = av_hwframe_ctx_init(hwf)) < 0) {
 				qDebug() << "dx2av child d3d11 hwframe failed" << av_err2str(err);
@@ -408,13 +408,6 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "qp_b", cqp, 0);
         assert(ret == 0);
-
-		//av_opt_set(ctx->priv_data, "rc", "vbr_peak", 0);
-		//ctx->rc_max_rate = ctx->bit_rate * 5;
-		//ctx->rc_buffer_size = ctx->bit_rate * 3;
-
-		//av_opt_set(ctx->priv_data, "rc", "cbr", 0);
-		//av_opt_set_int(ctx->priv_data, "filler_data", 1, 0);
 
 		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}

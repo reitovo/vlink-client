@@ -4,7 +4,12 @@
 
 #include "diag.h"
 #include "diag/amd/amf_cap.h"
+#include "diag/amd/amf_enc.h"
+#include "QDebug"
 
 void diagnoseAll() {
+    qDebug() << "diagnose AMD AMF Driver";
     diagnoseAmdAmf();
+    qDebug() << "diagnose AMF Encoder";
+    diagnoseAmfEnc();
 }
