@@ -82,8 +82,6 @@ void createCodec(bool intraRefresh) {
     THROW_IF_ERROR(av_opt_set_int(ctx->priv_data, "qp_p", cqp, 0));
     THROW_IF_ERROR(av_opt_set_int(ctx->priv_data, "qp_b", cqp, 0));
 
-    THROW_IF_ERROR(av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0));
-
     ctx->pix_fmt = AV_PIX_FMT_D3D11;
     ctx->sw_pix_fmt = AV_PIX_FMT_NV12;
 

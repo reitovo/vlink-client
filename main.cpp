@@ -33,34 +33,35 @@ void initializeCrashpad();
 #endif
 
 void redirectDebugOutput();
+
 void redirectStandard();
 
 void writeQtLogThread();
+
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 volatile bool ffmpegLogEnableDebug = false;
 
 static void dxCaptureMessageHandler(int log_level, const char *format, va_list args,
-                            void *param)
-{
+                                    void *param) {
     char out[4096];
     vsnprintf(out, sizeof(out), format, args);
 
     switch (log_level) {
         case LOG_DEBUG:
-            qDebug("dxcap debug: %s", out);
+            qDebug().noquote() << "dxcap debug:" << out;
             break;
 
         case LOG_INFO:
-            qInfo("dxcap info: %s", out);
+            qInfo().noquote() << "dxcap info:" << out;
             break;
 
         case LOG_WARNING:
-            qWarning("dxcap warn: %s", out);
+            qWarning().noquote() << "dxcap warn:" << out;
             break;
 
         case LOG_ERROR:
-            qCritical("dxcap error: %s", out);
+            qCritical().noquote() << "dxcap error:" << out;
             break;
     }
 
@@ -69,7 +70,7 @@ static void dxCaptureMessageHandler(int log_level, const char *format, va_list a
 
 namespace {
     moodycamel::ConcurrentQueue<QString> logQueue;
-    QThread* writeLogFileThread;
+    QThread *writeLogFileThread;
 }
 
 int main(int argc, char *argv[]) {
@@ -95,21 +96,21 @@ int main(int argc, char *argv[]) {
         av_log_format_line2(avcl, level, fmt, vl, buf, 1024, &prefix);
         auto err = QString(buf).trimmed();
         if (level <= AV_LOG_ERROR) {
-            qCritical() << err;
+            qCritical().noquote() << err;
         } else if (level == AV_LOG_WARNING) {
-            qWarning() << err;
+            qWarning().noquote() << err;
         }
         if (ffmpegLogEnableDebug) {
             if (level == AV_LOG_INFO) {
-                qInfo() << err;
+                qInfo().noquote() << err;
             } else if (level <= AV_LOG_TRACE) {
-                qDebug() << err;
+                qDebug().noquote() << err;
             }
         }
 
         if (err.contains("The minimum required Nvidia driver for nvenc is")) {
             if (CollabRoom::instance())
-                emit CollabRoom::instance()->onShareError("nv driver old");
+                    emit CollabRoom::instance()->onShareError("nv driver old");
         }
 
         if (err.contains("non-existing PPS 0 referenced")) {
@@ -122,23 +123,20 @@ int main(int argc, char *argv[]) {
         switch (level) {
             case rtc::LogLevel::Verbose:
             case rtc::LogLevel::Debug: {
-                qDebug(message.c_str());
+                qDebug().noquote() << message.c_str();
                 break;
             }
             case rtc::LogLevel::Info: {
-                qInfo(message.c_str());
+                qInfo().noquote() << message.c_str();
                 break;
             }
             case rtc::LogLevel::Warning: {
-                qWarning(message.c_str());
+                qWarning().noquote() << message.c_str();
                 break;
             }
-            case rtc::LogLevel::Error: {
-                qCritical(message.c_str());
-                break;
-            }
+            case rtc::LogLevel::Error:
             case rtc::LogLevel::Fatal: {
-                qFatal(message.c_str());
+                qCritical().noquote() << message.c_str();
                 break;
             }
         }
@@ -340,7 +338,7 @@ void redirectDebugOutput() {
 
 void redirectStandard() {
     std::stringstream coutBuffer, cerrBuffer;
-    std::wstringstream  wcoutBuffer, wcerrBuffer;
+    std::wstringstream wcoutBuffer, wcerrBuffer;
     std::cout.rdbuf(coutBuffer.rdbuf());
     std::wcout.rdbuf(wcoutBuffer.rdbuf());
     std::cout.rdbuf(cerrBuffer.rdbuf());
