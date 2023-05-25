@@ -17,6 +17,7 @@ extern "C" {
 }
 
 #include <QDebug>
+#include <QSettings>
 
 static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
@@ -41,6 +42,9 @@ void createCodec(bool intraRefresh) {
     AVHWDeviceContext* device_ctx = nullptr;
     AVD3D11VADeviceContext* d3d11va_device_ctx = nullptr;
     AVHWFramesContext* hwFrame = nullptr;
+
+    QSettings settings;
+    auto enableAmfCompatible = settings.value("enableAmfCompatible", false).toBool();
 
     auto err = 0;
     auto cqp = 24;
@@ -70,7 +74,8 @@ void createCodec(bool intraRefresh) {
     ctx->slices = 1;
 
     ctx->gop_size = intraRefresh ? 0 : gopSize;
-    THROW_IF_ERROR(av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0));
+
+    THROW_IF_ERROR(av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "transcoding" : "ultralowlatency", 0));
     THROW_IF_ERROR(av_opt_set(ctx->priv_data, "profile", "main", 0));
     THROW_IF_ERROR(av_opt_set(ctx->priv_data, "quality", "speed", 0));
     THROW_IF_ERROR(av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0));
