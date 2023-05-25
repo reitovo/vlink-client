@@ -389,7 +389,7 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         auto enableAmfCompatible = settings.value("enableAmfCompatible", false).toBool();
 
         ctx->gop_size = intraRefresh ? 0 : gopSize;
-        ret = av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "transcoding" : "ultralowlatency", 0);
+        ret = av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "lowlatency" : "ultralowlatency", 0);
         assert(ret == 0);
         ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
         assert(ret == 0);

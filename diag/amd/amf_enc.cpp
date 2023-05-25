@@ -75,7 +75,7 @@ void createCodec(bool intraRefresh) {
 
     ctx->gop_size = intraRefresh ? 0 : gopSize;
 
-    THROW_IF_ERROR(av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "transcoding" : "ultralowlatency", 0));
+    THROW_IF_ERROR(av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "lowlatency" : "ultralowlatency", 0));
     THROW_IF_ERROR(av_opt_set(ctx->priv_data, "profile", "main", 0));
     THROW_IF_ERROR(av_opt_set(ctx->priv_data, "quality", "speed", 0));
     THROW_IF_ERROR(av_opt_set_int(ctx->priv_data, "frame_skipping", 0, 0));
