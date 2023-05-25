@@ -32,9 +32,8 @@ void diagnoseAll() {
     if (!t->isFinished()) {
         qWarning() << "diag thread is not exited in 1000ms, terminate it";
         t->terminate();
-        t->wait(500);
     }
     delete t;
 
-    QThread::msleep(500);
+    QThread::msleep(200);
 }
