@@ -386,8 +386,10 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
 	}
 	else if (encoder == "h264_amf" || encoder == "hevc_amf") {
+        auto enableAmfCompatible = settings.value("enableAmfCompatible", false).toBool();
+
         ctx->gop_size = intraRefresh ? 0 : gopSize;
-        ret = av_opt_set(ctx->priv_data, "usage", "ultralowlatency", 0);
+        ret = av_opt_set(ctx->priv_data, "usage", enableAmfCompatible ? "transcoding" : "ultralowlatency", 0);
         assert(ret == 0);
         ret = av_opt_set(ctx->priv_data, "profile", "main", 0);
         assert(ret == 0);
@@ -408,8 +410,6 @@ void FrameToAv::initEncodingParameter(const CodecOption& option, AVCodecContext*
         assert(ret == 0);
         ret = av_opt_set_int(ctx->priv_data, "qp_b", cqp, 0);
         assert(ret == 0);
-
-		//av_opt_set_int(ctx->priv_data, "log_to_dbg", 1, 0);
 	}
 	else if (encoder == "h264_qsv" || encoder == "hevc_qsv") {
         ctx->gop_size = intraRefresh ? gopSize : 60;

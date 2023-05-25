@@ -38,14 +38,14 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>高级</string>
+      <string>常用设置</string>
      </attribute>
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
@@ -56,7 +56,7 @@
         <height>337</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -252,68 +252,6 @@
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QCheckBox" name="shouldForceEncoder">
-           <property name="font">
-            <font>
-             <family>Microsoft YaHei UI</family>
-             <bold>false</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>强制使用编码器</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item>
-          <widget class="QComboBox" name="encoders">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>250</width>
-             <height>0</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="disableIntraRefresh">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <family>Microsoft YaHei UI</family>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>关闭帧内刷新机制（仅出现码率过大问题时使用）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -375,19 +313,6 @@
          </property>
          <property name="text">
           <string>使用 D3D11 捕获（仅当 VTube Studio 无法被 Spout 捕获时使用）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="forceShmem">
-         <property name="font">
-          <font>
-           <family>Microsoft YaHei UI</family>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
          </property>
         </widget>
        </item>
@@ -543,9 +468,198 @@
       </layout>
      </widget>
     </widget>
+    <widget class="QWidget" name="tab_2">
+     <attribute name="title">
+      <string>高级设置</string>
+     </attribute>
+     <widget class="QWidget" name="verticalLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>2</x>
+        <y>0</y>
+        <width>561</width>
+        <height>321</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_7">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>★ 以下设置需要重新打开房间才能生效</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QCheckBox" name="shouldForceEncoder">
+           <property name="font">
+            <font>
+             <family>Microsoft YaHei UI</family>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>强制使用编码器</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QComboBox" name="encoders">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>250</width>
+             <height>0</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="disableIntraRefresh">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>关闭帧内刷新机制（仅出现码率过大问题时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="enableAmfCompatible">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>为较早型号AMD显卡启用兼容性编码设置</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_9">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="Line" name="line_4">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_10">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>5</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_8">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>★ 以下设置需要重新分享画面才能生效</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="forceShmem">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>使用 D3D11 捕获时采用共享内存型方案（缓解可能的画面闪烁）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </widget>
     <widget class="QWidget" name="widget">
      <attribute name="title">
-      <string>调试</string>
+      <string>统计信息</string>
      </attribute>
      <widget class="QLabel" name="debugInfo">
       <property name="geometry">
@@ -591,7 +705,7 @@
      </font>
     </property>
     <property name="title">
-     <string>工具</string>
+     <string>调试</string>
     </property>
     <addaction name="actionCrash"/>
     <addaction name="separator"/>

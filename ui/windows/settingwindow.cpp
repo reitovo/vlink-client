@@ -55,6 +55,14 @@ void SettingWindow::init() {
     ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
     ui->privateRoomServer->setText(settings.value("privateRoomServer").toString());
     ui->forceRelay->setChecked(settings.value("forceRelay").toBool());
+    ui->enableAmfCompatible->setChecked(settings.value("enableAmfCompatible").toBool());
+
+    connect(ui->enableAmfCompatible, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("enableAmfCompatible", v);
+        settings.sync();
+
+        qDebug() << "enableAmfCompatible" << v;
+    });
 
     connect(ui->forceRelay, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("forceRelay", v);
