@@ -370,7 +370,7 @@ void SpoutCapture::captureTick(float time) {
         return;
 
     char name[256] = {};
-    strcpy_s(name, "VTubeStudioSpout");
+    strcpy_s(name, spoutName.c_str());
 
     DWORD texFormat = 0;
     uint32_t width = _capturedWidth;
