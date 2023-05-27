@@ -29,16 +29,8 @@
       "name": "qtbase",
       "default-features": false,
       "features": [
-        "brotli",
-        "concurrent",
-        "freetype",
         "gui",
-        "icu",
-        "jpeg",
         "network",
-        "openssl",
-        "pcre2",
-        "png",
         "thread",
         "widgets"
       ]

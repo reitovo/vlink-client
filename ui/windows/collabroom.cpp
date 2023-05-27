@@ -248,7 +248,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     if (isServer) {
         auto _frameWidth = settings.value("frameWidth", 1600).toInt();
         auto _frameHeight = settings.value("frameHeight", 900).toInt();
-        auto _frameRate = settings.value("frameRate", 30).toInt();
+        auto _frameRate = settings.value("frameRate", 60).toInt();
         auto _frameQuality = settings.value("frameQualityIdx", 1).toInt();
 
         vts::server::ReqCreateRoom req;
