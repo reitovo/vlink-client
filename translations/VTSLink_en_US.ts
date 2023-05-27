@@ -877,7 +877,7 @@ If you once set relay server above, please make sure it is working. Otherwise it
         <location filename="../ui/windows/mainwindow.ui" line="189"/>
         <location filename="../ui/windows/mainwindow.ui" line="189"/>
         <source>加入联动</source>
-        <translation type="unfinished">Join Link</translation>
+        <translation type="unfinished">Join</translation>
     </message>
     <message>
         <location filename="../ui/windows/mainwindow.ui" line="696"/>
@@ -889,7 +889,7 @@ If you once set relay server above, please make sure it is working. Otherwise it
         <location filename="../ui/windows/mainwindow.ui" line="699"/>
         <location filename="../ui/windows/mainwindow.ui" line="699"/>
         <source>创建联动</source>
-        <translation type="unfinished">Create Link</translation>
+        <translation type="unfinished">Create</translation>
     </message>
     <message>
         <location filename="../ui/windows/mainwindow.ui" line="751"/>
