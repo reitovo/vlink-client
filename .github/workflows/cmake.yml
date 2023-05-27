@@ -41,6 +41,10 @@ jobs:
         working-directory: C:/vtslink/config
         run: git fetch && git reset --hard origin/ci
 
+      - name: Remove previous binary
+        working-directory: C:/vtslink/client/out/build
+        run: 'rm bin -r'
+
       - name: Configure CMake
         working-directory: C:/vtslink/client
         run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install
