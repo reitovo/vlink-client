@@ -41,9 +41,13 @@ jobs:
         working-directory: C:/vtslink/config
         run: git fetch && git reset --hard origin/ci
 
-      - name: Remove previous build
-        working-directory: C:/vtslink/client
-        run: 'rm out -r'
+      - name: Remove previous build binary
+        working-directory: C:/vtslink/client/out/build
+        run: 'rm bin -r'
+
+      - name: Remove previous install binary
+        working-directory: C:/vtslink/client/out
+        run: 'rm install -r'
 
       - name: Configure CMake
         working-directory: C:/vtslink/client
