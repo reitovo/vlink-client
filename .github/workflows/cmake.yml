@@ -61,6 +61,10 @@ jobs:
         working-directory: C:/vtslink/client
         run: cmake --build C:/vtslink/client/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
 
+      - name: Remove previous install binary
+        working-directory: C:/vtslink/client/out/install/bin
+        run: 'if (test-path vc_redist.x64.exe) { remove-item vc_redist.x64.exe }'
+
       - name: Build Updator uploader
         working-directory: 'C:/vtslink/updator/Updator.Uploader'
         run: 'dotnet build -o C:/vtslink/uploader'

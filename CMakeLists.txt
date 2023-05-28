@@ -322,6 +322,3 @@ configure_file(
     ${CMAKE_BINARY_DIR}/git.h
     @ONLY
 )
-
-add_custom_command(TARGET VTSLink POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E remove "${CMAKE_BINARY_DIR}/bin/vc_redist.x64.exe")
