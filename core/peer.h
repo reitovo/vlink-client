@@ -13,6 +13,7 @@
 #include "concurrentqueue/concurrentqueue.h"
 #include "proto/vts_server.pb.h"
 #include "ui/widgets/peeritemwidget.h"
+#include "speed.h"
 
 class CollabRoom;
 
@@ -27,6 +28,8 @@ class Peer {
     std::unique_ptr<AvToDx> dec;
 
     QMutex pcLock;
+    SpeedStat txSpeedCount;
+    SpeedStat rxSpeedCount;
 
     void printSelectedCandidate();
 
@@ -71,6 +74,9 @@ public:
 
     size_t txBytes();
     size_t rxBytes();
+
+    size_t txSpeed();
+    size_t rxSpeed();
 };
 
 #endif // PEER_H

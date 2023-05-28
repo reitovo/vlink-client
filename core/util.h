@@ -216,6 +216,8 @@ void showTexture(
 void setComboBoxIfChanged(const QStringList& strList, QComboBox* box);
 
 bool isElevated();
+bool isWireless();
+bool is2G4Wireless();
 
 std::string getPrimaryGpu();
 

@@ -30,13 +30,17 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
     return AV_PIX_FMT_NONE;
 }
 
-AvToDx::AvToDx(FrameQualityDesc q, std::shared_ptr<DxToFrame> d3d) : IDxToFrameSrc(d3d)
+AvToDx::AvToDx(const std::string& peerId, FrameQualityDesc q, const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d)
 {
     qDebug() << "begin d3d2dx";
+    this->peerId = peerId;
+
     d3d->registerSource(this);
 
+    auto wireless = isWireless();
     QSettings settings;
-    enableBuffering = settings.value("enableBuffering", false).toBool();
+    enableBuffering = wireless && !settings.value("forceNoBuffering", false).toBool();
+    qDebug() << "enable buffering" << enableBuffering;
 
     _width = q.frameWidth;
     _height = q.frameHeight;
@@ -262,7 +266,7 @@ retryNextFrame:
 
         dd = frameQueue.top();
         if (pts == 0 && !dd->isKey) {
-            CollabRoom::instance()->requestIdr();
+            CollabRoom::instance()->requestIdr("WAIT_FOR_KEY_FRAME", peerId);
             frameQueue.pop();
             delete dd;
             goto retryNextFrame;
@@ -274,7 +278,7 @@ retryNextFrame:
         static int waitForNextFrameCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
             // But not too long
-            if (waitForNextFrameCount > (enableBuffering ? 60 : 30)) {
+            if (waitForNextFrameCount > (enableBuffering ? 60 : 15)) {
                 waitForNextFrameCount = 0;
                 while (!frameQueue.empty()) {
                     delete frameQueue.top();
@@ -282,7 +286,7 @@ retryNextFrame:
                 }
                 pts = 0;
                 frameDelay.reset();
-                CollabRoom::instance()->requestIdr();
+                CollabRoom::instance()->requestIdr("WAIT_FOR_NEXT_FRAME_TIMEOUT", peerId);
                 return "resetting";
             }
 
@@ -345,9 +349,9 @@ retryNextFrame:
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
         errList.append("receive frame");
-        CollabRoom::instance()->requestIdr();
+        CollabRoom::instance()->requestIdr("DECODING_EAGAIN", peerId);
     }
-    else if (ret < 0){
+    else if (ret < 0) {
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
         errList.append("receive frame");
     }

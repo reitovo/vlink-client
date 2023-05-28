@@ -333,7 +333,7 @@ void Peer::resetDecoder() {
 
 void Peer::startDecoder() {
     ScopedQMutex _(&decoderMutex);
-    dec = std::make_unique<AvToDx>(room->quality, room->d3d);
+    dec = std::make_unique<AvToDx>(remotePeerId.toStdString(), room->quality, room->d3d);
 }
 
 void Peer::stopDecoder() {
@@ -399,4 +399,18 @@ rtc::Description Peer::processLocalDescription(rtc::Description desc) {
     auto ret = desc;
     ret.addCandidates(candidates);
     return ret;
+}
+
+static QMutex rxSpeedMutex;
+size_t Peer::rxSpeed() {
+    ScopedQMutex _(&rxSpeedMutex);
+    rxSpeedCount.update(rxBytes());
+    return rxSpeedCount.speedBytes();
+}
+
+static QMutex txSpeedMutex;
+size_t Peer::txSpeed() {
+    ScopedQMutex _(&txSpeedMutex);
+    txSpeedCount.update(txBytes());
+    return txSpeedCount.speedBytes();
 }

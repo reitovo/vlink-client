@@ -29,7 +29,7 @@ class RoomServer {
 
     NatType localNatType = NatType::StunTypeUnknown;
 
-    std::chrono::time_point<std::chrono::system_clock> lastRequestIdr = std::chrono::system_clock::time_point::min();
+    std::map<std::string, std::chrono::time_point<std::chrono::system_clock>> lastRequestIdr;
 
 public:
     explicit RoomServer(CollabRoom* room);
@@ -52,13 +52,14 @@ public:
     void startNatTypeDetect();
 
     void setRtt(const vts::server::ReqRtt& rtt);
+    void setStat(const vts::server::ReqStat& stat);
     void setNick(const std::string& nick);
     void setSdp(const vts::server::Sdp& sdp);
     void setNat(int type);
     void setFrameFormat(const vts::server::FrameFormatSetting& format);
     void setShareInfo(const std::string& gpu, const std::string& capture, bool start);
 
-    void requestIdr();
+    void requestIdr(const std::string& reason, const std::string& peer);
 
     void exit();
     void handleMessage(const vts::server::Notify &msg);

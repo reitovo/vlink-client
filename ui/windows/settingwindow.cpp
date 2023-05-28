@@ -51,7 +51,7 @@ void SettingWindow::init() {
     ui->useDxCapture->setChecked(settings.value("useDxCapture").toBool());
     ui->showDxgiWindow->setChecked(settings.value("showDxgiWindow").toBool());
     ui->forceShmem->setChecked(settings.value("forceShmem").toBool());
-    ui->enableBuffering->setChecked(settings.value("enableBuffering").toBool());
+    ui->forceNoBuffering->setChecked(settings.value("forceNoBuffering").toBool());
     ui->disableIntraRefresh->setChecked(settings.value("disableIntraRefresh").toBool());
     ui->privateRoomServer->setText(settings.value("privateRoomServer").toString());
     ui->forceRelay->setChecked(settings.value("forceRelay").toBool());
@@ -182,10 +182,10 @@ void SettingWindow::init() {
         throw std::exception("active crashed");
     });
 
-    connect(ui->enableBuffering, &QCheckBox::clicked, this, [=, this](bool v) {
-        settings.setValue("enableBuffering", v);
+    connect(ui->forceNoBuffering, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("forceNoBuffering", v);
         settings.sync();
-        qDebug() << "enable buffering" << v;
+        qDebug() << "force no buffering" << v;
     });
 
     connect(ui->forceShmem, &QCheckBox::clicked, this, [=, this](bool v) {
@@ -193,8 +193,6 @@ void SettingWindow::init() {
         settings.sync();
         qDebug() << "force shmem" << v;
     });
-
-
 
     //TODO: 计算机\HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences
 }

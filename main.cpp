@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 
         if (err.contains("non-existing PPS 0 referenced")) {
             if (CollabRoom::instance())
-                CollabRoom::instance()->requestIdr();
+                CollabRoom::instance()->requestIdr("DECODING_NO_PPS", "");
         }
     });
 
@@ -161,6 +161,10 @@ int main(int argc, char *argv[]) {
 #ifdef HAS_CRASHPAD
     initializeCrashpad();
 #endif
+
+    qDebug() << "isElevated =" << isElevated();
+    qDebug() << "isWireless =" << isWireless();
+    qDebug() << "is2G4Wireless =" << is2G4Wireless();
 
     MainWindow w;
     w.show();
@@ -341,8 +345,8 @@ void redirectStandard() {
     std::wstringstream wcoutBuffer, wcerrBuffer;
     std::cout.rdbuf(coutBuffer.rdbuf());
     std::wcout.rdbuf(wcoutBuffer.rdbuf());
-    std::cout.rdbuf(cerrBuffer.rdbuf());
-    std::wcout.rdbuf(wcerrBuffer.rdbuf());
+    std::cerr.rdbuf(cerrBuffer.rdbuf());
+    std::wcerr.rdbuf(wcerrBuffer.rdbuf());
 
     while (!QCoreApplication::closingDown()) {
         if (coutBuffer.tellp() != std::stringstream::pos_type(0)) {

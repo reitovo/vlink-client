@@ -196,6 +196,19 @@ void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
     }
 }
 
+void RoomServer::setStat(const vts::server::ReqStat &stat) {
+    auto context = getCtx();
+    if (context == nullptr)
+        return;
+
+    vts::server::RspCommon rsp;
+    auto status = service->SetStat(context.get(), stat, &rsp);
+    if (!status.ok()) {
+        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+    }
+}
+
 void RoomServer::setNick(const string &nick) {
     auto context = getCtx();
     if (context == nullptr)
@@ -234,6 +247,8 @@ void RoomServer::setShareInfo(const std::string& gpu, const std::string& capture
     req.set_gpu(gpu);
     req.set_capture(capture);
     req.set_start(start);
+    req.set_iswireless(isWireless());
+    req.set_is2g4(is2G4Wireless());
 
     vts::server::RspCommon rsp;
     auto status = service->SetShareInfo(context.get(), req, &rsp);
@@ -255,20 +270,25 @@ void RoomServer::exit() {
     }
 }
 
-void RoomServer::requestIdr() {
+void RoomServer::requestIdr(const std::string& reason, const std::string& peer) {
     auto now = std::chrono::system_clock::now();
-    if (lastRequestIdr + std::chrono::seconds(2) > now) {
+    if (lastRequestIdr[peer] + std::chrono::seconds(2) > now) {
         return;
     }
-    lastRequestIdr = now;
+    lastRequestIdr[peer] = now;
     qDebug() << "request idr";
 
     auto context = getCtx();
     if (context == nullptr)
         return;
 
+    vts::server::ReqIdr req;
+    req.set_reason(reason);
+    req.set_timestamp(QDateTime::currentMSecsSinceEpoch());
+    req.set_peerid(peer);
+
     vts::server::RspCommon rsp;
-    auto status = service->RequestIdr(context.get(), vts::server::ReqCommon(), &rsp);
+    auto status = service->RequestIdr(context.get(), req, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());

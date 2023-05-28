@@ -38,7 +38,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -56,7 +56,7 @@
         <height>337</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -232,22 +232,6 @@
          </property>
          <property name="text">
           <string>显示联动画面窗口（调试）</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="enableBuffering">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <family>Microsoft YaHei UI</family>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>启用缓冲（网络环境差时使用，增加稳定性，增加延迟）</string>
          </property>
         </widget>
        </item>
@@ -573,6 +557,22 @@
          </property>
          <property name="text">
           <string>为较早型号AMD显卡启用兼容性编码设置（仅当提示没有可用编码器时使用）</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="forceNoBuffering">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>在所有网络环境下都关闭缓冲（降低延迟，但在使用较差无线网络时可能产生卡顿）</string>
          </property>
         </widget>
        </item>

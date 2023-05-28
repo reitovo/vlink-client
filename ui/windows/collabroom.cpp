@@ -175,11 +175,13 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     // If server, start sending heartbeat, and rtt update
     if (isServer) {
-        heartbeat = std::make_unique<QTimer>(this);
-        connect(heartbeat.get(), &QTimer::timeout, this, [this]() {
-            heartbeatUpdate();
-        });
-        heartbeat->start(10000);
+        heartbeat = std::unique_ptr<QThread>(QThread::create([this]() {
+            while (!exiting) {
+                QThread::sleep(10);
+                heartbeatUpdate();
+            }
+        }));
+        heartbeat->start();
     }
 
     usageStat = std::make_unique<QTimer>(this);
@@ -274,9 +276,10 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 CollabRoom::~CollabRoom() {
     exiting = true;
 
+    terminateQThread(heartbeat, __FUNCTION__);
+
     spoutDiscovery.reset();
     usageStat.reset();
-    heartbeat.reset();
 
     stopShareWorker();
 
@@ -573,33 +576,38 @@ void CollabRoom::usageStatUpdate() {
         for (auto &s: clientPeers) {
             if (s.second == nullptr)
                 continue;
-            tx += s.second->txBytes();
-            rx += s.second->rxBytes();
+            tx += s.second->txSpeed();
+            rx += s.second->rxSpeed();
         }
     } else {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr) {
-            tx += serverPeer->txBytes();
-            rx += serverPeer->rxBytes();
+            tx += serverPeer->txSpeed();
+            rx += serverPeer->rxSpeed();
         }
     }
-    txSpeed.update(tx);
-    rxSpeed.update(rx);
-    ui->speedStat->setText(QString("%1 ↑↓ %2")
-                                   .arg(txSpeed.speed())
-                                   .arg(rxSpeed.speed()));
+    ui->speedStat->setText(QString("%1/s ↑↓ %2/s")
+                                   .arg(humanizeBytes(tx))
+                                   .arg(humanizeBytes(rx)));
 }
 
 void CollabRoom::heartbeatUpdate() {
-    vts::server::ReqRtt rtt;
+    vts::server::ReqStat stat;
     {
         ScopedQMutex _(&peersLock);
         for (auto &s: clientPeers) {
             s.second->sendHeartbeat();
-            rtt.mutable_rtt()->emplace(s.second->remotePeerId.toStdString(), s.second->rtt());
+
+            vts::server::StatInfo st;
+            st.set_rtt(s.second->rtt());
+            st.set_txbytes(s.second->txBytes());
+            st.set_rxbytes(s.second->rxBytes());
+            st.set_txspeed(s.second->txSpeed());
+            st.set_rxspeed(s.second->rxSpeed());
+            stat.mutable_stats()->emplace(s.second->remotePeerId.toStdString(), st);
         }
     }
-    roomServer->setRtt(rtt);
+    roomServer->setStat(stat);
 }
 
 void CollabRoom::copyRoomId() {
@@ -1427,10 +1435,10 @@ void CollabRoom::dxgiNeedElevate() {
     }
 }
 
-void CollabRoom::requestIdr() {
+void CollabRoom::requestIdr(const std::string& reason, const std::string& peer) {
     if (exiting)
         return;
-    roomServer->requestIdr();
+    roomServer->requestIdr(reason, peer);
 }
 
 void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {

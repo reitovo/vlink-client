@@ -46,6 +46,7 @@ public:
 
 signals:
     void onUpdatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers);
+
     void onShareError(QString);
     void onFatalError(QString);
     void onRtcFailed(Peer *);
@@ -126,7 +127,7 @@ private:
 
     std::atomic_bool notifiedForceIdr = false;
 public:
-    void requestIdr();
+    void requestIdr(const std::string& reason, const std::string& peer);
 
 private:
     std::atomic_bool exiting = false;
@@ -156,15 +157,13 @@ private:
     // As client
     std::unique_ptr<Peer> serverPeer;
 
-    std::unique_ptr<QTimer> heartbeat;
-    std::unique_ptr<QTimer> usageStat;
+    std::unique_ptr<QThread> heartbeat;
     std::unique_ptr<QTimer> spoutDiscovery;
+    std::unique_ptr<QTimer> usageStat;
     std::atomic_bool shareRunning = false;
     std::unique_ptr<QThread> shareThread;
     std::unique_ptr<QThread> frameSendThread;
     std::shared_ptr<DxToFrame> d3d;
-
-    Speed txSpeed, rxSpeed;
 
     std::string spoutName = "VTubeStudioSpout";
     spoutSenderNames spoutSender;

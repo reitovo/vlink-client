@@ -4,6 +4,14 @@
 #include <QString>
 #include <dxgi1_2.h>
 
+#include <winsock2.h>
+#include <windows.h>
+#include <iphlpapi.h>
+#include <wlanapi.h>
+
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "wlanapi.lib")
+
 namespace vts::info {
     QString BuildId = "debug";
 }
@@ -291,6 +299,106 @@ std::string getPrimaryGpu() {
     auto name = QString::fromWCharArray(descAdapter.Description);
     auto vendor = getGpuVendorTypeFromVendorId(descAdapter.VendorId);
     return getGpuVendorName(vendor).toStdString() + " (" + name.toStdString() + ")";
+}
+
+bool is2G4Wireless() {
+    HANDLE hClient;
+    DWORD dwCurVersion;
+    WLAN_INTERFACE_INFO_LIST* pInterfaceList;
+
+    // 初始化 WlanApi
+    if (WlanOpenHandle(2, NULL, &dwCurVersion, &hClient) != ERROR_SUCCESS) {
+        std::cerr << "WlanOpenHandle failed." << std::endl;
+        return false;
+    }
+
+    // 获取无线适配器列表信息
+    if (WlanEnumInterfaces(hClient, NULL, &pInterfaceList) != ERROR_SUCCESS) {
+        std::cerr << "WlanEnumInterfaces failed." << std::endl;
+        WlanCloseHandle(hClient, NULL);
+        return false;
+    }
+
+    auto has24Channel = false;
+    // 逐个处理找到的无线适配器
+    for (unsigned i = 0; i < pInterfaceList->dwNumberOfItems; ++i) {
+        WLAN_INTERFACE_INFO* pInterfaceInfo = &pInterfaceList->InterfaceInfo[i];
+
+        ULONG *channel = NULL;
+        DWORD dwSizeChannel = sizeof(*channel);
+
+        DWORD rc = WlanQueryInterface (
+                hClient, &pInterfaceInfo->InterfaceGuid,
+                wlan_intf_opcode_channel_number,
+                NULL, &dwSizeChannel, reinterpret_cast<PVOID *>(&channel), NULL);
+
+        if (rc == ERROR_SUCCESS && channel) {
+            std::cout << "Channel: " << *channel << std::endl;
+            if (*channel <= 14) {
+                has24Channel = true;
+            }
+            WlanFreeMemory (channel);
+        }
+    }
+
+    // 释放内存并关闭 WlanApi
+    WlanFreeMemory(pInterfaceList);
+    WlanCloseHandle(hClient, NULL);
+
+    return has24Channel;
+}
+
+bool isWireless() {
+    ULONG bufferSize = 0;
+    IP_ADAPTER_ADDRESSES* adapters = nullptr;
+
+    // 获取适配器信息的缓冲区大小
+    ULONG result = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, nullptr, nullptr, &bufferSize);
+    assert(result == ERROR_BUFFER_OVERFLOW);
+
+    // 分配缓冲区并重新获取适配器信息
+    adapters = static_cast<IP_ADAPTER_ADDRESSES*>(malloc(bufferSize));
+    result = GetAdaptersAddresses(AF_UNSPEC, GAA_FLAG_INCLUDE_PREFIX, nullptr, adapters, &bufferSize);
+    assert(result == NO_ERROR);
+
+    auto hasUpWireless = false;
+
+    // 遍历适配器列表
+    IP_ADAPTER_ADDRESSES* adapter = adapters;
+    while (adapter) {
+        std::wcout << L"适配器名称: " << adapter->AdapterName << std::endl;
+        std::wcout << L"适配器描述: " << adapter->Description << std::endl;
+
+        std::wcout << L"适配器类型: ";
+        if (adapter->IfType == IF_TYPE_IEEE80211) {
+            std::wcout << L"无线(WiFi)" << std::endl;
+        } else if (adapter->IfType == IF_TYPE_ETHERNET_CSMACD) {
+            std::wcout << L"有线(Ethernet)" << std::endl;
+        } else {
+            std::wcout << L"其他类型(" << adapter->IfType << L")" << std::endl;
+        }
+
+        std::wcout << L"适配器状态: ";
+        if (adapter->OperStatus == IfOperStatusUp) {
+            std::wcout << L"已连接" << std::endl;
+        } else if (adapter->OperStatus == IfOperStatusDown) {
+            std::wcout << L"未连接" << std::endl;
+        } else {
+            std::wcout << L"其他类型(" << adapter->OperStatus << L")" << std::endl;
+        }
+
+        if (adapter->OperStatus == IfOperStatusUp && adapter->IfType == IF_TYPE_IEEE80211) {
+            std::wcout << L"找到了活动的无线网络连接" << std::endl;
+            hasUpWireless = true;
+        }
+
+        adapter = adapter->Next;
+        std::wcout << std::endl;
+    }
+
+    // 释放内存并退出
+    free(adapters);
+    return hasUpWireless;
 }
 
 void FpsCounter::add(long nsConsumed)

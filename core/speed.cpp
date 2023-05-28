@@ -5,7 +5,7 @@
 #include "speed.h"
 #include "util.h"
 
-void Speed::update(size_t value) {
+void SpeedStat::update(size_t value) {
     int64_t time = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -27,9 +27,13 @@ void Speed::update(size_t value) {
     auto deltaValue = value - lastValue;
     lastValue = value;
 
-    bytesPerSecond = (size_t)((double)deltaValue / ((double)deltaTime / 1000000.0));
+    bytesPerSecond = (size_t) ((double) deltaValue / ((double) deltaTime / 1000000.0));
 }
 
-QString Speed::speed() const {
-    return QString("%1/s") .arg(humanizeBytes(bytesPerSecond));
+QString SpeedStat::speed() {
+    return QString("%1/s").arg(humanizeBytes(bytesPerSecond));
+}
+
+size_t SpeedStat::speedBytes() {
+    return bytesPerSecond;
 }

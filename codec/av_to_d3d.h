@@ -83,6 +83,7 @@ class DxToFrame;
 class AvToDx : public IDxToFrameSrc, public IDebugCollectable {
 
 private:
+    std::string peerId;
     std::unique_ptr<Nv12ToBgra> bgra;
 
     std::atomic_bool inited = false;
@@ -123,7 +124,7 @@ private:
     std::optional<QString> processFrame();
 
 public:
-    AvToDx(FrameQualityDesc q, std::shared_ptr<DxToFrame> d3d);
+    AvToDx(const std::string& peerId, FrameQualityDesc q, const std::shared_ptr<DxToFrame>& d3d);
     ~AvToDx();
 
     std::optional<QString> init();

@@ -99,6 +99,29 @@ MainWindow::MainWindow(QWidget *parent)
         box->show();
     }
 
+    if (isWireless()) {
+        auto ignoreWirelessHint = settings.value("ignoreWirelessHint", false).toBool();
+        if (!ignoreWirelessHint) {
+            auto *box = new QMessageBox(this);
+            box->setIcon(QMessageBox::Information);
+            box->setWindowTitle(tr("您似乎正在使用无线网络"));
+            box->setText(tr("VLink 推荐您使用有线连接进行联动，以取得最佳联动效果"));
+            auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
+            auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
+
+            connect(box, &QMessageBox::finished, this, [=]() {
+                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                if (ret == ign) {
+                    QSettings s;
+                    s.setValue("ignoreWirelessHint", true);
+                    s.sync();
+                }
+                box->deleteLater();
+            });
+            box->show();
+        }
+    }
+
     auto lastJoinRoomId = settings.value("lastJoinRoomId", "").toString();
     if (!lastJoinRoomId.isEmpty()) {
         ui->iptRoomId->setText(lastJoinRoomId);
