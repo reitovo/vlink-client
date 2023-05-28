@@ -38,6 +38,8 @@ void SettingWindow::init() {
     setAttribute(Qt::WA_DeleteOnClose);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
 
+    ui->tabWidget->setCurrentIndex(0);
+
     connect(&debugGather, &QTimer::timeout, this, &SettingWindow::updateDebug);
     debugGather.start(100);
 
