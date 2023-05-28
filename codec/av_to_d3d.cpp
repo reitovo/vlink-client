@@ -266,7 +266,7 @@ retryNextFrame:
 
         dd = frameQueue.top();
         if (pts == 0 && !dd->isKey) {
-            CollabRoom::instance()->requestIdr("WAIT_FOR_KEY_FRAME", peerId);
+            CollabRoom::instance()->requestIdr("WAIT_FOR_NEW_KEY_FRAME", peerId);
             frameQueue.pop();
             delete dd;
             goto retryNextFrame;
@@ -278,7 +278,7 @@ retryNextFrame:
         static int waitForNextFrameCount = 0;
         if (pts != 0 && dd->pts > pts + 1) {
             // But not too long
-            if (waitForNextFrameCount > (enableBuffering ? 60 : 15)) {
+            if (waitForNextFrameCount > (enableBuffering ? 60 : 30)) {
                 waitForNextFrameCount = 0;
                 while (!frameQueue.empty()) {
                     delete frameQueue.top();
