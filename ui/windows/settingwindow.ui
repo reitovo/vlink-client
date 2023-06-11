@@ -361,7 +361,7 @@
           </font>
          </property>
          <property name="text">
-          <string>使用强制中转模式（需要使用中转服务器，大幅节约房主带宽，并可隐藏 IP 地址）</string>
+          <string>使用强制中转模式（需要使用中转服务器，3人以上联动将大幅节约房主带宽，并可隐藏 IP 地址）</string>
          </property>
         </widget>
        </item>
