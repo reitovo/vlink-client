@@ -113,10 +113,10 @@ int main(int argc, char *argv[]) {
                     emit CollabRoom::instance()->onShareError("nv driver old");
         }
 
-        if (err.contains("non-existing PPS 0 referenced")) {
-            if (CollabRoom::instance())
-                CollabRoom::instance()->requestIdr("DECODING_NO_PPS", "");
-        }
+//        if (err.contains("non-existing PPS 0 referenced")) {
+//            if (CollabRoom::instance())
+//                CollabRoom::instance()->requestIdr("DECODING_NO_PPS", "");
+//        }
     });
 
     rtc::InitLogger(rtc::LogLevel::Debug, [](rtc::LogLevel level, std::string message) {

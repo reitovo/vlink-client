@@ -354,6 +354,7 @@ retryNextFrame:
     else if (ret < 0) {
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
         errList.append("receive frame");
+        CollabRoom::instance()->requestIdr("DECODING_ERROR", peerId);
     }
 
     //qDebug() << "to bgra";

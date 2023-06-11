@@ -343,27 +343,6 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QPushButton" name="openEvent">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>50</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="font">
-           <font>
-            <family>Microsoft YaHei UI</family>
-           </font>
-          </property>
-          <property name="text">
-           <string>获取</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </item>
       <item>

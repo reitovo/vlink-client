@@ -51,9 +51,6 @@ BuyRelay::BuyRelay(CollabRoom *parent) :
     connect(ui->setFrameQualityButton, &QPushButton::clicked, this, [=, this]() {
         changeQuality();
     });
-    connect(ui->openEvent, &QPushButton::clicked, this, [=]() {
-        QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
-    });
     connect(ui->refundRelay, &QPushButton::clicked, this, [=, this]() {
         refundPrevious();
     });
