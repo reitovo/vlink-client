@@ -56,6 +56,8 @@ DxToFrame::~DxToFrame()
 
     _inited = false;
 
+    spoutOutput.ReleaseSender();
+    spoutOutput.CloseDirectX11();
     releaseSharedSurf();
 
     COM_RESET(_d3d11_vertexBuffer);
@@ -309,6 +311,9 @@ bool DxToFrame::init()
     auto ret = createSharedSurf();
     resetDeviceContext();
 
+    spoutOutput.SetSenderName("VLink 联动");
+    spoutOutput.OpenDirectX11(_d3d11_device.Get());
+
     _inited = true;
     qDebug() << "d3d2dx init done";
 
@@ -546,6 +551,8 @@ bool DxToFrame::present() {
 
     this->_d3d11_deviceCtx->CopyResource(_swap_chain_back_buffer.Get(), _texture_rgba_target_shared.Get());
     this->_d3d11_deviceCtx->Flush();
+
+    spoutOutput.SendTexture(_swap_chain_back_buffer.Get());
 
     HRESULT hr = this->_swap_chain->Present(0, 0);
     if (FAILED(hr)) {

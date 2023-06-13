@@ -15,6 +15,8 @@ FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
 
     quality = init;
 
+    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+
     ui->frameQuality->setCurrentIndex(init.frameQuality);
 
     switch ((int)init.frameRate) {

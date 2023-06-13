@@ -2,6 +2,7 @@
 #define D3D_TO_NDI_H
 
 #include "av_to_d3d.h"
+#include "SpoutDX/SpoutDX.h"
 #include <QList>
 #include <d3dcompiler.h>
 #include <dxgi1_2.h>
@@ -50,6 +51,7 @@ class DxToFrame : public IDxCopyable, public IDebugCollectable {
     std::atomic_bool _inited = false;
     bool _mapped = false;
 
+    spoutDX spoutOutput;
     FpsCounter renderFps;
 
 public:

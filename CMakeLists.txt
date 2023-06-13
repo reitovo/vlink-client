@@ -244,7 +244,7 @@ target_link_libraries(VTSLink PRIVATE ${QRENCODE_LIBRARIES})
 
 # spout
 find_package(Spout2 CONFIG REQUIRED)
-target_link_libraries(VTSLink PRIVATE Spout2::Spout Spout2::SpoutLibrary)
+target_link_libraries(VTSLink PRIVATE Spout2::Spout Spout2::SpoutLibrary Spout2::SpoutDX)
 
 # brotli
 find_package(unofficial-brotli CONFIG REQUIRED)

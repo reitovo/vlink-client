@@ -38,7 +38,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="elideMode">
      <enum>Qt::ElideNone</enum>
@@ -361,7 +361,7 @@
           </font>
          </property>
          <property name="text">
-          <string>使用强制中转模式（需要使用中转服务器，3人以上联动将大幅节约房主带宽，并可隐藏 IP 地址）</string>
+          <string>使用中转服务器时，启用强制中转模式（3人及以上联动将大幅节约房主带宽）</string>
          </property>
         </widget>
        </item>

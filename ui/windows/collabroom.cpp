@@ -9,7 +9,6 @@
 #include "ui/windows/settingwindow.h"
 #include "ui_collabroom.h"
 #include "core/vtslink.h"
-
 #include <QSettings>
 #include <QSysInfo>
 #include <QUuid>
@@ -169,7 +168,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         if (s.isEmpty())
             return;
-        spoutName = s.toStdString();
+        spoutSourceName = s.toStdString();
         qDebug() << "set spout" << s;
     });
 
@@ -521,7 +520,7 @@ QString CollabRoom::debugInfo() {
 void CollabRoom::spoutDiscoveryUpdate() {
     QSettings settings;
     std::set<std::string> senders;
-    spoutSender.GetSenderNames(&senders);
+    spoutSenderNames.GetSenderNames(&senders);
     auto ignoreSpoutOpenHint = settings.value("ignoreSpoutOpenHint", false).toBool();
 
     static int emptyCount = 0;
@@ -554,7 +553,10 @@ void CollabRoom::spoutDiscoveryUpdate() {
         emptyCount = 0;
         QStringList strList;
         for (const auto &i: senders) {
-            strList.push_back(QString::fromStdString(i));
+            auto s = QString::fromStdString(i);
+            if (!s.startsWith("VLink")) {
+                strList.push_back(s);
+            }
         }
         setComboBoxIfChanged(strList, ui->spoutSourceSelect);
     }
@@ -834,7 +836,7 @@ void CollabRoom::startShare() {
         }
     }
 
-    if (!useDxCapture && (spoutName.empty() || ui->spoutSourceSelect->count() == 0)) {
+    if (!useDxCapture && (spoutSourceName.empty() || ui->spoutSourceSelect->count() == 0)) {
         emit onShareError(tr("尚未找到 Spout 来源，无法开始分享"));
         return;
     }
@@ -911,7 +913,7 @@ void CollabRoom::spoutShareWorkerClient() {
     qInfo() << "spout capture client start";
 
     // spout capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, nullptr, spoutName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, nullptr, spoutSourceName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
@@ -984,7 +986,7 @@ void CollabRoom::spoutShareWorkerServer() {
     qInfo() << "spout capture server start";
 
     // dx capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, d3d, spoutName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, d3d, spoutSourceName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
@@ -1144,7 +1146,7 @@ void CollabRoom::setShareInfo(bool start) {
         return;
     QThread* thread = QThread::create([=, this]() {
         std::string cap = useDxCapture ? "D3D11 " : "Spout ";
-        cap += useDxCapture ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString() : spoutName;
+        cap += useDxCapture ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString() : spoutSourceName;
         roomServer->setShareInfo(getPrimaryGpu(), cap, start);
     });
     thread->start();

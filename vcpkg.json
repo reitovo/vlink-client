@@ -24,7 +24,11 @@
     "libqrencode",
     "detours",
     "pthreads",
-    "spout2",
+    {
+      "name": "spout2",
+      "default-features": true,
+      "features": [ "dx" ]
+    },
     {
       "name": "qtbase",
       "default-features": false,

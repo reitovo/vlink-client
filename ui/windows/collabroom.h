@@ -165,8 +165,8 @@ private:
     std::unique_ptr<QThread> frameSendThread;
     std::shared_ptr<DxToFrame> d3d;
 
-    std::string spoutName = "VTubeStudioSpout";
-    spoutSenderNames spoutSender;
+    std::string spoutSourceName = "VTubeStudioSpout";
+    spoutSenderNames spoutSenderNames;
 
     QString roomEndpoint;
     std::atomic_bool isPrivateRoomEndpoint;
