@@ -9,7 +9,7 @@ env:
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
 
 concurrency:
-  group: ${{ github.ref }}
+  group: 'vlink'
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Fetch latest vtslink-client
         working-directory: C:/vtslink/client
-        run: git fetch && git reset --hard origin/main && git submodule update
+        run: git fetch && git reset --hard origin/dev && git submodule update
 
       - name: Fetch latest updator
         working-directory: C:/vtslink/updator
