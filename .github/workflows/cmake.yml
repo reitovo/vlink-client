@@ -2,9 +2,7 @@ name: CMake
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
 
 env:
   BUILD_TYPE: RelWithDebInfo
@@ -73,7 +71,7 @@ jobs:
         shell: pwsh
         run: | 
           dotnet C:/vtslink/uploader/Updator.Uploader.dll `
-          --config=C:/vtslink/config/vtslink/config.json `
+          --config=C:/vtslink/config/vtslink/dev.json `
           --distribution-root=C:/vtslink/client/out/install `
           --update-log="> ${{github.event.head_commit.message}}"
 

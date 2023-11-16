@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 
-set(ENV{VCPKG_MAX_CONCURRENCY} 16)  
+set(ENV{VCPKG_MAX_CONCURRENCY} 16)
 
 message(STATUS "VTSLink - Reito")
 
@@ -10,7 +10,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 20) 
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Linguist tools for Qt
@@ -242,6 +242,9 @@ set(QRENCODE_LIBRARIES optimized ${QRENCODE_LIBRARY_RELEASE} debug ${QRENCODE_LI
 target_include_directories(VTSLink PRIVATE ${QRENCODE_INCLUDE_DIR})
 target_link_libraries(VTSLink PRIVATE ${QRENCODE_LIBRARIES})
 
+# mfx
+target_include_directories(VTSLink PRIVATE "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include/mfx")
+
 # spout
 find_package(Spout2 CONFIG REQUIRED)
 target_link_libraries(VTSLink PRIVATE Spout2::Spout Spout2::SpoutLibrary Spout2::SpoutDX)
@@ -272,14 +275,14 @@ qt_generate_deploy_app_script(
     TARGET VTSLink
     FILENAME_VARIABLE DEPLOY_SCRIPT
     NO_UNSUPPORTED_PLATFORM_ERROR
-) 
+)
 install(SCRIPT ${DEPLOY_SCRIPT})
 
 qt_finalize_executable(VTSLink)
 
 #If use IDE other than Qt Creator,  we need to copy required plugins and qt.conf correctly
 file(WRITE "${CMAKE_BINARY_DIR}/bin/qt.conf" "[Paths]
-Prefix = ..") 
+Prefix = ..")
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     file(COPY "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/Qt6/plugins/" DESTINATION "${CMAKE_BINARY_DIR}/plugins/")
 else()

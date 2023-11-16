@@ -98,8 +98,10 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     if (roomEndpoint.isEmpty()) {
         roomEndpoint = "vts-grpc.reito.fun";
         isPrivateRoomEndpoint = false;
+        privateServerNoSsl = false;
     } else {
         isPrivateRoomEndpoint = true;
+        privateServerNoSsl = settings.value("privateServerNoSsl", false).toBool();
     }
 
     qDebug() << "Using Room Endpoint" << roomEndpoint;

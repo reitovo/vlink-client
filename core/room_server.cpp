@@ -14,8 +14,9 @@
 RoomServer::RoomServer(CollabRoom* room) {
     this->room = room;
 
-    channel = grpc::CreateChannel(room->roomEndpoint.toStdString(), grpc::SslCredentials(
-            grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")));
+    const auto cred = room->privateServerNoSsl ? grpc::InsecureChannelCredentials() : grpc::SslCredentials(
+            grpc::SslCredentialsOptions(ISRG_Root_X1, "", "")) ;
+    channel = grpc::CreateChannel(room->roomEndpoint.toStdString(), cred);
     service = vts::server::RoomService::NewStub(channel);
 }
 

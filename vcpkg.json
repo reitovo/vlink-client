@@ -18,6 +18,7 @@
       "features": [ "codegen" ]
     },
     "amd-amf",
+    "mfx-dispatch",
     "protobuf",
     "concurrentqueue",
     "crashpad",
@@ -52,6 +53,18 @@
     {
       "name": "openssl",
       "version-string": "1.1.1m#2"
+    },
+    {
+      "name": "qtbase",
+      "version-string": "6.5.0"
+    },
+    {
+      "name": "qttools",
+      "version-string": "6.5.0"
+    },
+    {
+      "name": "qttranslations",
+      "version-string": "6.5.0"
     }
   ],
   "supports": "windows",
@@ -59,7 +72,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "48a3c2720c5ad0514c301feb004707ac7a656feb",
+      "baseline": "039c347df2dcd605dae3c49099b1a4c8f676dead",
       "reference": "reito"
     },
     "registries": [

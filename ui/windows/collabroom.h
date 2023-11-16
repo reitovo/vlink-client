@@ -170,6 +170,7 @@ private:
 
     QString roomEndpoint;
     std::atomic_bool isPrivateRoomEndpoint;
+    std::atomic_bool privateServerNoSsl;
 
     bool keepTop = false;
 

@@ -58,6 +58,14 @@ void SettingWindow::init() {
     ui->privateRoomServer->setText(settings.value("privateRoomServer").toString());
     ui->forceRelay->setChecked(settings.value("forceRelay").toBool());
     ui->enableAmfCompatible->setChecked(settings.value("enableAmfCompatible").toBool());
+    ui->privateServerNoSsl->setChecked(settings.value("privateServerNoSsl").toBool());
+
+    connect(ui->privateServerNoSsl, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("privateServerNoSsl", v);
+        settings.sync();
+
+        qDebug() << "privateServerNoSsl" << v;
+    });
 
     connect(ui->enableAmfCompatible, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("enableAmfCompatible", v);

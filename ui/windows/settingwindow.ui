@@ -694,6 +694,19 @@
         </layout>
        </item>
        <item>
+        <widget class="QCheckBox" name="privateServerNoSsl">
+         <property name="font">
+          <font>
+           <family>Microsoft YaHei UI</family>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>关闭 SSL 验证</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_8">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
