@@ -56,15 +56,15 @@
     },
     {
       "name": "qtbase",
-      "version-string": "6.5.0"
+      "version-string": "6.4.3"
     },
     {
       "name": "qttools",
-      "version-string": "6.5.0"
+      "version-string": "6.4.3"
     },
     {
       "name": "qttranslations",
-      "version-string": "6.5.0"
+      "version-string": "6.4.3"
     }
   ],
   "supports": "windows",
