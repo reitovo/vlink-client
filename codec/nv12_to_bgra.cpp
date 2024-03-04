@@ -22,14 +22,14 @@ typedef struct _VERTEX {
 
 // Vertices for drawing whole texture
 static VERTEX Vertices[NUMVERTICES] =
-        {
-                {XMFLOAT3(-1.0f, -1.0f, 0), XMFLOAT2(0.0f, 1.0f)},
-                {XMFLOAT3(-1.0f, 1.0f, 0),  XMFLOAT2(0.0f, 0.0f)},
-                {XMFLOAT3(1.0f, -1.0f, 0),  XMFLOAT2(1.0f, 1.0f)},
-                {XMFLOAT3(1.0f, -1.0f, 0),  XMFLOAT2(1.0f, 1.0f)},
-                {XMFLOAT3(-1.0f, 1.0f, 0),  XMFLOAT2(0.0f, 0.0f)},
-                {XMFLOAT3(1.0f, 1.0f, 0),   XMFLOAT2(1.0f, 0.0f)},
-        };
+{
+    {XMFLOAT3(-1.0f, -1.0f, 0), XMFLOAT2(0.0f, 1.0f)},
+    {XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
+    {XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
+    {XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
+    {XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
+    {XMFLOAT3(1.0f, 1.0f, 0), XMFLOAT2(1.0f, 0.0f)},
+};
 
 static FLOAT blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
 
@@ -65,7 +65,7 @@ Nv12ToBgra::~Nv12ToBgra() {
 }
 
 bool Nv12ToBgra::compileShader() {
-    ID3DBlob *errs;
+    ID3DBlob* errs;
 
     QFile f1(":/shader/nv12bgra_vertex.hlsl");
     f1.open(QIODevice::ReadOnly);
@@ -84,7 +84,7 @@ bool Nv12ToBgra::compileShader() {
                     "PS", "ps_5_0", 0, 0, _pixel_shader.GetAddressOf(), &errs);
     if (FAILED(hr)) {
         qCritical() << "failed compiling nv12bgra pixel shader";
-        auto e = std::string((char *) errs->GetBufferPointer(), errs->GetBufferSize());
+        auto e = std::string((char*)errs->GetBufferPointer(), errs->GetBufferSize());
         qCritical("%s", e.c_str());
         return false;
     }
@@ -110,7 +110,7 @@ void Nv12ToBgra::releaseSharedSurf() {
     this->_height = 0;
 }
 
-ID3D11Device *Nv12ToBgra::getDevice() {
+ID3D11Device* Nv12ToBgra::getDevice() {
     _d3d11_device->AddRef();
     return _d3d11_device.Get();
 }
@@ -124,35 +124,35 @@ bool Nv12ToBgra::init() {
 
     // Driver types supported
     D3D_DRIVER_TYPE DriverTypes[] =
-            {
-                    D3D_DRIVER_TYPE_UNKNOWN,
-                    //D3D_DRIVER_TYPE_HARDWARE,
-                    //D3D_DRIVER_TYPE_WARP,
-                    //D3D_DRIVER_TYPE_REFERENCE,
-            };
+    {
+        D3D_DRIVER_TYPE_UNKNOWN,
+        //D3D_DRIVER_TYPE_HARDWARE,
+        //D3D_DRIVER_TYPE_WARP,
+        //D3D_DRIVER_TYPE_REFERENCE,
+    };
     UINT NumDriverTypes = ARRAYSIZE(DriverTypes);
 
     // Feature levels supported
     D3D_FEATURE_LEVEL FeatureLevels[] =
-            {
-                    D3D_FEATURE_LEVEL_11_0,
-            };
+    {
+        D3D_FEATURE_LEVEL_11_0,
+    };
     UINT NumFeatureLevels = ARRAYSIZE(FeatureLevels);
     D3D_FEATURE_LEVEL FeatureLevel;
     // This flag adds support for surfaces with a different color channel ordering
     // than the default. It is required for compatibility with Direct2D.
     UINT creationFlags =
-            D3D11_CREATE_DEVICE_SINGLETHREADED |
-            D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+        D3D11_CREATE_DEVICE_SINGLETHREADED |
+        D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
     if (IsDebuggerPresent() && DX_DEBUG_LAYER) {
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
     }
 
     // We need dxgi to share texture
-    IDXGIFactory2 *pDXGIFactory;
-    IDXGIAdapter *pAdapter = NULL;
-    hr = CreateDXGIFactory(IID_IDXGIFactory2, (void **) &pDXGIFactory);
+    IDXGIFactory2* pDXGIFactory;
+    IDXGIAdapter* pAdapter = NULL;
+    hr = CreateDXGIFactory(IID_IDXGIFactory2, (void**)&pDXGIFactory);
     if (FAILED(hr))
         return false;
 
@@ -202,12 +202,14 @@ bool Nv12ToBgra::init() {
     qDebug() << "nv12bgra create vertex shader";
 
     constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> Layout =
-            {{
-                     // 3D 32bit float vector
-                     {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-                     // 2D 32bit float vector
-                     {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-             }};
+    {
+        {
+            // 3D 32bit float vector
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            // 2D 32bit float vector
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        }
+    };
 
     hr = this->_d3d11_device->CreateInputLayout(Layout.data(), Layout.size(),
                                                 _vertex_shader->GetBufferPointer(), _vertex_shader->GetBufferSize(),
@@ -266,9 +268,9 @@ void Nv12ToBgra::resetDeviceContext() {
     qDebug() << "nv12bgra set context params";
 
     //SharedSurf
-    std::array<ID3D11ShaderResourceView *, 2> const textureViews = {
-            this->_luminanceView.Get(),
-            this->_chrominanceView.Get()
+    std::array<ID3D11ShaderResourceView*, 2> const textureViews = {
+        this->_luminanceView.Get(),
+        this->_chrominanceView.Get()
     };
     this->_d3d11_deviceCtx->PSSetShaderResources(0, textureViews.size(), textureViews.data());
     this->_d3d11_deviceCtx->OMSetRenderTargets(1, this->_renderTargetView.GetAddressOf(), nullptr);
@@ -285,9 +287,9 @@ void Nv12ToBgra::resetDeviceContext() {
     this->_d3d11_deviceCtx->RSSetViewports(1, &VP);
     //this->_d3d11_deviceCtx->Dispatch(8, 8, 1);
     this->_d3d11_deviceCtx->Dispatch(
-            (UINT) ceil(_width * 1.0 / 8),
-            (UINT) ceil(_height * 2 * 1.0 / 8),
-            1);
+        (UINT)ceil(_width * 1.0 / 8),
+        (UINT)ceil(_height * 2 * 1.0 / 8),
+        1);
 
     qDebug() << "nv12bgra set context viewport";
 }
@@ -321,8 +323,8 @@ bool Nv12ToBgra::createSharedSurf() {
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const luminancePlaneDesc
-            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D,
-                                               DXGI_FORMAT_R8_UNORM);
+        = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D,
+                                           DXGI_FORMAT_R8_UNORM);
     hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12.Get(), &luminancePlaneDesc,
                                                        this->_luminanceView.GetAddressOf());
     if (FAILED(hr))
@@ -332,8 +334,8 @@ bool Nv12ToBgra::createSharedSurf() {
 
     //
     D3D11_SHADER_RESOURCE_VIEW_DESC const chrominancePlaneDesc
-            = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D,
-                                               DXGI_FORMAT_R8G8_UNORM);
+        = CD3D11_SHADER_RESOURCE_VIEW_DESC(this->_texture_nv12.Get(), D3D11_SRV_DIMENSION_TEXTURE2D,
+                                           DXGI_FORMAT_R8G8_UNORM);
     hr = this->_d3d11_device->CreateShaderResourceView(this->_texture_nv12.Get(), &chrominancePlaneDesc,
                                                        this->_chrominanceView.GetAddressOf());
     if (FAILED(hr))
@@ -371,8 +373,8 @@ bool Nv12ToBgra::createSharedSurf() {
 
     qDebug() << "nv12bgra create texture copy bgra";
 
-    IDXGIResource *pDXGIResource = NULL;
-    _texture_rgba_copy->QueryInterface(__uuidof(IDXGIResource), (LPVOID *) &pDXGIResource);
+    IDXGIResource* pDXGIResource = NULL;
+    _texture_rgba_copy->QueryInterface(__uuidof(IDXGIResource), (LPVOID*)&pDXGIResource);
     pDXGIResource->GetSharedHandle(&_texture_rgba_copy_shared);
     pDXGIResource->Release();
     if (!_texture_rgba_copy_shared) {
@@ -398,7 +400,7 @@ bool Nv12ToBgra::createSharedSurf() {
     return true;
 }
 
-bool Nv12ToBgra::nv12ToBgra(AVFrame *f) {
+bool Nv12ToBgra::nv12ToBgra(AVFrame* f) {
     HRESULT hr{0};
 
     if (!_inited) {
@@ -412,14 +414,14 @@ bool Nv12ToBgra::nv12ToBgra(AVFrame *f) {
 
     D3D11_BOX srcBox = {0, 0, 0, _width, _height * 2, 1};
 
-    ID3D11Texture2D *textureRgb = (ID3D11Texture2D *) f->data[0];
-    const int textureRgbIndex = (int) f->data[1];
+    ID3D11Texture2D* textureRgb = (ID3D11Texture2D*)f->data[0];
+    const int textureRgbIndex = (int)f->data[1];
     //qDebug() << "copy rgb" << textureRgb << textureRgbIndex;
 
     //bind/copy ffmpeg hw texture -> local d3d11 texture
     this->_d3d11_deviceCtx->CopySubresourceRegion(
-            this->_texture_nv12.Get(), 0, 0, 0, 0,
-            textureRgb, textureRgbIndex, &srcBox
+        this->_texture_nv12.Get(), 0, 0, 0, 0,
+        textureRgb, textureRgbIndex, &srcBox
     );
 
     //saveTextureToFile(_d3d11_deviceCtx.Get(), _texture_nv12.Get(), "./nv12_bgra_input.png");
@@ -444,7 +446,7 @@ bool Nv12ToBgra::nv12ToBgra(AVFrame *f) {
     return true;
 }
 
-bool Nv12ToBgra::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) {
+bool Nv12ToBgra::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D* dest) {
     if (!_inited)
         return false;
 
@@ -452,8 +454,8 @@ bool Nv12ToBgra::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textu
 
     lock.lock();
 
-    ID3D11Texture2D *src;
-    dev->OpenSharedResource(_texture_rgba_copy_shared, __uuidof(ID3D11Texture2D), (LPVOID *) &src);
+    ID3D11Texture2D* src;
+    dev->OpenSharedResource(_texture_rgba_copy_shared, __uuidof(ID3D11Texture2D), (LPVOID*)&src);
     if (src == nullptr)
         return false;
 
@@ -468,6 +470,22 @@ bool Nv12ToBgra::copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Textu
     return true;
 }
 
+ID3D11Texture2D* Nv12ToBgra::getSharedTargetTexture(ID3D11Device* dev, ID3D11DeviceContext* ctx) {
+    if (!_inited)
+        return nullptr;
+
+    lock.lock();
+
+    ID3D11Texture2D* src;
+    dev->OpenSharedResource(_texture_rgba_copy_shared, __uuidof(ID3D11Texture2D), (LPVOID*)&src);
+    if (src == nullptr)
+        return nullptr;
+
+    lock.unlock();
+
+    return src;
+}
+
 int DxFrameBuffer::size() const {
     return queue.size();
 }
@@ -477,7 +495,8 @@ ComPtr<ID3D11Texture2D> DxFrameBuffer::getFree() {
     if (!free.empty()) {
         ret = free.front();
         free.pop();
-    } else if (!queue.empty()) {
+    }
+    else if (!queue.empty()) {
         ret = queue.front();
         queue.pop();
     }

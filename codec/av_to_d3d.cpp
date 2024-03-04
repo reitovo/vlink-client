@@ -34,7 +34,7 @@ AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityD
     d3d) {
     qDebug() << "begin d3d2dx";
     this->peerId = peerId;
-    this->nick = nick;
+    setNick(nick);
 
     d3d->registerSource(this);
 
@@ -95,10 +95,9 @@ std::optional<QString> AvToDx::init() {
     processThread->setObjectName("AvToDx Worker");
     processThread->start();
 
-    inited = true;
-
-    spoutOutput.SetSenderName(("VLink 联动 (" + this->nick + ")").c_str());
     spoutOutput.OpenDirectX11();
+
+    inited = true;
 
     qDebug() << "av2d3d init done";
 
@@ -367,7 +366,12 @@ std::optional<QString> AvToDx::processFrame() {
     }
 
     bgra->nv12ToBgra(frame);
-    spoutOutput.SendTexture(bgra->getTargetTexture());
+
+    auto spoutDevice = spoutOutput.GetDX11Device();
+    auto spoutContext = spoutOutput.GetDX11Context();
+    auto spoutTex = bgra->getSharedTargetTexture(spoutDevice, spoutContext);
+    spoutOutput.SendTexture(spoutTex);
+    spoutTex->Release();
 
     fps.add(t.nsecsElapsed());
 

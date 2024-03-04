@@ -142,7 +142,8 @@ public:
 
     inline void setNick(const std::string& nick) {
         this->nick = nick;
-        spoutOutput.SetSenderName(("VLink 联动 (" + this->nick + ")").c_str());
+        const auto suffix = nick.empty() ? " [最终合成]" : " (" + this->nick + ")";
+        spoutOutput.SetSenderName(("VLink 联动" + suffix).c_str());
     }
 };
 

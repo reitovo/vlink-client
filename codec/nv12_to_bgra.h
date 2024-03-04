@@ -96,10 +96,7 @@ public:
 
     bool nv12ToBgra(AVFrame* f);
     bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D* dest);
-
-    inline ID3D11Texture2D* getTargetTexture() {
-        return _texture_rgba_target.Get();
-    }
+    ID3D11Texture2D* getSharedTargetTexture(ID3D11Device* dev, ID3D11DeviceContext* ctx);
 };
 
 #endif // NV12_TO_BGRA_H
