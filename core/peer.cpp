@@ -333,7 +333,7 @@ void Peer::resetDecoder() {
 
 void Peer::startDecoder() {
     ScopedQMutex _(&decoderMutex);
-    dec = std::make_unique<AvToDx>(remotePeerId.toStdString(), room->quality, room->d3d);
+    dec = std::make_unique<AvToDx>(remotePeerId.toStdString(), nick, room->quality, room->d3d);
 }
 
 void Peer::stopDecoder() {

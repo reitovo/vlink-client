@@ -35,16 +35,16 @@ extern "C" {
 #include "spout_capture.h"
 #include "framequality.h"
 
-static CollabRoom *roomInstance;
+static CollabRoom* roomInstance;
 volatile int captureVerticalOffsetRatio = 0;
 
-CollabRoom *CollabRoom::instance() {
+CollabRoom* CollabRoom::instance() {
     return roomInstance;
 }
 
-CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
-        QDialog(parent),
-        ui(new Ui::CollabRoom) {
+CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget* parent) :
+    QDialog(parent),
+    ui(new Ui::CollabRoom) {
     ui->setupUi(this);
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
     setWindowModality(Qt::WindowModality::NonModal);
@@ -77,7 +77,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     // Dx sources
     ui->d3d11SourceSelect->clear();
-    for (auto &src: dxCaptureSources) {
+    for (auto& src : dxCaptureSources) {
         ui->d3d11SourceSelect->addItem(src.name);
     }
 
@@ -99,7 +99,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         roomEndpoint = "vts-grpc.reito.fun";
         isPrivateRoomEndpoint = false;
         privateServerNoSsl = false;
-    } else {
+    }
+    else {
         isPrivateRoomEndpoint = true;
         privateServerNoSsl = settings.value("privateServerNoSsl", false).toBool();
     }
@@ -115,7 +116,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     if (useDxCapture) {
         dxgiCaptureStatus("idle");
         ui->shareMethods->setCurrentIndex(1);
-    } else {
+    }
+    else {
         ui->shareMethods->setCurrentIndex(0);
     }
 
@@ -167,7 +169,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
     });
 
-    connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
+    connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString& s) {
         if (s.isEmpty())
             return;
         spoutSourceName = s.toStdString();
@@ -206,16 +208,16 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
                     QSettings sets;
                     auto ignored = sets.value("ignoreNotSharingHint").toBool();
                     if (!ignored) {
-                        auto *box = new QMessageBox(this);
+                        auto* box = new QMessageBox(this);
                         box->setIcon(QMessageBox::Information);
                         box->setWindowTitle(tr("是否忘记开始画面分享？"));
                         box->setText(tr("检测到房间里已有人加入，但您还没有开始分享画面\n"
-                                        "需要您点击「开始画面分享」，您的画面才会出现在联动画面中哦~"));
+                            "需要您点击「开始画面分享」，您的画面才会出现在联动画面中哦~"));
                         auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
                         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
 
                         connect(box, &QMessageBox::finished, this, [=](int) {
-                            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                            auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
                             if (ret == ign) {
                                 QSettings s;
                                 s.setValue("ignoreNotSharingHint", true);
@@ -228,7 +230,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
                     }
                 }
             }
-        } else {
+        }
+        else {
             notSharingCount = 0;
         }
     });
@@ -236,7 +239,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     if (!isServer) {
         resize(QSize(381, 386));
-    } else {
+    }
+    else {
         resize(QSize(730, 386));
     }
 
@@ -264,7 +268,8 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
         roomServer->createRoom(req);
         roomOpenWaiting->setText(tr("正在创建房间"));
-    } else {
+    }
+    else {
         roomServer->joinRoom(localPeerId.toStdString(), roomId.toStdString(), nick.toStdString());
         roomOpenWaiting->setText(tr("正在加入房间"));
     }
@@ -290,14 +295,15 @@ CollabRoom::~CollabRoom() {
 
     if (isServer) {
         ScopedQMutex _(&peersLock);
-        for (auto &a: clientPeers) {
+        for (auto& a : clientPeers) {
             if (a.second != nullptr) {
                 a.second->close();
                 a.second = nullptr;
             }
         }
         clientPeers.clear();
-    } else {
+    }
+    else {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr)
             serverPeer->close();
@@ -314,7 +320,7 @@ CollabRoom::~CollabRoom() {
     qWarning() << "room exit";
 }
 
-void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
+void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo& info) {
     roomOpenWaiting->close();
     delete roomOpenWaiting;
     roomOpenWaiting = nullptr;
@@ -326,16 +332,16 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
         auto ignoreTurnExpire = settings.value("ignoreTurnServerNotExpire").toBool();
         if (expires > QDateTime::currentDateTime() && !ignoreTurnExpire) {
             qDebug() << "Turn server still alive";
-            auto *box = new QMessageBox(this);
+            auto* box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("中转服务器仍然可用！"));
             box->setText(tr("您上次购买的的中转服务器仍然可用，已为您自动恢复，无需重新购买哦！\n"
-                            "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
+                "服务有效期至：%1").arg(expires.toString("yyyy/MM/dd hh:mm:ss")));
             auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
             auto ign = box->addButton(tr("下次购买前不再提示"), QMessageBox::NoRole);
 
             connect(box, &QMessageBox::finished, this, [=](int) {
-                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
                 if (ret == ign) {
                     QSettings s;
                     s.setValue("ignoreTurnServerNotExpire", true);
@@ -345,13 +351,14 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
             });
 
             box->show();
-        } else if (expires < QDateTime::currentDateTime() && expires != QDateTime()) {
+        }
+        else if (expires < QDateTime::currentDateTime() && expires != QDateTime()) {
             qDebug() << "Turn server dead, cleaning";
             settings.setValue("turnServer", QString());
             settings.setValue("turnServerExpiresAt", QDateTime());
             settings.sync();
 
-            auto *box = new QMessageBox(this);
+            auto* box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("中转服务器已过期"));
             box->setText(tr("您上次购买的的中转服务器已过期，已为您自动清除中转服务器"));
@@ -398,7 +405,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     activateWindow();
 }
 
-void CollabRoom::roomInfoFailed(const string &error) {
+void CollabRoom::roomInfoFailed(const string& error) {
     roomOpenWaiting->close();
     delete roomOpenWaiting;
     roomOpenWaiting = nullptr;
@@ -409,34 +416,36 @@ void CollabRoom::roomInfoFailed(const string &error) {
     emit fatalError(QString::fromStdString(error));
 }
 
-QString CollabRoom::errorToReadable(const QString &reason) {
+QString CollabRoom::errorToReadable(const QString& reason) {
     QString err = reason;
     if (reason == "init error") {
         err = tr("初始化错误");
-    } else if (reason == "no valid encoder") {
+    }
+    else if (reason == "no valid encoder") {
         err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
-    } else if (reason == "cap no uyva") {
+    }
+    else if (reason == "cap no uyva") {
         err = tr("捕获分享模式无法使用 UYVA 编码器");
     }
     return err;
 }
 
-void CollabRoom::shareError(const QString &reason) {
+void CollabRoom::shareError(const QString& reason) {
     stopShareWorker();
 
     if (reason == "nv driver old") {
-        auto *box = new QMessageBox(this);
+        auto* box = new QMessageBox(this);
         box->setIcon(QMessageBox::Critical);
         box->setWindowTitle(tr("错误"));
         box->setText(tr("您的 NVIDIA 显卡驱动版本过低，请更新显卡驱动。\n"
-                        "点击「更新」前往官网驱动下载页面"));
+            "点击「更新」前往官网驱动下载页面"));
         auto open = box->addButton(tr("更新"), QMessageBox::NoRole);
         auto ok = box->addButton(tr("关闭"), QMessageBox::NoRole);
         box->setWindowState(Qt::WindowState::WindowActive);
         box->activateWindow();
 
         connect(box, &QMessageBox::finished, this, [=, this](int) {
-            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
             if (ret == open) {
                 QDesktopServices::openUrl(QUrl("https://www.nvidia.cn/Download/index.aspx?lang=cn"));
             }
@@ -444,25 +453,30 @@ void CollabRoom::shareError(const QString &reason) {
         });
 
         box->show();
-    } else {
+    }
+    else {
         QMessageBox::critical(this, tr("分享错误"), errorToReadable(reason));
     }
 
     resetStartShareText();
 }
 
-void CollabRoom::fatalError(const QString &reason) {
+void CollabRoom::fatalError(const QString& reason) {
     // Show default dialog
     QString error = reason;
     if (reason == "host leave") {
         error = tr("房主已离开");
-    } else if (reason == "room not found") {
+    }
+    else if (reason == "room not found") {
         error = QString("%1\n\"%2\"").arg(tr("房间不存在")).arg(roomId);
-    } else if (reason == "init room req failed") {
+    }
+    else if (reason == "init room req failed") {
         error = tr("请求房间信息失败");
-    } else if (reason == "room init error 4") {
+    }
+    else if (reason == "room init error 4") {
         error = tr("请求房间信息超时，请重试");
-    } else if (reason == "room init error 14") {
+    }
+    else if (reason == "room init error 14") {
         error = tr("房间服务器连接错误，请检查网络");
         if (isPrivateRoomEndpoint) {
             error = tr("私有房间服务器连接错误，请检查网络与服务器状态\n服务器地址：") + roomEndpoint;
@@ -473,7 +487,7 @@ void CollabRoom::fatalError(const QString &reason) {
                                               error,
                                               MainWindow::instance()->tray->icon());
 
-    auto *box = new QMessageBox(this);
+    auto* box = new QMessageBox(this);
     box->setIcon(QMessageBox::Critical);
     box->setWindowTitle(tr("错误"));
     box->setText(errorToReadable(error));
@@ -489,15 +503,15 @@ void CollabRoom::fatalError(const QString &reason) {
     box->show();
 }
 
-void CollabRoom::roomServerError(const QString &func, const QString &reason) {
-    auto *box = new QMessageBox(this);
+void CollabRoom::roomServerError(const QString& func, const QString& reason) {
+    auto* box = new QMessageBox(this);
     box->setIcon(QMessageBox::Critical);
     box->setWindowTitle(tr("房间服务器错误"));
     box->setText(tr("请求 ") + func + tr(" 时发生错误：") + reason +
-                 tr("\n"
-                    "可能是由于房间被关闭，或远程房间服务器发生异常\n"
-                    "请重新创建房间，抱歉！\n"
-                    "已购买的中转服务器将不受影响。"));
+        tr("\n"
+            "可能是由于房间被关闭，或远程房间服务器发生异常\n"
+            "请重新创建房间，抱歉！\n"
+            "已购买的中转服务器将不受影响。"));
     box->addButton(tr("关闭"), QMessageBox::NoRole);
 
     connect(box, &QMessageBox::finished, this, [=, this](int) {
@@ -510,12 +524,12 @@ void CollabRoom::roomServerError(const QString &func, const QString &reason) {
 
 QString CollabRoom::debugInfo() {
     auto ret = QString("Room Role: %1 Id: %2\nPeer Nick: %4 Id: %3\n%5 %6\n%7 %8")
-            .arg(isServer ? "Server" : "Client").arg(roomId)
-            .arg(localPeerId).arg(ui->nick->text())
-            .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
-            .arg(sendProcessFps.stat())
-            .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
-            .arg(shareRecvFps.stat());
+               .arg(isServer ? "Server" : "Client").arg(roomId)
+               .arg(localPeerId).arg(ui->nick->text())
+               .arg(useDxCapture ? "Capture (D3D11) " : "Capture (Spout2) ")
+               .arg(sendProcessFps.stat())
+               .arg(isServer ? "Frame->Dx (D3D11 CapTick) " : "Frame->Av (D3D11 Receive) ")
+               .arg(shareRecvFps.stat());
     return ret;
 }
 
@@ -529,32 +543,35 @@ void CollabRoom::spoutDiscoveryUpdate() {
     if (senders.empty()) {
         emptyCount++;
         if (emptyCount == 3 && !ignoreSpoutOpenHint) {
-            auto *box = new QMessageBox(this);
+            auto* box = new QMessageBox(this);
             box->setIcon(QMessageBox::Information);
             box->setWindowTitle(tr("提示"));
             box->setText(tr("没有发现 Spout 来源，将无法捕获画面\n"
-                            "请点击「查看详情」了解如何开启"));
+                "请点击「查看详情」了解如何开启"));
             auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
             auto open = box->addButton(tr("查看详情"), QMessageBox::NoRole);
             auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
 
             connect(box, &QMessageBox::finished, this, [=]() {
-                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
                 if (ret == ign) {
                     QSettings s;
                     s.setValue("ignoreSpoutOpenHint", true);
                     s.sync();
-                } else if (ret == open) {
-                    QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
+                }
+                else if (ret == open) {
+                    QDesktopServices::openUrl(
+                        QUrl("https://www.wolai.com/reito/nhenjFvkw5gDNM4tikEw5V#3S3vaAGhXAPahqKyKqNy34"));
                 }
                 box->deleteLater();
             });
         }
         ui->spoutSourceSelect->clear();
-    } else {
+    }
+    else {
         emptyCount = 0;
         QStringList strList;
-        for (const auto &i: senders) {
+        for (const auto& i : senders) {
             auto s = QString::fromStdString(i);
             if (!s.startsWith("VLink")) {
                 strList.push_back(s);
@@ -566,24 +583,25 @@ void CollabRoom::spoutDiscoveryUpdate() {
 
 void CollabRoom::usageStatUpdate() {
     ui->usageStat->setText(QString("CPU: %1% FPS: %2 采集: %3 版本: %4 %5")
-                                   .arg(QString::number(usage::getCpuUsage(), 'f', 1))
-                                   .arg(QString::number(outputFps.fps(), 'f', 1))
-                                   .arg(useDxCapture ? "D3D11" : "Spout")
-                                   .arg(vts::info::BuildId)
-                                   .arg(isElevated() ? tr(" 正以管理员身份运行") : "")
+                           .arg(QString::number(usage::getCpuUsage(), 'f', 1))
+                           .arg(QString::number(outputFps.fps(), 'f', 1))
+                           .arg(useDxCapture ? "D3D11" : "Spout")
+                           .arg(vts::info::BuildId)
+                           .arg(isElevated() ? tr(" 正以管理员身份运行") : "")
     );
 
     // Speed Stat
     size_t tx = 0, rx = 0;
     if (isServer) {
         ScopedQMutex _(&peersLock);
-        for (auto &s: clientPeers) {
+        for (auto& s : clientPeers) {
             if (s.second == nullptr)
                 continue;
             tx += s.second->txSpeed();
             rx += s.second->rxSpeed();
         }
-    } else {
+    }
+    else {
         ScopedQMutex _(&peersLock);
         if (serverPeer != nullptr) {
             tx += serverPeer->txSpeed();
@@ -591,15 +609,15 @@ void CollabRoom::usageStatUpdate() {
         }
     }
     ui->speedStat->setText(QString("%1/s ↑↓ %2/s")
-                                   .arg(humanizeBytes(tx))
-                                   .arg(humanizeBytes(rx)));
+                           .arg(humanizeBytes(tx))
+                           .arg(humanizeBytes(rx)));
 }
 
 void CollabRoom::heartbeatUpdate() {
     vts::server::ReqStat stat;
     {
         ScopedQMutex _(&peersLock);
-        for (auto &s: clientPeers) {
+        for (auto& s : clientPeers) {
             s.second->sendHeartbeat();
 
             vts::server::StatInfo st;
@@ -644,7 +662,7 @@ void CollabRoom::updateTurnServer() {
 
     {
         ScopedQMutex _(&peersLock);
-        for (auto &peer: clientPeers) {
+        for (auto& peer : clientPeers) {
             peer.second->startServer();
         }
     }
@@ -668,16 +686,16 @@ void CollabRoom::checkDxCaptureNeedElevate() {
     auto ignoreElevate = s.value("ignoreRequireElevate:" + name).toBool();
     if (!ignoreElevate && !isElevated()) {
         if (elevateList.contains(name)) {
-            auto *box = new QMessageBox(this);
+            auto* box = new QMessageBox(this);
             box->setIcon(QMessageBox::Warning);
             box->setWindowTitle(name + tr(" 需要管理员权限"));
             box->setText(tr("由于 %1 默认以管理员身份启动，因此 VLink 联动也必须使用管理员身份启动才可对其进行 D3D11 捕获。\n"
-                            "与此同时，OBS 等推流软件也需要以管理员身份启动，请退出并「右键→以管理员身份运行」VLink 启动器与 OBS。").arg(name));
+                "与此同时，OBS 等推流软件也需要以管理员身份启动，请退出并「右键→以管理员身份运行」VLink 启动器与 OBS。").arg(name));
             auto ok = box->addButton(tr("我知道了"), QMessageBox::NoRole);
             auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
 
             connect(box, &QMessageBox::finished, this, [=](int) {
-                auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+                auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
                 if (ret == ign) {
                     QSettings s;
                     s.setValue("ignoreRequireElevate:" + name, true);
@@ -695,7 +713,8 @@ void CollabRoom::toggleTurnVisible() {
     if (ui->relayInput->echoMode() == QLineEdit::Normal) {
         ui->relayInput->setEchoMode(QLineEdit::Password);
         ui->relayHideShow->setIcon(QIcon(":/images/show.png"));
-    } else if (ui->relayInput->echoMode() == QLineEdit::Password) {
+    }
+    else if (ui->relayInput->echoMode() == QLineEdit::Password) {
         ui->relayInput->setEchoMode(QLineEdit::Normal);
         ui->relayHideShow->setIcon(QIcon(":/images/hide.png"));
     }
@@ -714,7 +733,8 @@ void CollabRoom::openSetting() {
             if (useDxCapture) {
                 dxgiCaptureStatus("idle");
                 ui->shareMethods->setCurrentIndex(1);
-            } else {
+            }
+            else {
                 ui->shareMethods->setCurrentIndex(0);
             }
             checkDxCaptureNeedElevate();
@@ -723,7 +743,7 @@ void CollabRoom::openSetting() {
 }
 
 void CollabRoom::openQualitySetting() {
-    auto *f = new FrameQuality(quality, this);
+    auto* f = new FrameQuality(quality, this);
 
     connect(f, &FrameQuality::finished, this, [=, this]() {
         if (f->changed) {
@@ -746,11 +766,11 @@ void CollabRoom::openQualitySetting() {
 
 void CollabRoom::openBuyRelay() {
     if (isPrivateRoomEndpoint) {
-        auto *box = new QMessageBox(this);
+        auto* box = new QMessageBox(this);
         box->setIcon(QMessageBox::Warning);
         box->setWindowTitle(tr("无法购买"));
         box->setText(tr("由于使用了私有部署房间服务器，因此无法使用本功能，请按教程自行部署中转服务器，或联系协助部署。"));
-        auto *open = box->addButton(tr("  查看部署教程  "), QMessageBox::NoRole);
+        auto* open = box->addButton(tr("  查看部署教程  "), QMessageBox::NoRole);
         box->addButton(tr("关闭"), QMessageBox::NoRole);
 
         connect(box, &QMessageBox::finished, this, [=, this](int) {
@@ -818,7 +838,8 @@ void CollabRoom::toggleKeepTop() {
 void CollabRoom::toggleShare() {
     if (!shareRunning) {
         startShare();
-    } else {
+    }
+    else {
         stopShare();
     }
 }
@@ -850,7 +871,9 @@ void CollabRoom::startShare() {
     palette.setBrush(QPalette::Inactive, QPalette::ButtonText, brush);
     palette.setBrush(QPalette::Disabled, QPalette::ButtonText, brush);
     ui->btnSharingStatus->setPalette(palette);
-    ui->btnSharingStatus->setStyleSheet("background-color: " VLINK_THEME_COLOR "; border-radius: 5px; border: inherit; margin: 1px; border-width: 5px;");
+    ui->btnSharingStatus->setStyleSheet(
+        "background-color: " VLINK_THEME_COLOR
+        "; border-radius: 5px; border: inherit; margin: 1px; border-width: 5px;");
 
     ui->btnSharingStatus->setText(tr("停止") + tr("分享画面"));
     ui->btnSharingStatus->setEnabled(false);
@@ -867,15 +890,18 @@ void CollabRoom::startShare() {
         shareThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
             if (useDxCapture) {
                 dxgiShareWorkerServer();
-            } else {
+            }
+            else {
                 spoutShareWorkerServer();
             }
         }));
-    } else {
+    }
+    else {
         shareThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
             if (useDxCapture) {
                 dxgiShareWorkerClient();
-            } else {
+            }
+            else {
                 spoutShareWorkerClient();
             }
         }));
@@ -915,7 +941,8 @@ void CollabRoom::spoutShareWorkerClient() {
     qInfo() << "spout capture client start";
 
     // spout capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, nullptr, spoutSourceName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(
+        quality.frameWidth, quality.frameHeight, nullptr, spoutSourceName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
@@ -944,7 +971,7 @@ void CollabRoom::spoutShareWorkerClient() {
 
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
     float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
@@ -971,14 +998,14 @@ void CollabRoom::spoutShareWorkerClient() {
         int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
         }
     }
 
-    clean:
+clean:
     cvt.stop();
 
     qInfo() << "spout capture client exit";
@@ -988,7 +1015,8 @@ void CollabRoom::spoutShareWorkerServer() {
     qInfo() << "spout capture server start";
 
     // dx capture
-    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(quality.frameWidth, quality.frameHeight, d3d, spoutSourceName);
+    std::shared_ptr<SpoutCapture> spout = std::make_shared<SpoutCapture>(
+        quality.frameWidth, quality.frameHeight, d3d, spoutSourceName);
     if (!spout->init()) {
         emit onShareError("spout capture init failed");
         return;
@@ -996,11 +1024,10 @@ void CollabRoom::spoutShareWorkerServer() {
 
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
     float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
-
         QElapsedTimer t;
         t.start();
 
@@ -1012,7 +1039,7 @@ void CollabRoom::spoutShareWorkerServer() {
         int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
@@ -1029,7 +1056,8 @@ void CollabRoom::dxgiShareWorkerClient() {
     qInfo() << dxWindow;
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth, quality.frameHeight, nullptr);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth,
+                                                                   quality.frameHeight, nullptr);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -1058,7 +1086,7 @@ void CollabRoom::dxgiShareWorkerClient() {
 
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
     float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
@@ -1087,14 +1115,14 @@ void CollabRoom::dxgiShareWorkerClient() {
         int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
         }
     }
 
-    clean:
+clean:
     cvt.stop();
 
     qInfo() << "dx capture client exit";
@@ -1107,7 +1135,8 @@ void CollabRoom::dxgiShareWorkerServer() {
     qInfo() << dxWindow;
 
     // dx capture
-    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth, quality.frameHeight, d3d);
+    std::shared_ptr<DxCapture> dxCap = std::make_shared<DxCapture>(dxWindow.toStdString(), quality.frameWidth,
+                                                                   quality.frameHeight, d3d);
     if (!dxCap->init()) {
         emit onShareError("dx capture init failed");
         return;
@@ -1115,11 +1144,10 @@ void CollabRoom::dxgiShareWorkerServer() {
 
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
     float frameSeconds = 1.0f / quality.frameRate;
 
     while (shareRunning) {
-
         QElapsedTimer t;
         t.start();
 
@@ -1133,7 +1161,7 @@ void CollabRoom::dxgiShareWorkerServer() {
         int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
@@ -1148,7 +1176,9 @@ void CollabRoom::setShareInfo(bool start) {
         return;
     QThread* thread = QThread::create([=, this]() {
         std::string cap = useDxCapture ? "D3D11 " : "Spout ";
-        cap += useDxCapture ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString() : spoutSourceName;
+        cap += useDxCapture
+                   ? dxCaptureSources[ui->d3d11SourceSelect->currentIndex()].name.toStdString()
+                   : spoutSourceName;
         roomServer->setShareInfo(getPrimaryGpu(), cap, start);
     });
     thread->start();
@@ -1163,13 +1193,13 @@ void CollabRoom::stopShareWorker() {
     setShareInfo(false);
 }
 
-void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
+void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
     peerCount = peers.size();
 
     if (isServer) {
         ScopedQMutex _(&peersLock);
         QList<QString> alive;
-        for (const auto &peer: peers) {
+        for (const auto& peer : peers) {
             // Find clients
             if (!peer.isserver()) {
                 auto id = QString::fromStdString(peer.peerid());
@@ -1181,13 +1211,15 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
                     server->startServer();
                     clientPeers[id] = std::move(server);
                 }
+                clientPeers[id]->setNick(peer.nick());
             }
         }
         // If one leaves, remove it.
         for (auto it = clientPeers.begin(); it != clientPeers.end();) {
             if (!alive.contains(it->first)) {
                 it = clientPeers.erase(it);
-            } else {
+            }
+            else {
                 it++;
             }
         }
@@ -1196,7 +1228,7 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
     emit onUpdatePeersUi(peers);
 }
 
-void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer> &peers) {
+void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::server::Peer>& peers) {
     while (ui->peerList->count() < peers.size()) {
         auto item = new QListWidgetItem(ui->peerList);
         auto peer = new PeerItemWidget(this);
@@ -1216,12 +1248,12 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
     auto idx = 0;
     QStringList badNatList;
     auto allUnknown = true;
-    for (auto &p: peers) {
+    for (auto& p : peers) {
         auto item = ui->peerList->item(idx++);
-        auto widget = reinterpret_cast<PeerItemWidget *>(ui->peerList->itemWidget(item));
+        auto widget = reinterpret_cast<PeerItemWidget*>(ui->peerList->itemWidget(item));
         widget->updatePeer(p);
 
-        auto nat = (NatType) p.nattype();
+        auto nat = (NatType)p.nattype();
         auto qNick = QString::fromStdString(p.nick());
         auto qPeerId = QString::fromStdString(p.peerid());
         if (nat != StunTypeUnknown)
@@ -1236,22 +1268,23 @@ void CollabRoom::updatePeersUi(const google::protobuf::RepeatedPtrField<vts::ser
     if (allUnknown) {
         ui->relayHint->setText("☕" + tr("网络检测中"));
         ui->relayHint->setToolTip(tr("检测中，请稍后"));
-
-    } else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
-               localNatType == StunTypeRestrictedNat) {
+    }
+    else if (badNatList.empty() || localNatType == StunTypeOpen || localNatType == StunTypeConeNat ||
+        localNatType == StunTypeRestrictedNat) {
         ui->relayHint->setText("✅" + tr("无需中转") + "ℹ");
         ui->relayHint->setToolTip(
-                tr("当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。\n如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
-    } else {
+            tr(
+                "当前应该无需中转服务器。\n如果长时间无法连接，请尝试换一个人创建房间再试。\n如果您曾经在上方设置过中转服务器，请确认其正在运行，否则也会造成无法建立连接。\n如需删除中转服务器，请清空地址后点击「连接中转服务器」即可。"));
+    }
+    else {
         ui->relayHint->setText("⚠" + tr("需要中转") + "ℹ");
         ui->relayHint->setToolTip(
-                tr("当前可能需要中转服务器。\n以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") +
-                tr("。\n如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
+            tr("当前可能需要中转服务器。\n以下用户 IPv4 NAT 类型无法直接连接：") + badNatList.join(", ") +
+            tr("。\n如果存在 IPv6，或许仍可以成功建立连接，请以最终结果为准。"));
     }
 }
 
 void CollabRoom::dxgiSendWorker() {
-
     qInfo() << "start dxgi sender";
 
     // ffmpeg coverter
@@ -1262,7 +1295,7 @@ void CollabRoom::dxgiSendWorker() {
                                           [=, this](auto av) {
                                               ScopedQMutex _(&peersLock);
                                               // This approach is bandwidth consuming, should be replaced by relay approach
-                                              for (auto &s: clientPeers) {
+                                              for (auto& s : clientPeers) {
                                                   s.second->sendAsync(av);
                                               }
                                           });
@@ -1275,14 +1308,13 @@ void CollabRoom::dxgiSendWorker() {
 
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (!exiting && !resettingFrameFormat) {
         QElapsedTimer t;
         t.start();
 
         if (d3d->render()) {
-
             // encode and send
             if (isServer) {
                 if (notifiedForceIdr) {
@@ -1305,7 +1337,7 @@ void CollabRoom::dxgiSendWorker() {
         int64_t frameTime = frameCount * 1000000.0 / quality.frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
@@ -1321,14 +1353,15 @@ void CollabRoom::dxgiSendWorker() {
     qInfo() << "end dxgi sender";
 }
 
-void CollabRoom::rtcFailed(Peer *peer) const {
+void CollabRoom::rtcFailed(Peer* peer) const {
     qDebug() << "rtc failed";
-    auto nick = peer->nick.isEmpty() ? tr("用户") + peer->remotePeerId.first(4) : peer->nick;
+    auto nick = peer->nick.size() == 0 ? tr("用户") + peer->remotePeerId.first(4) : QString::fromStdString(peer->nick);
     if (isServer) {
         auto tray = MainWindow::instance()->tray.get();
         tray->showMessage(tr("连接失败"),
                           QString(tr("与 %1 的连接失败，可能需要中转服务器！") + tr("正在尝试重新连接")).arg(nick));
-    } else {
+    }
+    else {
         auto tray = MainWindow::instance()->tray.get();
         tray->showMessage(tr("连接失败"), QString(tr("与 %1 的连接失败，请等待服务器重新连接")).arg(nick));
     }
@@ -1338,24 +1371,25 @@ void CollabRoom::downgradedToSharedMemory() {
     QSettings s;
     auto ig = s.value("ignoreDowngradedToSharedMemory", false).toBool();
     if (!ig) {
-        auto *box = new QMessageBox(this);
+        auto* box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("哎呀"));
         box->setText(tr("由于模型渲染软件与本软件没有运行在同一张显卡上，因此已自动使用兼容性方案进行捕获。\n\n"
-                        "可选的解决方案：\n"
-                        "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
-                        "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
+            "可选的解决方案：\n"
+            "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+            "2. 忽略/不再显示本提示，继续使用兼容性方案捕获（可能会导致性能下降）"));
         auto open = box->addButton(tr("查看教程"), QMessageBox::NoRole);
         auto ok = box->addButton(tr("忽略"), QMessageBox::NoRole);
         auto ign = box->addButton(tr("不再显示"), QMessageBox::NoRole);
 
         connect(box, &QMessageBox::finished, this, [=]() {
-            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
             if (ret == ign) {
                 QSettings s;
                 s.setValue("ignoreDowngradedToSharedMemory", true);
                 s.sync();
-            } else if (ret == open) {
+            }
+            else if (ret == open) {
                 QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
             }
             box->deleteLater();
@@ -1368,20 +1402,21 @@ void CollabRoom::downgradedToSharedMemory() {
 void CollabRoom::spoutOpenSharedFailed() {
     stopShare();
 
-    auto *box = new QMessageBox(this);
+    auto* box = new QMessageBox(this);
     box->setIcon(QMessageBox::Warning);
     box->setWindowTitle(tr("哎呀"));
     box->setText(tr("由于模型渲染软件与本软件没有运行在同一张显卡上，因此无法使用 Spout 进行捕获。\n\n"
-                    "可选的解决方案：\n"
-                    "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
-                    "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
+        "可选的解决方案：\n"
+        "1. 点击「查看教程」按教程提示，设置运行于同一显卡（推荐！）\n"
+        "2. 「使用备用捕获方式」重试（后续可以在设置中关闭「使用 D3D11 捕获」）"));
     auto ok = box->addButton(tr("查看教程"), QMessageBox::NoRole);
     auto open = box->addButton(tr("  使用备用捕获方式  "), QMessageBox::NoRole);
     connect(box, &QMessageBox::finished, this, [=, this]() {
-        auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+        auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
         if (ret == ok) {
             QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/c6iQ2dRR3aoVWEVzSydESe"));
-        } else if (ret == open) {
+        }
+        else if (ret == open) {
             QSettings settings;
             settings.setValue("useDxCapture", true);
             dxgiCaptureStatus("idle");
@@ -1397,13 +1432,17 @@ void CollabRoom::spoutOpenSharedFailed() {
 void CollabRoom::dxgiCaptureStatus(QString text) {
     if (text == "idle") {
         text = tr("未分享");
-    } else if (text == "init") {
+    }
+    else if (text == "init") {
         text = tr("尝试捕获中");
-    } else if (text == "shmem") {
+    }
+    else if (text == "shmem") {
         text = tr("已捕获（兼容）");
-    } else if (text == "shtex") {
+    }
+    else if (text == "shtex") {
         text = tr("已捕获");
-    } else if (text == "fail") {
+    }
+    else if (text == "fail") {
         text = tr("捕获失败");
     }
     ui->dxgiCaptureStatus->setText(text);
@@ -1416,7 +1455,7 @@ void CollabRoom::dxgiNeedElevate() {
     auto ig = s.value("ignoreNeedElevate", false).toBool();
     if (!ig) {
         stopShareWorker();
-        auto *box = new QMessageBox(this);
+        auto* box = new QMessageBox(this);
         box->setIcon(QMessageBox::Information);
         box->setWindowTitle(tr("D3D11 捕获失败"));
         box->setText(tr("捕获画面失败！请点击「查看详情」了解解决方案"));
@@ -1425,12 +1464,13 @@ void CollabRoom::dxgiNeedElevate() {
         auto ign = box->addButton(tr("不再提示"), QMessageBox::NoRole);
 
         connect(box, &QMessageBox::finished, this, [=]() {
-            auto ret = dynamic_cast<QPushButton *>(box->clickedButton());
+            auto ret = dynamic_cast<QPushButton*>(box->clickedButton());
             if (ret == ign) {
                 QSettings s;
                 s.setValue("ignoreNeedElevate", true);
                 s.sync();
-            } else if (ret == open) {
+            }
+            else if (ret == open) {
                 QDesktopServices::openUrl(QUrl("https://www.wolai.com/reito/okrsy7aW8QM6EfTp35hVxs"));
             }
             box->deleteLater();
@@ -1445,38 +1485,39 @@ void CollabRoom::requestIdr(const std::string& reason, const std::string& peer) 
     roomServer->requestIdr(reason, peer);
 }
 
-void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture> &cap) {
+void CollabRoom::tryFixVtsRatio(const std::shared_ptr<DxCapture>& cap) {
     if (needFixVtsRatio) {
         needFixVtsRatio = false;
         cap->fixWindowRatio();
     }
 }
 
-void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers &peers) {
+void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers& peers) {
     updatePeers(peers.peers());
 }
 
-void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
+void CollabRoom::onNotifySdp(const vts::server::Sdp& sdp) {
     ScopedQMutex _(&peersLock);
     auto from = QString::fromStdString(sdp.frompeerid());
     if (isServer) {
-        for (auto &peer: clientPeers) {
+        for (auto& peer : clientPeers) {
             if (peer.first == from) {
                 qDebug() << "client" << peer.first << "offered sdp to server";
                 peer.second->setClientRemoteSdp(sdp);
             }
         }
-    } else {
+    }
+    else {
         serverPeer = std::make_unique<Peer>(this, from);
         serverPeer->startClient(sdp);
     }
 }
 
-void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting &frame) {
+void CollabRoom::onNotifyFrameFormat(const vts::server::FrameFormatSetting& frame) {
     emit emitNotifyFrameFormat(frame);
 }
 
-void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &frame) {
+void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting& frame) {
     qDebug() << "received new frame setting";
 
     bool shareWasRunning = shareRunning;
@@ -1485,10 +1526,11 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
     {
         ScopedQMutex _(&peersLock);
         if (isServer) {
-            for (auto &peer: clientPeers) {
+            for (auto& peer : clientPeers) {
                 peer.second->stopDecoder();
             }
-        } else {
+        }
+        else {
             serverPeer->stopDecoder();
         }
     }
@@ -1531,10 +1573,11 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
     {
         ScopedQMutex _(&peersLock);
         if (isServer) {
-            for (auto &peer: clientPeers) {
+            for (auto& peer : clientPeers) {
                 peer.second->startDecoder();
             }
-        } else {
+        }
+        else {
             serverPeer->startDecoder();
         }
     }

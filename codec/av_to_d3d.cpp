@@ -1,4 +1,3 @@
-
 #include "ui/windows/collabroom.h"
 #include "av_to_d3d.h"
 #include "d3d_to_frame.h"
@@ -14,12 +13,12 @@ extern "C" {
 #include "libavutil/hwcontext_d3d11va.h"
 }
 
-static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
+static char av_error[AV_ERROR_MAX_STRING_SIZE] = {0};
 #undef av_err2str
 #define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
-static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
-    const enum AVPixelFormat *p;
+static enum AVPixelFormat get_hw_format(AVCodecContext* ctx, const enum AVPixelFormat* pix_fmts) {
+    const enum AVPixelFormat* p;
 
     for (p = pix_fmts; *p != -1; p++) {
         if (*p == AV_PIX_FMT_D3D11)
@@ -30,10 +29,12 @@ static enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelF
     return AV_PIX_FMT_NONE;
 }
 
-AvToDx::AvToDx(const std::string& peerId, FrameQualityDesc q, const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(d3d)
-{
+AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityDesc q,
+               const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(
+    d3d) {
     qDebug() << "begin d3d2dx";
     this->peerId = peerId;
+    this->nick = nick;
 
     d3d->registerSource(this);
 
@@ -49,16 +50,18 @@ AvToDx::AvToDx(const std::string& peerId, FrameQualityDesc q, const std::shared_
     init();
 }
 
-AvToDx::~AvToDx()
-{
+AvToDx::~AvToDx() {
     qDebug() << "end d3d2dx";
+
+    spoutOutput.ReleaseSender();
+    spoutOutput.CloseDirectX11();
+
     d3d->unregisterSource(this);
     stop();
     qDebug() << "end d3d2dx done";
 }
 
-std::optional<QString> AvToDx::init()
-{
+std::optional<QString> AvToDx::init() {
     if (inited)
         stop();
 
@@ -94,13 +97,15 @@ std::optional<QString> AvToDx::init()
 
     inited = true;
 
+    spoutOutput.SetSenderName(("VLink 联动 (" + this->nick + ")").c_str());
+    spoutOutput.OpenDirectX11();
+
     qDebug() << "av2d3d init done";
 
     return {};
 }
 
-std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
-{
+std::optional<QString> AvToDx::initCodec(AVCodecID codec_id) {
     int err;
 
     codec = avcodec_find_decoder(codec_id);
@@ -123,13 +128,13 @@ std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
     ctx->pix_fmt = AV_PIX_FMT_D3D11;
     ctx->get_format = get_hw_format;
 
-//    AVBufferRef* hw;
-//    if ((err = av_hwdevice_ctx_create(&hw, AV_HWDEVICE_TYPE_D3D11VA, NULL, NULL, 0)) < 0) {
-//        fprintf(stderr, "Failed to create specified HW device.\n");
-//        return "create hw";
-//    }
-//    ctx_rgb->hw_device_ctx = av_buffer_ref(hw);
-//    av_buffer_unref(&hw);
+    //    AVBufferRef* hw;
+    //    if ((err = av_hwdevice_ctx_create(&hw, AV_HWDEVICE_TYPE_D3D11VA, NULL, NULL, 0)) < 0) {
+    //        fprintf(stderr, "Failed to create specified HW device.\n");
+    //        return "create hw";
+    //    }
+    //    ctx_rgb->hw_device_ctx = av_buffer_ref(hw);
+    //    av_buffer_unref(&hw);
 
     AVBufferRef* hw2 = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_D3D11VA);
     AVHWDeviceContext* device_ctx = reinterpret_cast<AVHWDeviceContext*>(hw2->data);
@@ -161,8 +166,7 @@ std::optional<QString> AvToDx::initCodec(AVCodecID codec_id)
     return std::optional<QString>();
 }
 
-void AvToDx::process(std::unique_ptr<vts::VtsMsg> m)
-{
+void AvToDx::process(std::unique_ptr<vts::VtsMsg> m) {
     auto packet_pts = m->avframe().pts();
 
     auto isKey = false;
@@ -183,14 +187,12 @@ void AvToDx::process(std::unique_ptr<vts::VtsMsg> m)
     frameQueue.push(f);
 }
 
-void AvToDx::reset()
-{
+void AvToDx::reset() {
     qDebug() << "av2d3d reset";
     pts = 0;
 }
 
-void AvToDx::stop()
-{
+void AvToDx::stop() {
     if (!inited)
         return;
 
@@ -207,13 +209,11 @@ void AvToDx::stop()
     bgra = nullptr;
 }
 
-QString AvToDx::debugInfo()
-{
+QString AvToDx::debugInfo() {
     return QString("Av->Dx (Stream Decoder) %1 Queue: %2").arg(fps.stat()).arg(queueSize);
 }
 
-bool AvToDx::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest)
-{
+bool AvToDx::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D* dest) {
     if (!inited)
         return false;
     return bgra->copyTo(dev, ctx, dest);
@@ -222,10 +222,9 @@ bool AvToDx::copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D
 void AvToDx::processWorker() {
     int64_t frameCount = 0;
     int64_t startTime = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
+        std::chrono::system_clock::now().time_since_epoch()).count();
 
     while (processThreadRunning) {
-
         auto err = processFrame();
         if (!err.has_value()) {
             if (!enableBuffering) {
@@ -239,7 +238,7 @@ void AvToDx::processWorker() {
         int64_t frameTime = frameCount * 1000000.0 / frameRate;
         int64_t nextTime = startTime + frameTime;
         int64_t currentTime = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         auto sleepTime = nextTime - currentTime;
         if (sleepTime > 0) {
             QThread::usleep(sleepTime);
@@ -259,7 +258,7 @@ std::optional<QString> AvToDx::processFrame() {
         if (!enableBuffering)
             delay = 0;
 
-retryNextFrame:
+    retryNextFrame:
         if (frameQueue.size() <= delay) {
             return QString("buffering %1 %2").arg(delay).arg(frameQueue.size());
         }
@@ -270,7 +269,8 @@ retryNextFrame:
             frameQueue.pop();
             delete dd;
             goto retryNextFrame;
-        } else if (pts == 0 && dd->isKey) {
+        }
+        else if (pts == 0 && dd->isKey) {
             qDebug() << "got key frame = " << dd->pts << frameQueue.size();
         }
 
@@ -330,7 +330,7 @@ retryNextFrame:
 
     for (auto& a : meta.packets()) {
         auto& d = a.data();
-        packet->data = (uint8_t*) d.data();
+        packet->data = (uint8_t*)d.data();
         packet->size = d.size();
         packet->dts = a.dts();
         packet->pts = a.pts();
@@ -346,7 +346,7 @@ retryNextFrame:
     //qDebug() << "recv frame rgb";
 
     ret = avcodec_receive_frame(ctx, frame);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)  {
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         qDebug() << "error while decoding rgb" << av_err2str(ret) << ret;
         errList.append("receive frame");
         CollabRoom::instance()->requestIdr("DECODING_EAGAIN", peerId);
@@ -367,6 +367,7 @@ retryNextFrame:
     }
 
     bgra->nv12ToBgra(frame);
+    spoutOutput.SendTexture(bgra->getTargetTexture());
 
     fps.add(t.nsecsElapsed());
 

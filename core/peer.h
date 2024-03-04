@@ -35,7 +35,7 @@ class Peer {
 
 public:
     QString remotePeerId;
-    QString nick;
+    std::string nick;
 
     Peer(CollabRoom* room, QString remoteId);
     ~Peer();
@@ -51,7 +51,12 @@ public:
     QMutex decoderMutex;
     void startDecoder();
     void stopDecoder();
-     
+
+    inline void setNick(const std::string& name) {
+        nick = name;
+        dec->setNick(nick);
+    }
+
     std::atomic_bool dcInited = false;
     std::atomic_bool dcThreadAlive;
     std::unique_ptr<QThread> dcThread;

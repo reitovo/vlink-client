@@ -7,6 +7,7 @@
 #include "nv12_to_bgra.h"
 #include <cstdint>
 #include <QString>
+#include <SpoutDX/SpoutDX.h>
 
 #include "qthread.h"
 #include "proto/vts.pb.h"
@@ -30,7 +31,7 @@ struct UnorderedFrame {
 };
 
 struct FrameReorderer {
-    bool operator()(const UnorderedFrame *l, const UnorderedFrame *r) const { return l->pts > r->pts; }
+    bool operator()(const UnorderedFrame* l, const UnorderedFrame* r) const { return l->pts > r->pts; }
 };
 
 class FrameDelay {
@@ -42,7 +43,7 @@ class FrameDelay {
 public:
     inline void failed() {
         uint64_t time = std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
+            std::chrono::system_clock::now().time_since_epoch()).count();
         if (time - _lastDelayIncrease > 100000) {
             _lastDelayIncrease = time;
             _delay = _delayAccumulate;
@@ -81,7 +82,6 @@ public:
 class DxToFrame;
 
 class AvToDx : public IDxToFrameSrc, public IDebugCollectable {
-
 private:
     std::string peerId;
     std::unique_ptr<Nv12ToBgra> bgra;
@@ -92,11 +92,11 @@ private:
 
     AVCodecID codecId;
 
-    AVPacket *packet = nullptr;
+    AVPacket* packet = nullptr;
     //rgb
-    AVCodecContext *ctx = nullptr;
-    const AVCodec *codec = nullptr;
-    AVFrame *frame = nullptr;
+    AVCodecContext* ctx = nullptr;
+    const AVCodec* codec = nullptr;
+    AVFrame* frame = nullptr;
 
     int64_t pts = 0;
 
@@ -107,10 +107,13 @@ private:
     std::atomic_bool enableBuffering;
     std::atomic_bool processThreadRunning = false;
     std::unique_ptr<QThread> processThread;
-    std::priority_queue<UnorderedFrame *, std::vector<UnorderedFrame *>, FrameReorderer> frameQueue;
+    std::priority_queue<UnorderedFrame*, std::vector<UnorderedFrame*>, FrameReorderer> frameQueue;
     std::atomic_int queueSize = 0;
     QMutex frameQueueLock;
     FrameDelay frameDelay;
+
+    std::string nick;
+    spoutDX spoutOutput;
 
     inline int frameQueueSize() {
         int ret = 0;
@@ -124,7 +127,8 @@ private:
     std::optional<QString> processFrame();
 
 public:
-    AvToDx(const std::string& peerId, FrameQualityDesc q, const std::shared_ptr<DxToFrame>& d3d);
+    AvToDx(const std::string& peerId, const std::string& nick, FrameQualityDesc q,
+           const std::shared_ptr<DxToFrame>& d3d);
     ~AvToDx();
 
     std::optional<QString> init();
@@ -134,7 +138,12 @@ public:
 
     QString debugInfo();
 
-    bool copyTo(ID3D11Device *dev, ID3D11DeviceContext *ctx, ID3D11Texture2D *dest) override;
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D* dest) override;
+
+    inline void setNick(const std::string& nick) {
+        this->nick = nick;
+        spoutOutput.SetSenderName(("VLink 联动 (" + this->nick + ")").c_str());
+    }
 };
 
 #endif // AV_TO_D3D_H

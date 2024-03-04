@@ -55,8 +55,7 @@ namespace {
 // Because we use two streams to send RGB and Alpha in NV12 format, we need a fast path to convert them
 // back, luckily, ffmpeg can decode use d3d11 and we can directly use textures as shader input to do a
 // fast shader calculation, getting a BGRA texture.
-class Nv12ToBgra
-{
+class Nv12ToBgra {
     ComPtr<ID3D11DeviceContext> _d3d11_deviceCtx = nullptr;
     ComPtr<ID3D11Device> _d3d11_device = nullptr;
     ComPtr<ID3D11SamplerState> _d3d11_samplerState = nullptr;
@@ -96,7 +95,11 @@ public:
     ID3D11Device* getDevice();
 
     bool nv12ToBgra(AVFrame* f);
-    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D *dest); 
+    bool copyTo(ID3D11Device* dev, ID3D11DeviceContext* ctx, ID3D11Texture2D* dest);
+
+    inline ID3D11Texture2D* getTargetTexture() {
+        return _texture_rgba_target.Get();
+    }
 };
 
 #endif // NV12_TO_BGRA_H
