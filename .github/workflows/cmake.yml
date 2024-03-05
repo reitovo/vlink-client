@@ -2,7 +2,7 @@ name: CMake
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
 
 env:
   BUILD_TYPE: RelWithDebInfo
