@@ -65,9 +65,8 @@ public:
     std::unique_ptr<smart_buf> smartBuf;
     void sendAsync(std::shared_ptr<vts::VtsMsg> payload);
 
-    static rtc::Description processLocalDescription(rtc::Description desc);
-
     QString dataStats();
+    void addRemoteCandidate(const vts::server::Candidate& candidate);
     void setClientRemoteSdp(const vts::server::Sdp& sdp);
     void initSmartBuf();
 

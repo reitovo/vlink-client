@@ -28,6 +28,9 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
         case vts::server::Notify::kSdp:
             room->onNotifySdp(notify.sdp());
             break;
+        case vts::server::Notify::kCandidate:
+            room->onNotifyCandidate(notify.candidate());
+            break;
         case vts::server::Notify::kFrame:
             room->onNotifyFrameFormat(notify.frame());
             break;
@@ -75,7 +78,7 @@ void RoomServer::startNatTypeDetect() {
     natThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
         qDebug() << "Start nat type determine";
         CNatProb natProb;
-        if (!natProb.Init("stun.qq.com")) {
+        if (!natProb.Init("stun.miwifi.com")) {
             qDebug() << "natProb init failed.";
         }
         int retry = 0;
@@ -162,6 +165,19 @@ void RoomServer::setSdp(const vts::server::Sdp &sdp) {
 
     vts::server::RspCommon rsp;
     auto status = service->SetSdp(context.get(), sdp, &rsp);
+    if (!status.ok()) {
+        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+    }
+}
+
+void RoomServer::setCandidate(const vts::server::Candidate& candidate) {
+    auto context = getCtx();
+    if (context == nullptr)
+        return;
+
+    vts::server::RspCommon rsp;
+    auto status = service->SetCandidate(context.get(), candidate, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());

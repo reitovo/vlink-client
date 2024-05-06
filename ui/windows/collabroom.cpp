@@ -401,6 +401,10 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo& info) {
     }));
     frameSendThread->start();
 
+    if (!isServer) {
+        serverPeer = std::make_unique<Peer>(this, QString::fromStdString(info.hostpeerid()));
+    }
+
     show();
     activateWindow();
 }
@@ -1508,8 +1512,23 @@ void CollabRoom::onNotifySdp(const vts::server::Sdp& sdp) {
         }
     }
     else {
-        serverPeer = std::make_unique<Peer>(this, from);
         serverPeer->startClient(sdp);
+    }
+}
+
+void CollabRoom::onNotifyCandidate(const vts::server::Candidate& candidate) {
+    ScopedQMutex _(&peersLock);
+    auto from = QString::fromStdString(candidate.frompeerid());
+    if (isServer) {
+        for (auto& peer : clientPeers) {
+            if (peer.first == from) {
+                qDebug() << "client" << peer.first << "offered candidate to server";
+                peer.second->addRemoteCandidate(candidate);
+            }
+        }
+    }
+    else {
+        serverPeer->addRemoteCandidate(candidate);
     }
 }
 

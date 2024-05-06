@@ -93,12 +93,13 @@ void Peer::startServer() {
 
     config.mtu = 1400;
     config.maxMessageSize = 512 * 1024;
-    config.iceServers.emplace_back("stun:stun.qq.com:3478");
     if (!room->turnServer.isEmpty()) {
         if (forceRelay) {
             config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         }
         config.iceServers.emplace_back("turn:" + room->turnServer.toStdString());
+    } else {
+        config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
@@ -111,16 +112,14 @@ void Peer::startServer() {
         }
     });
 
-    pc->onGatheringStateChange([=](rtc::PeerConnection::GatheringState state) {
+    pc->onGatheringStateChange([=, this](rtc::PeerConnection::GatheringState state) {
         qDebugStd("Server Gathering state: " << state);
         if (state == rtc::PeerConnection::GatheringState::Complete) {
             auto description = pc->localDescription();
             if (description.has_value()) {
-                auto desc = processLocalDescription(description.value());
-
                 vts::server::Sdp sdp;
-                sdp.set_type(desc.typeString());
-                sdp.set_sdp(std::string(desc));
+                sdp.set_type(description.value().typeString());
+                sdp.set_sdp(std::string(description.value()));
                 sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
                 sdp.set_frompeerid(room->localPeerId.toStdString());
                 sdp.set_topeerid(remotePeerId.toStdString());
@@ -131,6 +130,31 @@ void Peer::startServer() {
             }
         }
     });
+
+//    pc->onLocalDescription([=, this](const rtc::Description &description) {
+//        vts::server::Sdp sdp;
+//        sdp.set_type(description.typeString());
+//        sdp.set_sdp(std::string(description));
+//        sdp.set_timestamp(sdpTime.toMSecsSinceEpoch());
+//        sdp.set_turn(room->turnServer.toStdString());
+//        sdp.set_frompeerid(room->localPeerId.toStdString());
+//        sdp.set_topeerid(remotePeerId.toStdString());
+//
+//        qDebug() << "Send server sdp to client";
+//        room->roomServer->setSdp(sdp);
+//    });
+//
+//    pc->onLocalCandidate([=, this](const rtc::Candidate &candidate) {
+//        vts::server::Candidate c;
+//        c.set_mid(candidate.mid());
+//        c.set_candidate(candidate.candidate());
+//        c.set_frompeerid(room->localPeerId.toStdString());
+//        c.set_topeerid(remotePeerId.toStdString());
+//
+//        qDebug() << "Send server candidate to client";
+//        qDebugStd(candidate);
+//        room->roomServer->setCandidate(c);
+//    });
 
     pcLock.lock();
     dc = pc->createDataChannel("vts");
@@ -157,7 +181,7 @@ void Peer::startServer() {
     });
 }
 
-void Peer::startClient(const vts::server::Sdp& serverSdp) {
+void Peer::startClient(const vts::server::Sdp &serverSdp) {
     auto timeStamp = serverSdp.timestamp();
     auto serverSdpTime = QDateTime::fromMSecsSinceEpoch(timeStamp, Qt::UTC);
 
@@ -172,13 +196,14 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
 
     config.mtu = 1400;
     config.maxMessageSize = 512 * 1024;
-    config.iceServers.emplace_back("stun:stun.qq.com:3478");
-    auto turnServer = serverSdp.turn();
+    const auto &turnServer = serverSdp.turn();
     if (!turnServer.empty()) {
         if (forceRelay) {
             config.iceTransportPolicy = rtc::TransportPolicy::Relay;
         }
         config.iceServers.emplace_back("turn:" + turnServer);
+    } else {
+        config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     }
 
     pc = std::make_unique<rtc::PeerConnection>(config);
@@ -196,11 +221,9 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
         if (state == rtc::PeerConnection::GatheringState::Complete) {
             auto description = pc->localDescription();
             if (description.has_value()) {
-                auto desc = processLocalDescription(description.value());
-
                 vts::server::Sdp sdp;
-                sdp.set_type(desc.typeString());
-                sdp.set_sdp(std::string(desc));
+                sdp.set_type(description.value().typeString());
+                sdp.set_sdp(std::string(description.value()));
                 sdp.set_timestamp(serverSdp.timestamp());
                 sdp.set_frompeerid(room->localPeerId.toStdString());
                 sdp.set_topeerid(remotePeerId.toStdString());
@@ -210,6 +233,29 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
             }
         }
     });
+
+//    pc->onLocalDescription([=, this](const rtc::Description &description) {
+//        vts::server::Sdp sdp;
+//        sdp.set_type(description.typeString());
+//        sdp.set_sdp(std::string(description));
+//        sdp.set_timestamp(serverSdp.timestamp());
+//        sdp.set_frompeerid(room->localPeerId.toStdString());
+//        sdp.set_topeerid(remotePeerId.toStdString());
+//
+//        qDebug() << "Send client sdp to server";
+//        room->roomServer->setSdp(sdp);
+//    });
+//
+//    pc->onLocalCandidate([=, this](const rtc::Candidate &candidate) {
+//        vts::server::Candidate c;
+//        c.set_mid(candidate.mid());
+//        c.set_candidate(candidate.candidate());
+//        c.set_frompeerid(room->localPeerId.toStdString());
+//        c.set_topeerid(remotePeerId.toStdString());
+//
+//        qDebug() << "Send client candidate to server";
+//        room->roomServer->setCandidate(c);
+//    });
 
     pc->onDataChannel([=, this](std::shared_ptr<rtc::DataChannel> incoming) {
         pcLock.lock();
@@ -284,7 +330,20 @@ QString Peer::dataStats() {
             .arg(humanizeBytes(pc->bytesReceived()));
 }
 
-void Peer::setClientRemoteSdp(const vts::server::Sdp& sdp) {
+void Peer::addRemoteCandidate(const vts::server::Candidate &candidate) {
+    if (pc == nullptr || pc->state() == rtc::PeerConnection::State::Connected ||
+        pc->signalingState() == rtc::PeerConnection::SignalingState::Stable)
+        return;
+    if (connected())
+        return;
+
+    qDebug() << "set client remote candidate";
+    auto c = rtc::Candidate(candidate.candidate(), candidate.mid());
+    pc->addRemoteCandidate(c);
+    qDebugStd(c);
+}
+
+void Peer::setClientRemoteSdp(const vts::server::Sdp &sdp) {
     if (pc == nullptr || pc->state() == rtc::PeerConnection::State::Connected ||
         pc->signalingState() == rtc::PeerConnection::SignalingState::Stable)
         return;
@@ -392,14 +451,8 @@ size_t Peer::rxBytes() {
     return pc->bytesReceived();
 }
 
-rtc::Description Peer::processLocalDescription(rtc::Description desc) {
-    auto candidates = desc.extractCandidates();
-    auto ret = desc;
-    ret.addCandidates(candidates);
-    return ret;
-}
-
 static QMutex rxSpeedMutex;
+
 size_t Peer::rxSpeed() {
     ScopedQMutex _(&rxSpeedMutex);
     rxSpeedCount.update(rxBytes());
@@ -407,6 +460,7 @@ size_t Peer::rxSpeed() {
 }
 
 static QMutex txSpeedMutex;
+
 size_t Peer::txSpeed() {
     ScopedQMutex _(&txSpeedMutex);
     txSpeedCount.update(txBytes());

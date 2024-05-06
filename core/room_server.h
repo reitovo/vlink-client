@@ -55,6 +55,7 @@ public:
     void setStat(const vts::server::ReqStat& stat);
     void setNick(const std::string& nick);
     void setSdp(const vts::server::Sdp& sdp);
+    void setCandidate(const vts::server::Candidate& candidate);
     void setNat(int type);
     void setFrameFormat(const vts::server::FrameFormatSetting& format);
     void setShareInfo(const std::string& gpu, const std::string& capture, bool start);
