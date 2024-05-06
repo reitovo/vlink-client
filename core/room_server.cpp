@@ -75,7 +75,7 @@ void RoomServer::startNatTypeDetect() {
     natThread = std::unique_ptr<QThread>(QThread::create([=, this]() {
         qDebug() << "Start nat type determine";
         CNatProb natProb;
-        if (!natProb.Init("stun.miwifi.com")) {
+        if (!natProb.Init("stun.qq.com")) {
             qDebug() << "natProb init failed.";
         }
         int retry = 0;

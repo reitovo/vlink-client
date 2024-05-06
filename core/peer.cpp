@@ -94,7 +94,6 @@ void Peer::startServer() {
     config.mtu = 1400;
     config.maxMessageSize = 512 * 1024;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
-    config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     if (!room->turnServer.isEmpty()) {
         if (forceRelay) {
             config.iceTransportPolicy = rtc::TransportPolicy::Relay;
@@ -174,7 +173,6 @@ void Peer::startClient(const vts::server::Sdp& serverSdp) {
     config.mtu = 1400;
     config.maxMessageSize = 512 * 1024;
     config.iceServers.emplace_back("stun:stun.qq.com:3478");
-    config.iceServers.emplace_back("stun:stun.miwifi.com:3478");
     auto turnServer = serverSdp.turn();
     if (!turnServer.empty()) {
         if (forceRelay) {
