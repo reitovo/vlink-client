@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package vts.server;
+
+message FrameFormatSetting {
+  int32 frameWidth = 1;
+  int32 frameHeight = 2;
+  int32 frameRate = 3;
+  int32 frameQuality = 4;
+}
+
+message ReqCommon {}
+
+message RspCommon {}
+
+message NotifyCommon {}
