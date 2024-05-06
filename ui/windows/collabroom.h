@@ -113,6 +113,7 @@ private:
     // Callback From RoomServer
     void onNotifyPeers(const vts::server::NotifyPeers &peers);
     void onNotifySdp(const vts::server::Sdp &sdp);
+    void onNotifyTurn(const std::string &turn);
     void onNotifyCandidate(const vts::server::Candidate& candidate);
     void onNotifyFrameFormat(const vts::server::FrameFormatSetting &sdp);
     void onNotifyDestroy();

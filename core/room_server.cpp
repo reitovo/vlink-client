@@ -34,6 +34,9 @@ void RoomServer::handleMessage(const vts::server::Notify &notify) {
         case vts::server::Notify::kFrame:
             room->onNotifyFrameFormat(notify.frame());
             break;
+        case vts::server::Notify::kTurn:
+            room->onNotifyTurn(notify.turn().turn());
+            break;
         case vts::server::Notify::kRoomDestroy: {
             static QMutex destroyedMutex;
             ScopedQMutex _(&destroyedMutex);
@@ -236,6 +239,22 @@ void RoomServer::setNick(const string &nick) {
 
     vts::server::RspCommon rsp;
     auto status = service->SetNickName(context.get(), req, &rsp);
+    if (!status.ok()) {
+        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
+        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+    }
+}
+
+void RoomServer::setTurn(const string &turn) {
+    auto context = getCtx();
+    if (context == nullptr)
+        return;
+
+    vts::server::TurnInfo t;
+    t.set_turn(turn);
+
+    vts::server::RspCommon rsp;
+    auto status = service->SetTurn(context.get(), t, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());

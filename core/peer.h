@@ -22,7 +22,6 @@ class Peer {
     CollabRoom* room;
     std::unique_ptr<rtc::PeerConnection> pc;
     std::shared_ptr<rtc::DataChannel> dc;
-    QDateTime sdpTime;
     bool forceRelay;
 
     std::unique_ptr<AvToDx> dec;
@@ -45,7 +44,7 @@ public:
     bool failed();
 
     void startServer();
-    void startClient(const vts::server::Sdp& serverSdp);
+    void startClient();
     void close();
 
     QMutex decoderMutex;
@@ -67,7 +66,7 @@ public:
 
     QString dataStats();
     void addRemoteCandidate(const vts::server::Candidate& candidate);
-    void setClientRemoteSdp(const vts::server::Sdp& sdp);
+    void setRemoteSdp(const vts::server::Sdp& sdp);
     void initSmartBuf();
 
     void decode(std::unique_ptr<vts::VtsMsg> m);

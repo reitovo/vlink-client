@@ -54,6 +54,7 @@ public:
     void setRtt(const vts::server::ReqRtt& rtt);
     void setStat(const vts::server::ReqStat& stat);
     void setNick(const std::string& nick);
+    void setTurn(const std::string& turn);
     void setSdp(const vts::server::Sdp& sdp);
     void setCandidate(const vts::server::Candidate& candidate);
     void setNat(int type);
