@@ -14,6 +14,8 @@
 
 namespace vts::info {
     QString BuildId = "debug";
+    bool OverrideForceUseTurn = true;
+    QString OverrideTurnServer = "";
 }
 
 #ifdef HAS_DIRECTXTK

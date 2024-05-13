@@ -2,6 +2,7 @@
 #include <QTimer>
 #include <utility>
 #include "util.h"
+#include "QCommandLineParser"
 #include <QSettings>
 
 Peer::Peer(CollabRoom *room, QString id) {
@@ -10,6 +11,10 @@ Peer::Peer(CollabRoom *room, QString id) {
 
     QSettings s;
     forceRelay = s.value("forceRelay").toBool();
+    if (vts::info::OverrideForceUseTurn) {
+        forceRelay = true;
+        qDebug() << "Use force turn server from command line";
+    }
 
     dcThreadAlive = true;
     dcThread = std::unique_ptr<QThread>(QThread::create([=, this]() {

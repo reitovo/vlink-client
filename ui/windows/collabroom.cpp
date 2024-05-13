@@ -287,8 +287,13 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         }
 
         turnServer = settings.value("turnServer", QString()).toString();
-        ui->relayInput->setText(turnServer);
         qDebug() << "Turn server" << turnServer;
+        if (!vts::info::OverrideTurnServer.isEmpty()) {
+            turnServer = vts::info::OverrideTurnServer;
+            qDebug() << "Use turn server from command line " << turnServer;
+        }
+
+        ui->relayInput->setText(turnServer);
     }
 
     roomOpenWaiting = new QMessageBox(this);

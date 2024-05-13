@@ -150,9 +150,18 @@ int main(int argc, char *argv[]) {
 
     QCommandLineParser parser;
     parser.addOption(QCommandLineOption("build-id", QString(), "build-id", "Debug"));
+    parser.addOption(QCommandLineOption("turn-server", QString(), "turn-server"));
+    parser.addOption(QCommandLineOption("force-use-turn", QString()));
     parser.process(app);
 
     vts::info::BuildId = parser.value("build-id");
+
+    if (parser.isSet("turn-server")) {
+        vts::info::OverrideTurnServer = parser.value("turn-server");
+    }
+    if (parser.isSet("force-use-turn")) {
+        vts::info::OverrideForceUseTurn = true;
+    }
 
     std::vector<int> fonts;
     fonts.push_back(QFontDatabase::addApplicationFont(":/fonts/SmileySans-Oblique.ttf"));

@@ -22,6 +22,8 @@
 
 namespace vts::info {
     extern QString BuildId;
+    extern bool OverrideForceUseTurn;
+    extern QString OverrideTurnServer;
 }
 
 class Elapsed {
