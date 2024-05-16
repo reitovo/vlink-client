@@ -370,8 +370,11 @@ std::optional<QString> AvToDx::processFrame() {
     auto spoutDevice = spoutOutput.GetDX11Device();
     auto spoutContext = spoutOutput.GetDX11Context();
     auto spoutTex = bgra->getSharedTargetTexture(spoutDevice, spoutContext);
-    spoutOutput.SendTexture(spoutTex);
-    spoutTex->Release();
+
+    if (spoutTex != nullptr) {
+        spoutOutput.SendTexture(spoutTex);
+        spoutTex->Release();
+    }
 
     fps.add(t.nsecsElapsed());
 

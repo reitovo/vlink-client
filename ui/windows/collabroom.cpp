@@ -403,6 +403,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     frameSendThread->start();
 
     if (!isServer) {
+        ScopedQMutex _(&peersLock);
         serverPeer = std::make_unique<Peer>(this, QString::fromStdString(info.hostpeerid()));
         serverPeer->startClient();
     }
