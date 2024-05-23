@@ -37,7 +37,8 @@
         "gui",
         "network",
         "thread",
-        "widgets"
+        "widgets",
+        "png"
       ]
     },
     "qttools",
@@ -56,15 +57,15 @@
     },
     {
       "name": "qtbase",
-      "version-string": "6.4.3"
+      "version-string": "6.7.0"
     },
     {
       "name": "qttools",
-      "version-string": "6.4.3"
+      "version-string": "6.7.0#1"
     },
     {
       "name": "qttranslations",
-      "version-string": "6.4.3"
+      "version-string": "6.7.0"
     }
   ],
   "supports": "windows",
@@ -72,7 +73,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/cnSchwarzer/vcpkg",
-      "baseline": "49f7c044e84dab1648b1996939f94236d5e84948",
+      "baseline": "bee2447e324d4a59fe460640683adbd2df3d8373",
       "reference": "reito"
     },
     "registries": [

@@ -30,11 +30,9 @@ static enum AVPixelFormat get_hw_format(AVCodecContext* ctx, const enum AVPixelF
 }
 
 AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityDesc q,
-               const std::shared_ptr<DxToFrame>& d3d) : IDxToFrameSrc(
-    d3d) {
+               const std::shared_ptr<DxToFrame>& d3d, bool isServer) : IDxToFrameSrc(d3d) {
     qDebug() << "begin d3d2dx";
     this->peerId = peerId;
-    setNick(nick);
 
     d3d->registerSource(this);
 
@@ -43,9 +41,15 @@ AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityD
     enableBuffering = wireless && !settings.value("forceNoBuffering", false).toBool();
     qDebug() << "enable buffering" << enableBuffering;
 
+    auto enableSeparateSpout = settings.value("enableSeparateSpout", false).toBool();
+    if (enableSeparateSpout || !isServer) {
+        spoutOutput = std::make_unique<spoutDX>();
+    }
+
     _width = q.frameWidth;
     _height = q.frameHeight;
     this->frameRate = q.frameRate;
+    setNick(nick);
 
     init();
 }
@@ -53,8 +57,10 @@ AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityD
 AvToDx::~AvToDx() {
     qDebug() << "end d3d2dx";
 
-    spoutOutput.ReleaseSender();
-    spoutOutput.CloseDirectX11();
+    if (spoutOutput) {
+        spoutOutput->ReleaseSender();
+        spoutOutput->CloseDirectX11();
+    }
 
     d3d->unregisterSource(this);
     stop();
@@ -95,7 +101,9 @@ std::optional<QString> AvToDx::init() {
     processThread->setObjectName("AvToDx Worker");
     processThread->start();
 
-    spoutOutput.OpenDirectX11();
+    if (spoutOutput) {
+        spoutOutput->OpenDirectX11();
+    }
 
     inited = true;
 
@@ -367,13 +375,15 @@ std::optional<QString> AvToDx::processFrame() {
 
     bgra->nv12ToBgra(frame);
 
-    auto spoutDevice = spoutOutput.GetDX11Device();
-    auto spoutContext = spoutOutput.GetDX11Context();
-    auto spoutTex = bgra->getSharedTargetTexture(spoutDevice, spoutContext);
+    if (spoutOutput) {
+        auto spoutDevice = spoutOutput->GetDX11Device();
+        auto spoutContext = spoutOutput->GetDX11Context();
+        auto spoutTex = bgra->getSharedTargetTexture(spoutDevice, spoutContext);
 
-    if (spoutTex != nullptr) {
-        spoutOutput.SendTexture(spoutTex);
-        spoutTex->Release();
+        if (spoutTex != nullptr) {
+            spoutOutput->SendTexture(spoutTex);
+            spoutTex->Release();
+        }
     }
 
     fps.add(t.nsecsElapsed());

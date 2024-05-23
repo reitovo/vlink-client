@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
     QCoreApplication::setOrganizationName("Reito");
     QCoreApplication::setOrganizationDomain("reito.fun");
-    QCoreApplication::setApplicationName("VTSLink");
+    QCoreApplication::setApplicationName("VLink");
 
     QApplication app(argc, argv);
 

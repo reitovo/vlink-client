@@ -307,7 +307,7 @@ bool DxToFrame::init() {
     auto ret = createSharedSurf();
     resetDeviceContext();
 
-    spoutOutput.SetSenderName("VLink 联动 [最终合成]");
+    spoutOutput.SetSenderName("VLink 联动 [创建者最终合成画面]");
     spoutOutput.OpenDirectX11(_d3d11_device.Get());
 
     _inited = true;

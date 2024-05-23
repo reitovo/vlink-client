@@ -113,7 +113,7 @@ private:
     FrameDelay frameDelay;
 
     std::string nick;
-    spoutDX spoutOutput;
+    std::unique_ptr<spoutDX> spoutOutput;
 
     inline int frameQueueSize() {
         int ret = 0;
@@ -128,7 +128,7 @@ private:
 
 public:
     AvToDx(const std::string& peerId, const std::string& nick, FrameQualityDesc q,
-           const std::shared_ptr<DxToFrame>& d3d);
+           const std::shared_ptr<DxToFrame>& d3d, bool isServer);
     ~AvToDx();
 
     std::optional<QString> init();
@@ -142,8 +142,10 @@ public:
 
     inline void setNick(const std::string& nick) {
         this->nick = nick;
-        const auto suffix = nick.empty() ? " [最终合成]" : " (" + this->nick + ")";
-        spoutOutput.SetSenderName(("VLink 联动" + suffix).c_str());
+        const auto suffix = nick.empty() ? " [加入者最终合成画面]" : " (" + this->nick + ")";
+        if (spoutOutput) {
+            spoutOutput->SetSenderName(("VLink 联动" + suffix).c_str());
+        }
     }
 };
 

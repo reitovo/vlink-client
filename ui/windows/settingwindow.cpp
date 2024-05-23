@@ -59,6 +59,7 @@ void SettingWindow::init() {
     ui->forceRelay->setChecked(settings.value("forceRelay").toBool());
     ui->enableAmfCompatible->setChecked(settings.value("enableAmfCompatible").toBool());
     ui->privateServerNoSsl->setChecked(settings.value("privateServerNoSsl").toBool());
+    ui->enableSeparateSpout->setChecked(settings.value("enableSeparateSpout").toBool());
 
     connect(ui->privateServerNoSsl, &QCheckBox::clicked, this, [=, this](bool v) {
         settings.setValue("privateServerNoSsl", v);
@@ -202,6 +203,12 @@ void SettingWindow::init() {
         settings.setValue("forceShmem", v);
         settings.sync();
         qDebug() << "force shmem" << v;
+    });
+
+    connect(ui->enableSeparateSpout, &QCheckBox::clicked, this, [=, this](bool v) {
+        settings.setValue("enableSeparateSpout", v);
+        settings.sync();
+        qDebug() << "enableSeparateSpout" << v;
     });
 
     //TODO: 计算机\HKEY_CURRENT_USER\Software\Microsoft\DirectX\UserGpuPreferences
