@@ -418,7 +418,7 @@ int diagnoseAmdAmf() {
             {
                 DeviceDX11 deviceDX11;
                 if (deviceDX11.Init(deviceIdx) == AMF_OK) {
-                    deviceInit = (pContext->InitDX11(deviceDX11.GetDevice()) == AMF_OK);
+                    deviceInit = (pContext->InitDX11(deviceDX11.GetDevice().Get()) == AMF_OK);
                 }
             }
         } else    //  Older than Vista - not supported

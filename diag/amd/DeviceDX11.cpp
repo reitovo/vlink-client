@@ -51,7 +51,7 @@ DeviceDX11::~DeviceDX11()
     Terminate();
 }
 
-ATL::CComPtr<ID3D11Device>      DeviceDX11::GetDevice()
+Microsoft::WRL::ComPtr<ID3D11Device> DeviceDX11::GetDevice()
 {
     return m_pD3DDevice;
 }
@@ -60,7 +60,7 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
 {
     HRESULT hr = S_OK;
     // find adapter
-    ATL::CComPtr<IDXGIAdapter> pAdapter;
+    Microsoft::WRL::ComPtr<IDXGIAdapter> pAdapter;
 
 #if !defined(METRO_APP)
     EnumerateAdapters(onlyWithOutputs, bCheckForAMD);
@@ -74,7 +74,7 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
     flagDXGI |= DXGI_CREATE_FACTORY_DEBUG;
 #endif
 
-    ATL::CComPtr<IDXGIFactory1> pFactory;
+    Microsoft::WRL::ComPtr<IDXGIFactory1> pFactory;
 
     HMODULE hModule = ::LoadLibraryW(L"Dxgi.dll");
     CreateDXGIFactory2_Fun fun = (CreateDXGIFactory2_Fun)::GetProcAddress(hModule, "CreateDXGIFactory2");
@@ -114,7 +114,7 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
 
     LOG_INFO("DX11 : Chosen Device " << adapterID <<": Device ID: " << strDevice << " [" << desc.Description << "]");
 
-    ATL::CComPtr<IDXGIOutput> pOutput;
+    Microsoft::WRL::ComPtr<IDXGIOutput> pOutput;
     if(SUCCEEDED(pAdapter->EnumOutputs(0, &pOutput)))
     {
         DXGI_OUTPUT_DESC outputDesc;
@@ -124,8 +124,8 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
 #endif//#if !defined(METRO_APP)
 
 /////
-    ATL::CComPtr<ID3D11Device> pD3D11Device;
-    ATL::CComPtr<ID3D11DeviceContext>  pD3D11Context;
+    Microsoft::WRL::ComPtr<ID3D11Device> pD3D11Device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext>  pD3D11Context;
     UINT createDeviceFlags = 0;
 
 #ifdef _DEBUG
@@ -140,7 +140,7 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
     D3D_FEATURE_LEVEL featureLevel;
 
     D3D_DRIVER_TYPE eDriverType = pAdapter != NULL ? D3D_DRIVER_TYPE_UNKNOWN : D3D_DRIVER_TYPE_HARDWARE;
-    hr = D3D11CreateDevice(pAdapter, eDriverType, NULL, createDeviceFlags, featureLevels, _countof(featureLevels),
+    hr = D3D11CreateDevice(pAdapter.Get(), eDriverType, NULL, createDeviceFlags, featureLevels, _countof(featureLevels),
                 D3D11_SDK_VERSION, &pD3D11Device, &featureLevel, &pD3D11Context);
 #ifdef _DEBUG
     if(FAILED(hr))
@@ -153,7 +153,7 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
     if(FAILED(hr))
     {
         LOG_ERROR(L"InitDX11() failed to create HW DX11.1 device ");
-        hr = D3D11CreateDevice(pAdapter, eDriverType, NULL, createDeviceFlags, featureLevels + 1, _countof(featureLevels) - 1,
+        hr = D3D11CreateDevice(pAdapter.Get(), eDriverType, NULL, createDeviceFlags, featureLevels + 1, _countof(featureLevels) - 1,
                     D3D11_SDK_VERSION, &pD3D11Device, &featureLevel, &pD3D11Context);
     }
     else
@@ -182,8 +182,8 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
         LOG_ERROR(L"InitDX11() failed to create SW DX11 device ");
     }
 
-    ATL::CComPtr<ID3D10Multithread> pMultithread = NULL;
-    hr = pD3D11Device->QueryInterface(__uuidof(ID3D10Multithread), reinterpret_cast<void**>(&pMultithread));
+    Microsoft::WRL::ComPtr<ID3D10Multithread> pMultithread = NULL;
+    hr = pD3D11Device->QueryInterface(__uuidof(ID3D10Multithread), reinterpret_cast<void**>(pMultithread.GetAddressOf()));
     if(pMultithread)
     {
 //        amf_bool isSafe = pMultithread->GetMultithreadProtected() ? true : false;
@@ -197,14 +197,14 @@ AMF_RESULT DeviceDX11::Init(amf_uint32 adapterID, bool onlyWithOutputs, bool bCh
 
 AMF_RESULT DeviceDX11::Terminate()
 {
-    m_pD3DDevice.Release();
+    m_pD3DDevice->Release();
     return AMF_OK;
 }
 
 void DeviceDX11::EnumerateAdapters(bool onlyWithOutputs, bool bCheckForAMD)
 {
 #if !defined(METRO_APP)
-    ATL::CComPtr<IDXGIFactory> pFactory;
+    Microsoft::WRL::ComPtr<IDXGIFactory> pFactory;
     HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void **)&pFactory);
     if(FAILED(hr))
     {
@@ -217,7 +217,7 @@ void DeviceDX11::EnumerateAdapters(bool onlyWithOutputs, bool bCheckForAMD)
     m_adaptersCount = 0;
     while(true)
     {
-        ATL::CComPtr<IDXGIAdapter> pAdapter;
+        Microsoft::WRL::ComPtr<IDXGIAdapter> pAdapter;
         if(pFactory->EnumAdapters(count, &pAdapter) == DXGI_ERROR_NOT_FOUND)
         {
             break;
@@ -231,7 +231,7 @@ void DeviceDX11::EnumerateAdapters(bool onlyWithOutputs, bool bCheckForAMD)
             count++;
             continue;
         }
-        ATL::CComPtr<IDXGIOutput> pOutput;
+        Microsoft::WRL::ComPtr<IDXGIOutput> pOutput;
         if(onlyWithOutputs && pAdapter->EnumOutputs(0, &pOutput) == DXGI_ERROR_NOT_FOUND)
         {
             count++;

@@ -34,8 +34,8 @@
 
 #include <SDKDDKVer.h>
 #include <string>
-#include <atlbase.h>
 #include <d3d11.h>
+#include <wrl/client.h>
 #include "AMF/core/Result.h"
 
 class DeviceDX11 {
@@ -46,7 +46,7 @@ public:
     AMF_RESULT Init(amf_uint32 adapterID, bool onlyWithOutputs = false, bool bCheckForAMD = true);
     AMF_RESULT Terminate();
 
-    ATL::CComPtr<ID3D11Device> GetDevice();
+    Microsoft::WRL::ComPtr<ID3D11Device> GetDevice();
 
     std::wstring GetDisplayDeviceName() { return m_displayDeviceName; }
 
@@ -55,7 +55,7 @@ public:
 private:
     void EnumerateAdapters(bool onlyWithOutputs, bool bCheckForAMD = true);
 
-    ATL::CComPtr<ID3D11Device> m_pD3DDevice;
+    Microsoft::WRL::ComPtr<ID3D11Device> m_pD3DDevice;
 
     static const amf_uint32 MAXADAPTERS = 128;
     amf_uint32 m_adaptersCount;
