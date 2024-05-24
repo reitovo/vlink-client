@@ -7,6 +7,7 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
+  VCPKG_MSVC_TOOLSET_VERSION: 14.34.31933
 
 concurrency:
   group: 'vlink'
@@ -47,23 +48,21 @@ jobs:
         working-directory: C:/vtslink/client/out
         run: 'if (test-path install) { remove-item -r install }'
 
+      - name: Remove previous cmake cache
+        working-directory: C:/vtslink/client/out/build
+        run: 'if (test-path CMakeCache.txt) { remove-item CMakeCache.txt }'
+
       - name: Configure CMake
         working-directory: C:/vtslink/client
         run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install
-        env:
-          VCPKG_MSVC_TOOLSET_VERSION: 14.34.31933
 
       - name: Build
         working-directory: C:/vtslink/client
         run: cmake --build C:/vtslink/client/out/build --target VTSLink -j $NUMBER_OF_PROCESSORS
-        env:
-          VCPKG_MSVC_TOOLSET_VERSION: 14.34.31933
 
       - name: Install
         working-directory: C:/vtslink/client
         run: cmake --build C:/vtslink/client/out/build --config ${{env.BUILD_TYPE}} --target install -j $NUMBER_OF_PROCESSORS
-        env:
-          VCPKG_MSVC_TOOLSET_VERSION: 14.34.31933
 
       - name: Remove previous install binary
         working-directory: C:/vtslink/client/out/install/bin
