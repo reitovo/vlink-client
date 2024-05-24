@@ -142,7 +142,7 @@ public:
 
     inline void setNick(const std::string& nick) {
         this->nick = nick;
-        const auto suffix = nick.empty() ? " [加入者最终合成画面]" : " (" + this->nick + ")";
+        const auto suffix = nick.empty() ? " [Client]" : " (" + this->nick + ")";
         if (spoutOutput) {
             spoutOutput->SetSenderName(("VLink 联动" + suffix).c_str());
         }
