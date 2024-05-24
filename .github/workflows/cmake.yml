@@ -7,6 +7,7 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
+  VCPKG_MSVC_TOOLSET_VERSION: 14.34.31933
 
 concurrency:
   group: 'vlink'
