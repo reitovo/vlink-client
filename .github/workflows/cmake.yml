@@ -55,7 +55,7 @@ jobs:
 
       - name: Configure CMake
         working-directory: C:/vtslink/client
-        run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install -DVCPKG_TARGET_TRIPLET=x64-windows-14-34
+        run: cmake -G Ninja -B C:/vtslink/client/out/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=C:/vtslink/client/out/install -DVCPKG_TARGET_TRIPLET=x64-windows-msvc1434 -DVCPKG_HOST_TRIPLET=x64-windows-msvc1434
 
       - name: Build
         working-directory: C:/vtslink/client
