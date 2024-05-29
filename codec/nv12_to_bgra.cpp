@@ -474,6 +474,9 @@ ID3D11Texture2D *Nv12ToBgra::getSharedTargetTexture(ID3D11Device *dev, ID3D11Dev
     if (!_texture_rgba_copy_shared)
         return nullptr;
 
+    if (!dev || !ctx)
+        return nullptr;
+
     lock.lock();
 
     ID3D11Texture2D *src;

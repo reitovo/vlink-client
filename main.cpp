@@ -242,7 +242,7 @@ void initializeCrashpad() {
 #endif
 
 void writeQtLogThread() {
-    std::cout << "writeQtLogThread start" << std::endl;
+    std::cout << "writeQtLogThread" << std::endl;
 
     QFile outFile(VLINK_LOG_FILE);
     outFile.open(QIODevice::WriteOnly | QIODevice::Append);
@@ -256,8 +256,6 @@ void writeQtLogThread() {
             QThread::msleep(1);
         }
     }
-
-    std::cout << "writeQtLogThread exit" << std::endl;
 }
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {

@@ -7,7 +7,6 @@ on:
 env:
   BUILD_TYPE: RelWithDebInfo
   BACKTRACE_SUBMIT_TOKEN: ${{ secrets.BACKTRACE_SUBMIT_TOKEN }}
-  VCPKG_PLATFORM_TOOLSET_VERSION: 14.34.31933
   VCPKG_ROOT: "C:/vcpkg"
 
 concurrency:
