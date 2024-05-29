@@ -72,11 +72,19 @@ jobs:
         working-directory: 'C:/vtslink/updator/Updator.Uploader'
         run: 'dotnet build -o C:/vtslink/uploader'
 
-      - name: Publish build
+      - name: Publish build tencent
         shell: pwsh
         run: | 
           dotnet C:/vtslink/uploader/Updator.Uploader.dll `
           --config=C:/vtslink/config/vtslink/config.json `
+          --distribution-root=C:/vtslink/client/out/install `
+          --update-log="> ${{github.event.head_commit.message}}"
+
+      - name: Publish build azure
+        shell: pwsh
+        run: |
+          dotnet C:/vtslink/uploader/Updator.Uploader.dll `
+          --config=C:/vtslink/config/vtslink/azure.json `
           --distribution-root=C:/vtslink/client/out/install `
           --update-log="> ${{github.event.head_commit.message}}"
 
