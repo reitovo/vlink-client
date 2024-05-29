@@ -144,7 +144,7 @@ public:
         this->nick = nick;
         const auto suffix = nick.empty() ? " [Client]" : " (" + this->nick + ")";
         if (spoutOutput) {
-            spoutOutput->SetSenderName(("VLink 联动" + suffix).c_str());
+            spoutOutput->SetSenderName(("VLink " + suffix).c_str());
         }
     }
 };
