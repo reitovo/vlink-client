@@ -174,17 +174,6 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         qDebug() << "set spout" << s;
     });
 
-    // If server, start sending heartbeat, and rtt update
-    if (isServer) {
-        heartbeat = std::unique_ptr<QThread>(QThread::create([this]() {
-            while (!exiting) {
-                QThread::sleep(10);
-                heartbeatUpdate();
-            }
-        }));
-        heartbeat->start();
-    }
-
     usageStat = std::make_unique<QTimer>(this);
     connect(usageStat.get(), &QTimer::timeout, this, [this]() {
         usageStatUpdate();
@@ -406,6 +395,17 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
         ScopedQMutex _(&peersLock);
         serverPeer = std::make_unique<Peer>(this, QString::fromStdString(info.hostpeerid()));
         serverPeer->startClient();
+    }
+
+    // If server, start sending heartbeat, and rtt update
+    if (isServer) {
+        heartbeat = std::unique_ptr<QThread>(QThread::create([this]() {
+            while (!exiting) {
+                QThread::sleep(10);
+                heartbeatUpdate();
+            }
+        }));
+        heartbeat->start();
     }
 
     show();
