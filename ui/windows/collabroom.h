@@ -138,6 +138,8 @@ private:
 
     bool isServer;
     bool useDxCapture;
+    bool isRoomInfoReady;
+
     QString roomId;
     QString localPeerId;
 

@@ -107,7 +107,14 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     qDebug() << "Using Room Endpoint" << roomEndpoint;
 
     this->roomId = roomId;
-    localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    localPeerId =  QSysInfo::machineUniqueId();
+    if (localPeerId.isEmpty()) {
+        localPeerId = QSysInfo::bootUniqueId();
+    }
+    if (localPeerId.isEmpty()) {
+        localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    }
 
     useDxCapture = settings.value("useDxCapture", false).toBool();
     qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");
@@ -410,6 +417,8 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
 
     show();
     activateWindow();
+
+    isRoomInfoReady = true;
 }
 
 void CollabRoom::roomInfoFailed(const string &error) {
