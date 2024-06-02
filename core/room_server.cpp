@@ -168,6 +168,7 @@ void RoomServer::setSdp(const vts::server::Sdp &sdp) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -181,6 +182,7 @@ void RoomServer::setCandidate(const vts::server::Candidate& candidate) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -197,6 +199,7 @@ void RoomServer::setNat(int type) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -210,6 +213,7 @@ void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -223,6 +227,7 @@ void RoomServer::setStat(const vts::server::ReqStat &stat) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -239,6 +244,7 @@ void RoomServer::setNick(const string &nick) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -255,6 +261,7 @@ void RoomServer::setTurn(const string &turn) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -268,6 +275,7 @@ void RoomServer::setFrameFormat(const vts::server::FrameFormatSetting &format) {
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -288,6 +296,7 @@ void RoomServer::setShareInfo(const std::string& gpu, const std::string& capture
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }
 
@@ -325,5 +334,6 @@ void RoomServer::requestIdr(const std::string& reason, const std::string& peer) 
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
         emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        requestHasFailed = true;
     }
 }

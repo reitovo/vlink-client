@@ -108,13 +108,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
 
     this->roomId = roomId;
 
-    localPeerId =  QSysInfo::machineUniqueId();
-    if (localPeerId.isEmpty()) {
-        localPeerId = QSysInfo::bootUniqueId();
-    }
-    if (localPeerId.isEmpty()) {
-        localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    }
+    localPeerId = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
     useDxCapture = settings.value("useDxCapture", false).toBool();
     qDebug() << "sender is" << (useDxCapture ? "dx" : "spout");

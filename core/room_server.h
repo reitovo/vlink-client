@@ -18,6 +18,8 @@ class RoomServer {
     std::atomic_bool exiting = false;
     std::atomic_bool destroyed = false;
 
+    std::atomic_bool requestHasFailed = false;
+
     std::unique_ptr<QThread> natThread;
     std::unique_ptr<QThread> notifyThread;
     std::unique_ptr<grpc::ClientContext> notifyContext;
@@ -39,7 +41,7 @@ public:
     void joinRoom(const std::string& peerId, const std::string& roomId, const std::string& nick);
 
     inline std::unique_ptr<grpc::ClientContext> getCtx() {
-        if (peerId.empty() || roomId.empty())
+        if (peerId.empty() || roomId.empty() || requestHasFailed)
             return nullptr;
 
         auto ctx = std::make_unique<grpc::ClientContext>();
