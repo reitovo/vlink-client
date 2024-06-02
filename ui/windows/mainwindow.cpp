@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
     connect(ui->btnCreateRoom, SIGNAL(clicked()), this, SLOT(createRoom()));
+    connect(ui->btnReclaimRoom, SIGNAL(clicked()), this, SLOT(reclaimRoom()));
     connect(ui->actionOpenSetting, SIGNAL(triggered()), this, SLOT(openSetting()));
 
     connect(ui->actionLicense, &QAction::triggered, this, [=]() {
@@ -175,6 +176,27 @@ void MainWindow::createRoom() {
 
     hide();
     auto c = new CollabRoom(true);
+    connect(c, &CollabRoom::finished, this, [=, this] {
+        c->deleteLater();
+    });
+    connect(c, &CollabRoom::destroyed, this, [=, this] {
+        qDebug() << "CollabRoom finished";
+        show();
+        setWindowState(Qt::WindowState::WindowActive);
+        activateWindow();
+        c->deleteLater();
+    });
+    c->show();
+}
+
+void MainWindow::reclaimRoom() {
+    qDebug() << "Reclaim room";
+
+    QSettings settings;
+    auto prev = settings.value("previousHostRoomId").toString();
+
+    hide();
+    auto c = new CollabRoom(true, prev);
     connect(c, &CollabRoom::finished, this, [=, this] {
         c->deleteLater();
     });

@@ -306,6 +306,11 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         req.mutable_format()->set_framerate(_frameRate);
         req.mutable_format()->set_framequality(_frameQuality);
 
+        if (!roomId.isEmpty()) {
+            qDebug() << "Use previous room for reclaim host " << roomId;
+            req.set_reclaimroomid(roomId.toStdString());
+        }
+
         roomServer->createRoom(req);
         roomOpenWaiting->setText(tr("正在创建房间"));
     } else {
@@ -343,7 +348,7 @@ CollabRoom::~CollabRoom() {
         clientPeers.clear();
     } else {
         ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr)
+        if (serverPeer)
             serverPeer->close();
         serverPeer = nullptr;
     }
@@ -366,6 +371,12 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     QSettings settings;
 
     this->roomId = QString::fromStdString(info.roomid());
+
+    if (isServer) {
+        settings.setValue("previousHostRoomId", this->roomId);
+        settings.sync();
+    }
+
     quality.frameWidth = info.format().framewidth();
     quality.frameHeight = info.format().frameheight();
     quality.frameRate = info.format().framerate();
@@ -392,17 +403,11 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     }));
     frameSendThread->start();
 
-    if (!isServer) {
-        ScopedQMutex _(&peersLock);
-        serverPeer = std::make_unique<Peer>(this, QString::fromStdString(info.hostpeerid()));
-        serverPeer->startClient();
-    }
-
     // If server, start sending heartbeat, and rtt update
     if (isServer) {
         heartbeat = std::unique_ptr<QThread>(QThread::create([this]() {
             while (!exiting) {
-                QThread::sleep(10);
+                QThread::sleep(5);
                 heartbeatUpdate();
             }
         }));
@@ -480,6 +485,8 @@ void CollabRoom::fatalError(const QString &reason) {
         error = tr("请求房间信息失败");
     } else if (reason == "room init error 4") {
         error = tr("请求房间信息超时，请重试");
+    } else if (reason == "room init error 5") {
+        error = tr("请求房间信息失败，可能是房间已不存在");
     } else if (reason == "room init error 14") {
         error = tr("房间服务器连接错误，请检查网络");
         if (isPrivateRoomEndpoint) {
@@ -604,7 +611,7 @@ void CollabRoom::usageStatUpdate() {
         }
     } else {
         ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr) {
+        if (serverPeer) {
             tx += serverPeer->txSpeed();
             rx += serverPeer->rxSpeed();
         }
@@ -649,6 +656,8 @@ void CollabRoom::setNick() {
     }
     qDebug() << "new nick" << n;
 
+    QSettings settings;
+    settings.setValue("nick", n);
     roomServer->setNick(n.toStdString());
 }
 
@@ -941,7 +950,7 @@ void CollabRoom::spoutShareWorkerClient() {
     // ffmpeg coverter
     FrameToAv cvt(quality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr)
+        if (serverPeer)
             serverPeer->sendAsync(std::move(av));
     });
 
@@ -1056,7 +1065,7 @@ void CollabRoom::dxgiShareWorkerClient() {
     // ffmpeg coverter
     FrameToAv cvt(quality, [=, this](auto av) {
         ScopedQMutex _(&peersLock);
-        if (serverPeer != nullptr)
+        if (serverPeer)
             serverPeer->sendAsync(std::move(av));
     });
 
@@ -1200,6 +1209,9 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
                     auto server = std::make_unique<Peer>(this, id);
                     server->startServer();
                     clientPeers[id] = std::move(server);
+
+                    consumeSdp();
+                    consumeCandidate();
                 }
                 clientPeers[id]->setNick(peer.nick());
             }
@@ -1210,6 +1222,31 @@ void CollabRoom::updatePeers(const google::protobuf::RepeatedPtrField<vts::serve
                 it = clientPeers.erase(it);
             } else {
                 it++;
+            }
+        }
+    } else {
+        QString newServerId;
+        for (const auto &peer: peers) {
+            // Find clients
+            if (peer.isserver()) {
+                auto id = QString::fromStdString(peer.peerid());
+                newServerId = id;
+                break;
+            }
+        }
+
+        if (newServerId != currentServerPeerId) {
+            currentServerPeerId = newServerId;
+            ScopedQMutex _(&peersLock);
+            if (newServerId.isEmpty() && serverPeer) {
+                serverPeer->close();
+                serverPeer = nullptr;
+            } else {
+                serverPeer = std::make_unique<Peer>(this, newServerId);
+                serverPeer->startClient();
+
+                consumeSdp();
+                consumeCandidate();
             }
         }
     }
@@ -1475,21 +1512,6 @@ void CollabRoom::onNotifyPeers(const vts::server::NotifyPeers &peers) {
     updatePeers(peers.peers());
 }
 
-void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
-    ScopedQMutex _(&peersLock);
-    auto from = QString::fromStdString(sdp.frompeerid());
-    if (isServer) {
-        for (auto &peer: clientPeers) {
-            if (peer.first == from) {
-                qDebug() << "client" << peer.first << "offered sdp to server";
-                peer.second->setRemoteSdp(sdp);
-            }
-        }
-    } else {
-        serverPeer->setRemoteSdp(sdp);
-    }
-}
-
 void CollabRoom::onNotifyTurn(const std::string &turn) {
     turnServer = QString::fromStdString(turn);
 
@@ -1499,22 +1521,94 @@ void CollabRoom::onNotifyTurn(const std::string &turn) {
             peer.second->startServer();
         }
     } else {
-        serverPeer->startClient();
+        if (serverPeer)
+            serverPeer->startClient();
     }
 }
 
 void CollabRoom::onNotifyCandidate(const vts::server::Candidate &candidate) {
     ScopedQMutex _(&peersLock);
-    auto from = QString::fromStdString(candidate.frompeerid());
-    if (isServer) {
-        for (auto &peer: clientPeers) {
-            if (peer.first == from) {
-                qDebug() << "client" << peer.first << "offered candidate to server";
-                peer.second->addRemoteCandidate(candidate);
+    candidateQueue.emplace_back(candidate, QDateTime::currentDateTime());
+    consumeCandidate();
+}
+
+void CollabRoom::onNotifySdp(const vts::server::Sdp &sdp) {
+    ScopedQMutex _(&peersLock);
+    sdpQueue.emplace_back(sdp, QDateTime::currentDateTime());
+    consumeSdp();
+}
+
+void CollabRoom::consumeCandidate() {
+    for (auto it = candidateQueue.begin(); it != candidateQueue.end(); ) {
+        auto candidate = std::get<0>(*it);
+        auto from = QString::fromStdString(candidate.frompeerid());
+        if (isServer) {
+            auto consumed = false;
+            for (auto &peer: clientPeers) {
+                if (peer.first == from) {
+                    qDebug() << "client" << peer.first << "offered candidate to server";
+                    peer.second->addRemoteCandidate(candidate);
+                    it = candidateQueue.erase(it);
+                    consumed = true;
+                    break;
+                }
+            }
+            if (consumed) {
+                continue;
+            }
+        } else {
+            if (serverPeer) {
+                serverPeer->addRemoteCandidate(candidate);
+                it = candidateQueue.erase(it);
+                continue;
             }
         }
-    } else {
-        serverPeer->addRemoteCandidate(candidate);
+        it++;
+    }
+
+    for (auto it = candidateQueue.begin(); it != candidateQueue.end(); ) {
+        if (std::get<1>(*it).addSecs(300) < QDateTime::currentDateTime()) {
+            it = candidateQueue.erase(it);
+            continue;
+        }
+        it++;
+    }
+}
+
+void CollabRoom::consumeSdp() {
+    for (auto it = sdpQueue.begin(); it != sdpQueue.end(); ) {
+        auto sdp = std::get<0>(*it);
+        auto from = QString::fromStdString(sdp.frompeerid());
+        if (isServer) {
+            auto consumed = false;
+            for (auto &peer: clientPeers) {
+                if (peer.first == from) {
+                    qDebug() << "client" << peer.first << "offered sdp to server";
+                    peer.second->setRemoteSdp(sdp);
+                    it = sdpQueue.erase(it);
+                    consumed = true;
+                    break;
+                }
+            }
+            if (consumed) {
+                continue;
+            }
+        } else {
+            if (serverPeer) {
+                serverPeer->setRemoteSdp(sdp);
+                it = sdpQueue.erase(it);
+                continue;
+            }
+        }
+        it++;
+    }
+
+    for (auto it = sdpQueue.begin(); it != sdpQueue.end(); ) {
+        if (std::get<1>(*it).addSecs(300) < QDateTime::currentDateTime()) {
+            it = sdpQueue.erase(it);
+            continue;
+        }
+        it++;
     }
 }
 
@@ -1535,7 +1629,8 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
                 peer.second->stopDecoder();
             }
         } else {
-            serverPeer->stopDecoder();
+            if (serverPeer)
+                serverPeer->stopDecoder();
         }
     }
 
@@ -1581,7 +1676,8 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
                 peer.second->startDecoder();
             }
         } else {
-            serverPeer->startDecoder();
+            if (serverPeer)
+                serverPeer->startDecoder();
         }
     }
 

@@ -203,20 +203,6 @@ void RoomServer::setNat(int type) {
     }
 }
 
-void RoomServer::setRtt(const vts::server::ReqRtt &rtt) {
-    auto context = getCtx();
-    if (context == nullptr)
-        return;
-
-    vts::server::RspCommon rsp;
-    auto status = service->SetRtt(context.get(), rtt, &rsp);
-    if (!status.ok()) {
-        qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
-        requestHasFailed = true;
-    }
-}
-
 void RoomServer::setStat(const vts::server::ReqStat &stat) {
     auto context = getCtx();
     if (context == nullptr)
@@ -226,8 +212,13 @@ void RoomServer::setStat(const vts::server::ReqStat &stat) {
     auto status = service->SetStat(context.get(), stat, &rsp);
     if (!status.ok()) {
         qDebug() << __FUNCTION__ << "failed:" << status.error_message().c_str();
-        emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
-        requestHasFailed = true;
+        heartbeatFailureCount++;
+        if (heartbeatFailureCount >= 3) {
+            requestHasFailed = true;
+            emit room->onRoomServerError(__FUNCTION__, status.error_message().c_str());
+        }
+    } else {
+        heartbeatFailureCount = 0;
     }
 }
 

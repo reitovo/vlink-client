@@ -13,6 +13,8 @@
 #include <QJsonDocument>
 #include <map>
 #include <QDateTime>
+#include <vector>
+#include <tuple>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -24,7 +26,6 @@ namespace Ui {
 }
 
 class DxCapture;
-
 class DxgiOutput;
 
 // This is the collab main logic
@@ -119,6 +120,9 @@ private:
     void onNotifyDestroy();
     void onNotifyForceIdr();
 
+    void consumeCandidate();
+    void consumeSdp();
+
     void applyNewFrameFormat(const vts::server::FrameFormatSetting &frame);
     void setShareInfo(bool start);
 
@@ -160,6 +164,10 @@ private:
     std::map<QString, std::unique_ptr<Peer>> clientPeers;
     // As client
     std::unique_ptr<Peer> serverPeer;
+    QString currentServerPeerId;
+
+    std::vector<std::tuple<vts::server::Candidate, QDateTime>> candidateQueue;
+    std::vector<std::tuple<vts::server::Sdp, QDateTime>> sdpQueue;
 
     std::unique_ptr<QThread> heartbeat;
     std::unique_ptr<QTimer> spoutDiscovery;

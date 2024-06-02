@@ -19,6 +19,7 @@ class RoomServer {
     std::atomic_bool destroyed = false;
 
     std::atomic_bool requestHasFailed = false;
+    std::atomic_int heartbeatFailureCount = 0;
 
     std::unique_ptr<QThread> natThread;
     std::unique_ptr<QThread> notifyThread;
@@ -53,7 +54,6 @@ public:
     void startReceiveNotify();
     void startNatTypeDetect();
 
-    void setRtt(const vts::server::ReqRtt& rtt);
     void setStat(const vts::server::ReqStat& stat);
     void setNick(const std::string& nick);
     void setTurn(const std::string& turn);
