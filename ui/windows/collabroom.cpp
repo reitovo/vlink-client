@@ -419,6 +419,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     activateWindow();
 
     isRoomInfoReady = true;
+    roomServer->startReceiveNotify();
 }
 
 void CollabRoom::roomInfoFailed(const string &error) {

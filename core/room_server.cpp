@@ -123,8 +123,6 @@ void RoomServer::createRoom(const vts::server::ReqCreateRoom& req) {
 
         this->roomId = rsp.roomid();
         emit room->onRoomInfoSucceed(rsp);
-
-        startReceiveNotify();
     });
     CollabRoom::connect(worker, &QThread::finished, worker, &QThread::deleteLater);
     worker->setParent(room);
@@ -153,7 +151,6 @@ void RoomServer::joinRoom(const std::string& peerId, const std::string& roomId, 
             return;
         }
 
-        startReceiveNotify();
         emit room->onRoomInfoSucceed(rsp);
     });
     CollabRoom::connect(worker, &QThread::finished, worker, &QThread::deleteLater);

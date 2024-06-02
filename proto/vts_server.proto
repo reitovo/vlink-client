@@ -31,6 +31,7 @@ message ReqCreateRoom {
     FrameFormatSetting format = 2; 
     string nick = 4;
     string turn = 5;
+    optional string reclaimRoomId = 6;
 }
 
 message ReqJoinRoom {
