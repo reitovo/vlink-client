@@ -15,20 +15,13 @@ static char av_error[AV_ERROR_MAX_STRING_SIZE] = { 0 };
 #undef av_err2str
 #define av_err2str(errnum) av_make_error_string(av_error, AV_ERROR_MAX_STRING_SIZE, errnum)
 
-static QList<CodecOption> options = { 
-	// Full Hardware Acceleration
-	{"h264_nvenc", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_D3D11, "NVENC Native (H.264)"}, // Least CPU usage, fastest approach
-	{"h264_qsv", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_QSV,"QSV Native (H.264)"}, // Best quality, slightly slower
-	{"h264_amf", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_D3D11, "AMF Native (H.264)"}, // Good
-
-	// Try mapped, as app might run on different GPU, it might perform bad.
-//	{"h264_nvenc", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "NVENC Mapped (H.264)"},
-//	{"h264_amf", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "AMF Mapped (H.264)"},
-//	{"h264_qsv", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXMAP, "QSV Mapped (H.264)"},
-
-	// You don't have a GPU? 
-//	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_UYVA, "X264 UYVA (H.264)"}, // Cost less CPU
-//	{"libx264", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_LIBYUV_BGRA, "X264 BGRA (H.264)"}, // Cost more CPU
+static QList<CodecOption> options = {
+	{"h264_nvenc", AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_D3D11, "NVENC Native (H.264)", "nvenc"},
+	{"hevc_nvenc", AV_CODEC_ID_HEVC, FRAME_TO_AV_MODE_DXFULL_D3D11, "NVENC Native (HEVC)",  "nvenc"},
+	{"h264_qsv",  AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_QSV,   "QSV Native (H.264)",   "qsv"},
+	{"hevc_qsv",  AV_CODEC_ID_HEVC, FRAME_TO_AV_MODE_DXFULL_QSV,   "QSV Native (HEVC)",    "qsv"},
+	{"h264_amf",  AV_CODEC_ID_H264, FRAME_TO_AV_MODE_DXFULL_D3D11, "AMF Native (H.264)",   "amf"},
+	{"hevc_amf",  AV_CODEC_ID_HEVC, FRAME_TO_AV_MODE_DXFULL_D3D11, "AMF Native (HEVC)",    "amf"},
 };
 
 FrameToAv::FrameToAv(FrameQualityDesc q, std::function<void(std::shared_ptr<vts::VtsMsg>)> cb) {
@@ -38,6 +31,7 @@ FrameToAv::FrameToAv(FrameQualityDesc q, std::function<void(std::shared_ptr<vts:
     this->_height = q.frameHeight;
     this->frameRate = q.frameRate;
     this->frameQuality = q.frameQuality;
+    this->_codec = q.codec;
 }
 
 FrameToAv::~FrameToAv()
@@ -85,20 +79,29 @@ std::optional<QString> FrameToAv::init(bool forceBgra) {
 		return "init bgra to nv12";
 	}
 
-	QList<CodecOption> opts = options;
+	auto targetCodec = _codec == VIDEO_CODEC_HEVC ? AV_CODEC_ID_HEVC : AV_CODEC_ID_H264;
+	qDebug() << "target codec" << avcodec_get_name(targetCodec) << "for" << _width << "x" << _height;
+
+	QList<CodecOption> opts;
+	for (const auto& o : options) {
+		if (o.codecId == targetCodec)
+			opts.append(o);
+	}
 
 	QSettings settings;
-	auto forceEncoder = settings.value("forceEncoder", false).toBool();
-	if (forceEncoder) {
-		qDebug() << "forcing encoder";
+	if (settings.value("forceEncoder", false).toBool()) {
 		auto name = settings.value("forceEncoderName").toString();
-		auto opt = std::find_if(options.begin(), options.end(), [&](const CodecOption& item) {
-			return item.readable == name;
+		auto it = std::find_if(options.begin(), options.end(), [&](const CodecOption& o) {
+			return o.readable == name;
+		});
+		if (it != options.end()) {
+			auto resolved = std::find_if(options.begin(), options.end(), [&](const CodecOption& o) {
+				return o.backend == it->backend && o.codecId == targetCodec;
 			});
-		if (opt != options.end()) {
-			opts.clear();
-			opts.append(*opt);
-			qDebug() << "forced encoder" << (*opt).readable;
+			if (resolved != options.end()) {
+				opts = { *resolved };
+				qDebug() << "forced encoder" << resolved->readable;
+			}
 		}
 	}
 

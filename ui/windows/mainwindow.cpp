@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 #include "collabroom.h"
 #include "settingwindow.h"
+#include "framequality.h"
 #include "dx-capture.h"
 #include "QMessageBox"
 
@@ -42,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->btnJoinRoom, SIGNAL(clicked()), this, SLOT(joinRoom()));
     connect(ui->btnCreateRoom, SIGNAL(clicked()), this, SLOT(createRoom()));
     connect(ui->btnReclaimRoom, SIGNAL(clicked()), this, SLOT(reclaimRoom()));
+    connect(ui->actionFrameQuality, SIGNAL(triggered()), this, SLOT(openFrameQuality()));
     connect(ui->actionOpenSetting, SIGNAL(triggered()), this, SLOT(openSetting()));
 
     connect(ui->actionLicense, &QAction::triggered, this, [=]() {
@@ -278,6 +280,22 @@ void MainWindow::iterateHwAccels() {
 void MainWindow::openSetting() {
     auto w = new SettingWindow(this);
     w->show();
+}
+
+void MainWindow::openFrameQuality() {
+    FrameQualityDesc init;
+    QSettings settings;
+    init.frameWidth = settings.value("frameWidth", 1600).toInt();
+    init.frameHeight = settings.value("frameHeight", 900).toInt();
+    init.frameRate = settings.value("frameRate", 60).toInt();
+    init.frameQuality = settings.value("frameQualityIdx", 1).toInt();
+    init.codec = static_cast<VideoCodec>(settings.value("videoCodec", 0).toInt());
+
+    auto* quality = new FrameQuality(init, this);
+    connect(quality, &FrameQuality::finished, this, [quality]() {
+        quality->deleteLater();
+    });
+    quality->show();
 }
 
 void MainWindow::debugVideoAdapters() {

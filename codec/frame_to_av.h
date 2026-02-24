@@ -52,6 +52,7 @@ struct CodecOption {
     AVCodecID codecId;
     FrameToAvMode mode;
     QString readable;
+    QString backend;
 };
 
 // This is used by clients to encode NDI source which should comes from VTube Studio
@@ -67,6 +68,7 @@ private:
     int _width, _height;
     float frameRate;
     int frameQuality;
+    VideoCodec _codec = VIDEO_CODEC_H264;
 
     AVPacket *packet = nullptr;
 

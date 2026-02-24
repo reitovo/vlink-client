@@ -36,6 +36,7 @@ private slots:
     void joinRoom();
     void createRoom();
     void reclaimRoom();
+    void openFrameQuality();
     void openSetting();
 };
 

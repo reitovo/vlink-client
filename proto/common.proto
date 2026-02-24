@@ -2,11 +2,17 @@ syntax = "proto3";
 
 package vts.server;
 
+enum VideoCodecType {
+  VIDEO_CODEC_H264 = 0;
+  VIDEO_CODEC_HEVC = 1;
+}
+
 message FrameFormatSetting {
   int32 frameWidth = 1;
   int32 frameHeight = 2;
   int32 frameRate = 3;
   int32 frameQuality = 4;
+  VideoCodecType codec = 5;
 }
 
 message ReqCommon {}

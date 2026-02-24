@@ -19,6 +19,7 @@ class FrameQuality : public QDialog {
 Q_OBJECT
     QSettings settings;
 
+    void updateCodecAvailability();
     void updateBandwidthEstimate();
 
 public:

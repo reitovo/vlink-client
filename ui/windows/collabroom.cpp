@@ -164,9 +164,6 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
     connect(ui->feedQQGuild, &QPushButton::clicked, this, [=]() {
         QDesktopServices::openUrl(QUrl("https://pd.qq.com/s/3y2gr1nmy"));
     });
-    connect(ui->openEvent, &QPushButton::clicked, this, [=]() {
-        QDesktopServices::openUrl(QUrl("https://www.wolai.com/gX1EU9Zi2k4WvBnzH9kH9T"));
-    });
 
     connect(ui->spoutSourceSelect, &QComboBox::currentTextChanged, this, [=, this](const QString &s) {
         if (s.isEmpty())
@@ -296,6 +293,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         auto _frameHeight = settings.value("frameHeight", 900).toInt();
         auto _frameRate = settings.value("frameRate", 60).toInt();
         auto _frameQuality = settings.value("frameQualityIdx", 1).toInt();
+        auto _codec = (_frameWidth >= 2560 || _frameHeight >= 1440) ? VIDEO_CODEC_HEVC : VIDEO_CODEC_H264;
 
         vts::server::ReqCreateRoom req;
         req.set_peerid(localPeerId.toStdString());
@@ -305,6 +303,7 @@ CollabRoom::CollabRoom(bool isServer, QString roomId, QWidget *parent) :
         req.mutable_format()->set_frameheight(_frameHeight);
         req.mutable_format()->set_framerate(_frameRate);
         req.mutable_format()->set_framequality(_frameQuality);
+        req.mutable_format()->set_codec(static_cast<vts::server::VideoCodecType>(_codec));
 
         if (!roomId.isEmpty()) {
             qDebug() << "Use previous room for reclaim host " << roomId;
@@ -381,6 +380,7 @@ void CollabRoom::roomInfoSucceed(const vts::server::RspRoomInfo &info) {
     quality.frameHeight = info.format().frameheight();
     quality.frameRate = info.format().framerate();
     quality.frameQuality = info.format().framequality();
+    quality.codec = static_cast<VideoCodec>(info.format().codec());
     updateFrameQualityText();
     qDebug() << "frame quality" << quality;
 
@@ -437,7 +437,8 @@ QString CollabRoom::errorToReadable(const QString &reason) {
     if (reason == "init error") {
         err = tr("初始化错误");
     } else if (reason == "no valid encoder") {
-        err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。");
+        err = tr("没有可用的编码器，请确认您的电脑拥有显卡，且已更新显卡驱动至最新版。\n"
+                 "如果是分辨率设置过高，请回到主界面，在「选项 -> 画面设置（分辨率）」里调低后重试。");
     } else if (reason == "cap no uyva") {
         err = tr("捕获分享模式无法使用 UYVA 编码器");
     }
@@ -758,6 +759,7 @@ void CollabRoom::openQualitySetting() {
             req.set_frameheight(f->quality.frameHeight);
             req.set_framewidth(f->quality.frameWidth);
             req.set_framerate(f->quality.frameRate);
+            req.set_codec(static_cast<vts::server::VideoCodecType>(f->quality.codec));
             roomServer->setFrameFormat(req);
             updateFrameQualityText();
         }
@@ -1642,6 +1644,7 @@ void CollabRoom::applyNewFrameFormat(const vts::server::FrameFormatSetting &fram
     quality.frameHeight = frame.frameheight();
     quality.frameRate = frame.framerate();
     quality.frameQuality = frame.framequality();
+    quality.codec = static_cast<VideoCodec>(frame.codec());
 
     updateFrameQualityText();
     qDebug() << "new frame quality" << quality;

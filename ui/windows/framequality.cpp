@@ -16,6 +16,8 @@ FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
     quality = init;
 
     setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
+    ui->usageStat_5->setVisible(false);
+    ui->codecType->setVisible(false);
 
     ui->frameQuality->setCurrentIndex(init.frameQuality);
 
@@ -33,12 +35,18 @@ FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
         case 1280:
             ui->frameSize->setCurrentIndex(0);
             break;
+        case 1920:
+            ui->frameSize->setCurrentIndex(2);
+            break;
+        case 2560:
+            ui->frameSize->setCurrentIndex(3);
+            break;
+        case 3840:
+            ui->frameSize->setCurrentIndex(4);
+            break;
         default:
         case 1600:
             ui->frameSize->setCurrentIndex(1);
-            break;
-        case 1920:
-            ui->frameSize->setCurrentIndex(2);
             break;
     }
 
@@ -89,6 +97,14 @@ FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
                 quality.frameWidth = 1920;
                 quality.frameHeight = 1080;
                 break;
+            case 3:
+                quality.frameWidth = 2560;
+                quality.frameHeight = 1440;
+                break;
+            case 4:
+                quality.frameWidth = 3840;
+                quality.frameHeight = 2160;
+                break;
         }
 
         settings.setValue("frameWidth", quality.frameWidth);
@@ -96,14 +112,27 @@ FrameQuality::FrameQuality(FrameQualityDesc init, QWidget *parent) :
         settings.sync();
         qDebug() << "frameSizeIdx" << v;
 
+        updateCodecAvailability();
         updateBandwidthEstimate();
     });
+
+    updateCodecAvailability();
 
     updateBandwidthEstimate();
 }
 
 FrameQuality::~FrameQuality() {
     delete ui;
+}
+
+void FrameQuality::updateCodecAvailability() {
+    bool highRes = quality.frameWidth >= 2560 || quality.frameHeight >= 1440;
+    auto target = highRes ? VIDEO_CODEC_HEVC : VIDEO_CODEC_H264;
+    ui->codecType->setEnabled(false);
+    ui->codecType->setCurrentIndex(target);
+    quality.codec = target;
+    settings.setValue("videoCodec", target);
+    settings.sync();
 }
 
 void FrameQuality::updateBandwidthEstimate() {

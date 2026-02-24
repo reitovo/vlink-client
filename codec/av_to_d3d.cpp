@@ -49,6 +49,7 @@ AvToDx::AvToDx(const std::string& peerId, const std::string& nick, FrameQualityD
     _width = q.frameWidth;
     _height = q.frameHeight;
     this->frameRate = q.frameRate;
+    this->_codec = q.codec;
     setNick(nick);
 
     init();
@@ -72,7 +73,7 @@ std::optional<QString> AvToDx::init() {
         stop();
 
     qDebug() << "av2d3d init";
-    codecId = AV_CODEC_ID_H264;
+    codecId = _codec == VIDEO_CODEC_HEVC ? AV_CODEC_ID_HEVC : AV_CODEC_ID_H264;
 
     qDebug() << "av2d3d using codec" << avcodec_get_name(codecId);
 

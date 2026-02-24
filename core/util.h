@@ -94,19 +94,25 @@ inline void runDetachedThenFinishOnUI(const std::function<void(RspType*, grpc::S
     t->start();
 }
 
+enum VideoCodec {
+    VIDEO_CODEC_H264 = 0,
+    VIDEO_CODEC_HEVC = 1,
+};
+
 struct FrameQualityDesc {
     float frameRate = 60;
     int frameWidth = 1920;
     int frameHeight = 1080;
     int frameQuality = 0;
+    VideoCodec codec = VIDEO_CODEC_H264;
 
     friend inline std::ostream& operator<<(std::ostream& out, const FrameQualityDesc& quality) {
-        out << "W =" << quality.frameWidth << "H ="  << quality.frameHeight << "F ="  << quality.frameRate  << "Q =" << quality.frameQuality;
+        out << "W=" << quality.frameWidth << " H=" << quality.frameHeight << " F=" << quality.frameRate << " Q=" << quality.frameQuality << " C=" << quality.codec;
         return out;
     }
 
     friend inline QDebug& operator<<(QDebug& out, const FrameQualityDesc& quality) {
-        out  << "W =" << quality.frameWidth << "H ="  << quality.frameHeight << "F ="  << quality.frameRate  << "Q =" << quality.frameQuality;
+        out << "W=" << quality.frameWidth << " H=" << quality.frameHeight << " F=" << quality.frameRate << " Q=" << quality.frameQuality << " C=" << quality.codec;
         return out;
     }
 };

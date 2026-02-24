@@ -87,6 +87,9 @@
         "reference": "main",
         "packages": [ "ndi-sdk" ]
       }
+    ],
+    "overlay-triplets": [
+      "cmake"
     ]
   }
 }

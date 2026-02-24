@@ -802,6 +802,8 @@
     <property name="title">
      <string>选项</string>
     </property>
+   <addaction name="actionFrameQuality"/>
+   <addaction name="separator"/>
     <addaction name="actionOpenSetting"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -879,6 +881,14 @@
   <action name="actionOpenSetting">
    <property name="text">
     <string>设置</string>
+   </property>
+   <property name="font">
+    <font/>
+   </property>
+  </action>
+  <action name="actionFrameQuality">
+   <property name="text">
+    <string>画面设置（分辨率）</string>
    </property>
    <property name="font">
     <font/>

@@ -89,6 +89,7 @@ private:
     std::atomic_bool inited = false;
     int _width, _height;
     float frameRate;
+    VideoCodec _codec = VIDEO_CODEC_H264;
 
     AVCodecID codecId;
 

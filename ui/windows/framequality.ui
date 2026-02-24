@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>画质设置</string>
+   <string>画面设置</string>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
    <property name="geometry">
@@ -124,6 +124,16 @@
           <string>1080P</string>
          </property>
         </item>
+       <item>
+        <property name="text">
+         <string>1440P</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>4K</string>
+        </property>
+       </item>
        </widget>
       </item>
      </layout>
@@ -172,6 +182,56 @@
         <item>
          <property name="text">
           <string>60</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <spacer name="verticalSpacer_5">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_codec">
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="usageStat_5">
+        <property name="font">
+         <font>
+          <family>Microsoft YaHei UI</family>
+          <pointsize>9</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>编码</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="codecType">
+        <item>
+         <property name="text">
+          <string>H.264</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>HEVC</string>
          </property>
         </item>
        </widget>
