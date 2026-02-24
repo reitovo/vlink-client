@@ -11,7 +11,7 @@ env:
 
 concurrency:
   group: 'vlink'
-  cancel-in-progress: true
+  cancel-in-progress: true 
 
 jobs:
   build:
